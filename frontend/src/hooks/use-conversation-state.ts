@@ -24,11 +24,19 @@ export type Nudge = {
   source_turn_index: number;
 };
 
+export type PerspectiveResult = {
+  name: string;
+  analysis: string;
+};
+
 export type CoachAnalysis = {
   blind_spots: string[];
   concrete_moves: string[];
   likely_objections: string[];
   opening_strategy: string;
+  perspectives: PerspectiveResult[];
+  disagreements: string[];
+  consensus: string[];
 };
 
 export type ConversationState = {

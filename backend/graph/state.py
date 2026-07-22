@@ -23,17 +23,32 @@ class Nudge(TypedDict):
     source_turn_index: int
 
 
+class PerspectiveResult(TypedDict):
+    """Raw output from one adversarial perspective in the Coach debate."""
+
+    name: str  # "skeptic", "counterpart", "negotiator"
+    analysis: str  # the perspective's full analysis text
+
+
 class CoachAnalysis(TypedDict):
     """Structured output from the Coach stress-test.
 
     Set during prep; the proactive Wingman reads blind_spots and likely_objections
     to calibrate nudge sensitivity during the live conversation.
+
+    The multi-perspective debate runs three adversarial perspectives in parallel
+    (Skeptic, Counterpart, Voss Negotiator), then synthesizes them into the
+    structured fields below. The raw perspectives and surfaced disagreements
+    are preserved so the UI can show the reasoning, not just the conclusion.
     """
 
     blind_spots: list[str]
     concrete_moves: list[str]
     likely_objections: list[str]
     opening_strategy: str
+    perspectives: list[PerspectiveResult]
+    disagreements: list[str]
+    consensus: list[str]
 
 
 class ConversationState(TypedDict):

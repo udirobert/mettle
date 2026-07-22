@@ -1,7 +1,19 @@
 'use client';
 
-import { CircleAlert, Plus, ShieldCheck, Swords, Target } from 'lucide-react';
+import {
+  CircleAlert,
+  Eye,
+  Flame,
+  Handshake,
+  MessageCircleQuote,
+  Plus,
+  Scale,
+  ShieldCheck,
+  Swords,
+  Target,
+} from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import type { PerspectiveResult } from '@/hooks/use-conversation-state';
 
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
@@ -87,6 +99,48 @@ export function CoachPanel() {
           </div>
         </div>
       </section>
+
+      {analysis?.perspectives && analysis.perspectives.length > 0 && (
+        <section>
+          <h3 className="mettle-section-title">Three advisors weighed in</h3>
+          <p className="mettle-copy" style={{ marginBottom: 12 }}>
+            The Skeptic attacks the position. The Counterpart speaks from their seat. The Negotiator
+            checks the emotional leverage. They ran independently — the synthesis surfaced where
+            they clashed.
+          </p>
+          <div className="mettle-grid" style={{ marginTop: 12 }}>
+            {analysis.perspectives.map((p) => (
+              <PerspectiveCard key={p.name} perspective={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {analysis?.disagreements && analysis.disagreements.length > 0 && (
+        <section className="mettle-card mettle-card--risk">
+          <p className="mettle-kicker">
+            <Flame size={13} /> Where they disagreed
+          </p>
+          <ul className="mettle-list" style={{ marginTop: 11 }}>
+            {analysis.disagreements.map((d, i) => (
+              <li key={`${d}-${i}`}>{d}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {analysis?.consensus && analysis.consensus.length > 0 && (
+        <section className="mettle-card mettle-card--signal">
+          <p className="mettle-kicker">
+            <Handshake size={13} /> Where they agreed
+          </p>
+          <ul className="mettle-list" style={{ marginTop: 11 }}>
+            {analysis.consensus.map((c, i) => (
+              <li key={`${c}-${i}`}>{c}</li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
@@ -116,6 +170,35 @@ function AnalysisCard({
           <li>{fallback[tone]}</li>
         )}
       </ul>
+    </div>
+  );
+}
+
+const PERSPECTIVE_META: Record<
+  string,
+  { label: string; icon: typeof Eye; tone: 'risk' | 'accent' | 'signal' }
+> = {
+  skeptic: { label: 'The Skeptic', icon: Eye, tone: 'risk' },
+  counterpart: { label: 'The Counterpart', icon: MessageCircleQuote, tone: 'accent' },
+  negotiator: { label: 'The Negotiator', icon: Scale, tone: 'signal' },
+};
+
+function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
+  const meta = PERSPECTIVE_META[perspective.name] ?? {
+    label: perspective.name,
+    icon: Eye,
+    tone: 'risk' as const,
+  };
+  const Icon = meta.icon;
+
+  return (
+    <div className={`mettle-card mettle-card--${meta.tone}`}>
+      <p className="mettle-kicker">
+        <Icon size={13} /> {meta.label}
+      </p>
+      <p style={{ marginTop: 11, whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.5 }}>
+        {perspective.analysis}
+      </p>
     </div>
   );
 }
