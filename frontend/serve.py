@@ -1,35 +1,37 @@
 """
 Thin wrapper to serve the LangGraph agent via AG-UI protocol.
 Used in Docker where langgraph-cli dev (which needs Docker) is unavailable.
-The original main.py and all agent code remain unmodified.
+The original main.py and all backend code remain unmodified.
 """
 
 import os
 import sys
 
-# Add the agent directory to the path so imports work
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "agent"))
+# Add the backend directory to the path so imports work
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 
 import uvicorn
+from ag_ui_langgraph import add_langgraph_fastapi_endpoint
+from copilotkit import LangGraphAGUIAgent
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from langgraph.checkpoint.memory import MemorySaver
 
-# Import the original graph from the unmodified agent code
-from main import graph
+# Standalone deployments own their durable checkpointer. The LangGraph Platform
+# graph export intentionally leaves persistence to the platform itself.
+from graph.checkpoint import create_checkpointer
+from graph.graph import build_graph
 
-# The create_agent() graph may not have a checkpointer (it's normally
-# provided by the LangGraph Platform server). Add one for standalone serving.
-if not hasattr(graph, "checkpointer") or graph.checkpointer is None:
-    # Recompile with a checkpointer
-    graph = graph.copy()
-    graph.checkpointer = MemorySaver()
-
-# Use copilotkit's LangGraphAGUIAgent to serve via AG-UI
-from copilotkit import LangGraphAGUIAgent
-from ag_ui_langgraph import add_langgraph_fastapi_endpoint
+checkpointer, close_checkpointer = create_checkpointer()
+graph = build_graph(checkpointer=checkpointer)
 
 app = FastAPI()
+
+
+@app.on_event("shutdown")
+def shutdown_checkpointer() -> None:
+    """Close the Postgres connection cleanly when the agent process stops."""
+    close_checkpointer()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,8 +49,8 @@ async def health():
 add_langgraph_fastapi_endpoint(
     app=app,
     agent=LangGraphAGUIAgent(
-        name="sample_agent",
-        description="LangGraph Python starter agent",
+        name="conversation_agent",
+        description="Mettle high-stakes conversation agent",
         graph=graph,
     ),
     path="/",

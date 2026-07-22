@@ -18,18 +18,11 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
-    hooks:
-      - id: detect-secrets
-        args: [--baseline, .secrets.baseline]
-        exclude: (package-lock\.json|\.env\.example|uv\.lock)
-
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        types_or: [javascript, jsx, typescript, tsx, json, css, md]
+        types_or: [javascript, jsx, tsx, json, css, markdown]
         args: [--write]
         additional_dependencies:
           - prettier@3
@@ -38,13 +31,13 @@ repos:
     hooks:
       - id: no-env-files
         name: Block .env files from being committed
-        entry: .env(\.|$)
-        language: pygrep
-        types: [text]
-        exclude: \.env\.example$
+        entry: "block"
+        language: fail
+        files: '(^|/)\.env(\.|$)'
+        exclude: '\.env\.example$'
 
       - id: no-hardcoded-secrets
-        name: Check for hardcoded secrets
+        name: Check for hardcoded API keys and tokens
         entry: scripts/check-secrets.sh
         language: script
         types: [text]

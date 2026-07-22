@@ -32,22 +32,46 @@ The frontend starts Next.js and the local LangGraph deployment at port `8123`.
 Set the required provider credentials in `.env` before adding LLM-backed node
 logic. The graph ID is `conversation_agent`.
 
+## Test
+
+```bash
+cd backend && uv run python -m pytest tests/ -v
+```
+
 ## Current scope
 
-The graph wiring, native reactive interrupt, deterministic proactive trigger
-pass, LP renewal state contract, and frontend phase-panel shells are committed
-first. Node bodies are explicit TODOs with ownership markers. LiveKit is
-deliberately an unimplemented adapter seam until text-mode Wingman is stable.
+- **Done** — graph wiring, reactive interrupt, deterministic proactive triggers,
+  LP renewal scenario loading, frontend phase-panel shells.
+- **Done (Person A)** — Coach scenario resolution (custom scenario synthesized
+  from a typed description or voice interview, LP renewal as the default) +
+  weak-point stress test. Opponent voice rehearsal (Deepgram Voice Agent,
+  echo-cancellation-safe) and typed fallback, both against the resolved
+  scenario. Debrief analysis (outcome, commitments including accidental soft
+  promises, open objections, weak-point verdicts, follow-up email draft).
+- **Done (Person B)** — Coach multi-perspective debate synthesis (Skeptic,
+  Counterpart, Voss Negotiator → structured `CoachAnalysis`) + proactive nudge
+  enrichment (rules pass → LLM, context-aware). Both with graceful fallback.
+- **In progress (Person B)** — reactive Wingman answer.
+- **Stretch (Person B)** — LiveKit voice adapter for the live call. Additive —
+  the demo is complete without it.
 
 ## Build order
 
-1. **This commit** — graph skeleton + state contract + scenario + frontend
-   shells, all stubbed. Proven wiring, no LLM logic yet.
-2. **Person A** fills in `coach.py` + `opponent.py` + `debrief.py`; **Person B**
-   fills in `wingman_reactive.py` + `wingman_proactive.py` escalation, against
-   the same state schema and `lp_renewal.md`. Text/typed input only.
-3. **Person B** layers in `voice/livekit_adapter.py` so Wingman can run against
-   a real or simulated live call. Additive — the demo is complete without it.
+1. **Done** — graph skeleton + state contract + scenario + frontend shells.
+2. **Done (Person A)** — Coach scenario resolution + stress test, Opponent
+   voice + typed rehearsal, Debrief analysis.
+3. **Done (Person B)** — Coach multi-perspective debate, proactive nudge
+   enrichment.
+4. **In progress (Person B)** — reactive Wingman answer.
+5. **Stretch (Person B)** — LiveKit voice adapter for the live call. Additive —
+   the demo is complete without it.
+
+## Known gaps
+
+- `wingman_reactive.py` (answer function) still returns placeholder text —
+  Person B's work item.
+- A2UI demo catalog was removed; nudge-specific generative UI components
+  should be added when the Wingman proactive surface matures.
 
 ## Upstream
 

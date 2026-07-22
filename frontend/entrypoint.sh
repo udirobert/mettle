@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "[entrypoint] Starting: langgraph-python starter"
+echo "[entrypoint] Starting: Mettle"
 
 if [ -z "$OPENAI_API_KEY" ]; then
   echo "[entrypoint] WARNING: OPENAI_API_KEY not set!"

@@ -1,23 +1,32 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { useAgent } from "@copilotkit/react-core/v2";
+import { useEffect, useRef, useState } from 'react';
+import { useAgent } from '@copilotkit/react-core/v2';
+import {
+  ChevronDown,
+  CircleAlert,
+  Eye,
+  Mic,
+  MessageCircle,
+  Plus,
+  Scale,
+  ShieldCheck,
+  Square,
+  Swords,
+  Target,
+} from 'lucide-react';
 
-import { useConversationState } from "@/hooks/use-conversation-state";
-import { DeepgramVoiceSession } from "@/lib/deepgram-voice";
-import { EXAMPLE_SCENARIOS } from "@/lib/example-scenarios";
+import { useConversationState } from '@/hooks/use-conversation-state';
+import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
+import { DeepgramVoiceSession } from '@/lib/deepgram-voice';
+import { EXAMPLE_SCENARIOS } from '@/lib/example-scenarios';
 
 /**
- * Coach phase UI — owned by Person A (before + after).
- *
- * Two steps:
- * 1. Voice interview (optional): the coach asks what's at stake and what the
- *    user fears; the exchange accumulates in state.transcript with the coach
- *    as speaker "system".
- * 2. "Run prep" executes the coach node, which distills scenario + interview
- *    into personalized weak points and clears the transcript for rehearsal.
+ * Voice interview: the coach asks what's at stake and what the user fears;
+ * the exchange accumulates in state.transcript (speaker "system"/"user") and
+ * is consumed by the coach node to synthesize a custom scenario + weak
+ * points, then run through the multi-perspective debate below.
  */
-
 const COACH_PROMPT = [
   "You are Mettle, a preparation coach for high-stakes conversations. The",
   "user has a difficult conversation coming up. Interview them briefly and",
@@ -27,36 +36,46 @@ const COACH_PROMPT = [
   "sentences per turn. Push past vague answers. After four or five exchanges,",
   "give them your sharpest three observations about where they will slip,",
   "then tell them to hit Run prep and go rehearse against their counterpart.",
-].join(" ");
+].join(' ');
 
 const COACH_GREETING =
   "Let's get you ready. Walk me into the room — what's the conversation you're dreading, and who is on the other side of the table?";
 
+/** Pre-conversation briefing surface, owned by Person A (before + after). */
 export function CoachPanel() {
   const { state, setPartial } = useConversationState();
   const { agent } = useAgent();
+  const weakPoints = state.user_weak_points ?? [];
+  const analysis = state.coach_analysis;
+  const profile = (state.counterpart_profile ?? {}) as {
+    name?: string;
+    role?: string;
+  };
+
   const [running, setRunning] = useState(false);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [voiceStatus, setVoiceStatus] = useState<string | null>(null);
   const sessionRef = useRef<DeepgramVoiceSession | null>(null);
   const transcriptRef = useRef(state.transcript ?? []);
   transcriptRef.current = state.transcript ?? [];
-  const stateRef = useRef(state);
-  stateRef.current = state;
 
   useEffect(() => () => sessionRef.current?.stop(), []);
 
   const interview = (state.transcript ?? []).filter(
-    (t) => t.speaker === "system" || t.speaker === "user",
+    (t) => t.speaker === 'system' || t.speaker === 'user',
   );
 
-  const appendInterview = (speaker: "user" | "system", text: string) => {
+  const addWeakPoint = () => {
+    setPartial({ user_weak_points: [...weakPoints, 'New weak point - edit me'] });
+  };
+
+  const appendInterview = (speaker: 'user' | 'system', text: string) => {
     const next = [
       ...transcriptRef.current,
       { speaker, text, timestamp: new Date().toISOString() } as const,
     ];
     transcriptRef.current = next;
-    setPartial({ ...stateRef.current, transcript: next, phase: "prep" });
+    setPartial({ transcript: next, phase: 'prep' });
   };
 
   const startVoice = async () => {
@@ -66,14 +85,14 @@ export function CoachPanel() {
       await session.start({
         prompt: COACH_PROMPT,
         greeting: COACH_GREETING,
-        voice: "aura-2-apollo-en",
+        voice: 'aura-2-apollo-en',
         onTranscript: (role, text) =>
-          appendInterview(role === "assistant" ? "system" : "user", text),
+          appendInterview(role === 'assistant' ? 'system' : 'user', text),
         onStatus: setVoiceStatus,
       });
     } catch (error) {
       setVoiceStatus(
-        error instanceof Error ? error.message : "failed to start coach session",
+        error instanceof Error ? error.message : 'failed to start coach session',
       );
       sessionRef.current = null;
     }
@@ -88,89 +107,55 @@ export function CoachPanel() {
   const runPrep = async () => {
     stopVoice();
     setRunning(true);
-    // The typed description joins the interview transcript; any interview or
-    // description at all means the coach synthesizes a custom scenario.
     let transcript = transcriptRef.current;
     if (description.trim()) {
       transcript = [
         ...transcript,
         {
-          speaker: "user" as const,
+          speaker: 'user' as const,
           text: `My situation: ${description.trim()}`,
           timestamp: new Date().toISOString(),
         },
       ];
     }
     const isCustom = transcript.length > 0;
-    // agent.setState replaces state wholesale — send the full object.
     setPartial({
-      ...stateRef.current,
-      phase: "prep",
+      phase: 'prep',
       transcript,
-      scenario_id: isCustom ? "custom" : "lp_renewal",
+      scenario_id: isCustom ? 'custom' : 'lp_renewal',
     });
     try {
-      await (
-        agent as unknown as { runAgent?: () => Promise<unknown> }
-      ).runAgent?.();
+      await (agent as unknown as { runAgent?: () => Promise<unknown> }).runAgent?.();
     } finally {
       setRunning(false);
     }
   };
 
-  const weakPoints = state.user_weak_points ?? [];
   const voiceActive = sessionRef.current !== null;
 
   return (
-    <div className="flex flex-col gap-6 h-full overflow-y-auto p-6">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">Coach — Prep</h2>
-          <p className="text-sm opacity-70 mt-1">
-            Scenario: {state.scenario_id || "lp_renewal"}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex gap-2">
-            <button
-              onClick={voiceActive ? stopVoice : startVoice}
-              className={`px-4 py-2 rounded text-sm font-medium border ${
-                voiceActive
-                  ? "border-red-500/50 text-red-500"
-                  : "border-current/20 hover:bg-current/5"
-              }`}
-            >
-              {voiceActive ? "■ End session" : "🎙 Talk to your coach"}
-            </button>
-            <button
-              onClick={runPrep}
-              disabled={running}
-              className="px-4 py-2 rounded text-sm font-medium border border-current/20 hover:bg-current/5 disabled:opacity-50"
-            >
-              {running ? "Preparing…" : "Run prep"}
-            </button>
-          </div>
-          {voiceStatus && (
-            <span className="text-xs opacity-60">{voiceStatus}</span>
-          )}
-        </div>
+    <div className="mettle-phase">
+      <header>
+        <p className="mettle-kicker">Position before performance</p>
+        <h2 className="mettle-headline">Walk in with a point of view.</h2>
+        <p className="mettle-copy">
+          Mettle has loaded the pressure points. Build the case before the room starts setting the
+          terms.
+        </p>
       </header>
 
-      <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Your situation
-        </h3>
-        <div className="mt-2 flex flex-wrap gap-2">
+      <section className="mettle-card mettle-card--accent">
+        <p className="mettle-kicker">
+          <Target size={13} /> Your situation
+        </p>
+        <div className="flex flex-wrap gap-2" style={{ marginTop: 10 }}>
           {EXAMPLE_SCENARIOS.map((example) => (
             <button
               key={example.label}
               type="button"
               onClick={() => setDescription(example.text)}
-              className={`text-xs px-2.5 py-1 rounded-full border ${
-                description === example.text
-                  ? "border-current/60 bg-current/10"
-                  : "border-current/20 hover:bg-current/5"
-              }`}
+              className="mettle-icon-action"
+              style={{ fontSize: 11, padding: '4px 10px' }}
             >
               {example.label}
             </button>
@@ -179,45 +164,44 @@ export function CoachPanel() {
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe the conversation you're preparing for: who's on the other side, what's at stake, what you're afraid of. Pick an example above and edit it, or just talk to your coach. Leave empty for the demo scenario (LP renewal)."
-          rows={4}
-          className="mt-2 w-full rounded border border-current/20 bg-transparent px-3 py-2 text-sm"
+          placeholder="Describe who's on the other side and what's at stake. Pick an example above and edit it, or just talk to your coach. Leave empty for the demo scenario (LP renewal)."
+          rows={3}
+          className="mettle-input"
+          style={{ width: '100%', marginTop: 10, resize: 'vertical' }}
         />
-      </section>
-
-      <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Stakes
-        </h3>
-        <p className="mt-2">{state.stakes || "Not set yet — run prep."}</p>
-        {(state.counterpart_profile as { name?: string })?.name && (
-          <p className="mt-1 text-sm opacity-70">
-            Counterpart: {String((state.counterpart_profile as { name?: string }).name)}
-            {(state.counterpart_profile as { role?: string })?.role
-              ? ` — ${String((state.counterpart_profile as { role?: string }).role)}`
-              : ""}
+        <div className="flex gap-2" style={{ marginTop: 10 }}>
+          <button className="mettle-action" onClick={voiceActive ? stopVoice : startVoice} type="button">
+            {voiceActive ? (
+              <>
+                <Square size={14} aria-hidden="true" /> End session
+              </>
+            ) : (
+              <>
+                <Mic size={14} aria-hidden="true" /> Talk to your coach
+              </>
+            )}
+          </button>
+          <button className="mettle-action" onClick={runPrep} disabled={running} type="button">
+            {running ? 'Preparing…' : 'Run prep'}
+          </button>
+        </div>
+        {voiceStatus && (
+          <p className="mettle-copy" style={{ marginTop: 8, fontSize: 12 }}>
+            {voiceStatus}
           </p>
         )}
       </section>
 
       {interview.length > 0 && (
         <section>
-          <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-            Coaching session
-          </h3>
-          <div className="mt-2 flex flex-col gap-2">
-            {interview.map((turn, i) => (
+          <h3 className="mettle-section-title">Coaching session</h3>
+          <div className="mettle-transcript" style={{ marginTop: 12 }}>
+            {interview.map((turn, index) => (
               <div
-                key={i}
-                className={`text-sm rounded-lg p-3 max-w-[80%] ${
-                  turn.speaker === "user"
-                    ? "self-end bg-current/10"
-                    : "self-start border border-current/15"
-                }`}
+                key={`${turn.timestamp}-${index}`}
+                className={`mettle-turn ${turn.speaker === 'user' ? 'mettle-turn--user' : 'mettle-turn--counterpart'}`}
               >
-                <span className="text-xs opacity-50 block mb-1">
-                  {turn.speaker === "user" ? "you" : "coach"}
-                </span>
+                <span className="mettle-turn-label">{turn.speaker === 'user' ? 'You' : 'Coach'}</span>
                 {turn.text}
               </div>
             ))}
@@ -225,23 +209,219 @@ export function CoachPanel() {
         </section>
       )}
 
-      <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Your weak points
-        </h3>
-        <ul className="mt-2 flex flex-col gap-2">
-          {weakPoints.length === 0 && (
-            <li className="text-sm opacity-50">
-              No weak points surfaced yet. Talk to your coach, then run prep.
-            </li>
-          )}
-          {weakPoints.map((point, i) => (
-            <li key={i} className="text-sm rounded border border-current/10 p-3">
-              {point}
-            </li>
-          ))}
-        </ul>
+      <div className="mettle-grid">
+        <section className="mettle-card mettle-card--risk">
+          <p className="mettle-kicker">
+            <CircleAlert size={13} /> Stakes
+          </p>
+          <strong>{state.stakes || 'Not set yet — run prep'}</strong>
+          <p>
+            {profile.name
+              ? `${profile.name}${profile.role ? ` — ${profile.role}` : ''}`
+              : 'This is an expectation-setting meeting, not a status call.'}
+          </p>
+        </section>
+        <section className="mettle-card mettle-card--signal">
+          <p className="mettle-kicker">
+            <Target size={13} /> Win condition
+          </p>
+          <strong>Leave with clarity, not a concession</strong>
+          <p>State the outcome you need before the room defines it for you.</p>
+        </section>
+      </div>
+
+      <section className="mettle-card mettle-card--accent">
+        <p className="mettle-kicker">
+          <Swords size={13} /> Opening move
+        </p>
+        <strong>
+          {analysis?.opening_strategy ||
+            'Lead with the operational evidence, then ask what would make this simple.'}
+        </strong>
+        <p>
+          Put your position on the table before the counterpart can frame the conversation around
+          their number.
+        </p>
       </section>
+
+      <section>
+        <h3 className="mettle-section-title">Pressure test</h3>
+        <div className="mettle-grid" style={{ marginTop: 12 }}>
+          <AnalysisCard title="Blind spots" items={analysis?.blind_spots} tone="risk" />
+          <AnalysisCard title="Concrete moves" items={analysis?.concrete_moves} tone="signal" />
+          <AnalysisCard
+            title="Likely objections"
+            items={analysis?.likely_objections}
+            tone="accent"
+          />
+          <div className="mettle-card">
+            <p className="mettle-kicker">
+              <ShieldCheck size={13} /> Your weak points
+            </p>
+            <ul className="mettle-list" style={{ marginTop: 11 }}>
+              {weakPoints.length === 0 ? (
+                <li>No weak points surfaced yet.</li>
+              ) : (
+                weakPoints.map((point, index) => <li key={`${point}-${index}`}>{point}</li>)
+              )}
+            </ul>
+            <button
+              className="mettle-action"
+              onClick={addWeakPoint}
+              type="button"
+              style={{ marginTop: 12 }}
+            >
+              <Plus size={14} aria-hidden="true" /> Add weak point
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {analysis && <CouncilBrief analysis={analysis} />}
+    </div>
+  );
+}
+
+function AnalysisCard({
+  title,
+  items,
+  tone,
+}: {
+  title: string;
+  items?: string[];
+  tone: 'risk' | 'signal' | 'accent';
+}) {
+  const fallback: Record<typeof tone, string> = {
+    risk: 'No blind spots are loaded yet.',
+    signal: 'No concrete moves are loaded yet.',
+    accent: 'No objections are loaded yet.',
+  };
+
+  return (
+    <div className={`mettle-card mettle-card--${tone}`}>
+      <p className="mettle-kicker">{title}</p>
+      <ul className="mettle-list" style={{ marginTop: 11 }}>
+        {items?.length ? (
+          items.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
+        ) : (
+          <li>{fallback[tone]}</li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
+const PERSPECTIVE_META: Record<string, { label: string; icon: typeof Eye; role: string }> = {
+  skeptic: { label: 'The Skeptic', icon: Eye, role: 'Finds the argument against you' },
+  counterpart: { label: 'The Counterpart', icon: MessageCircle, role: "Speaks from the other seat" },
+  negotiator: { label: 'The Negotiator', icon: Scale, role: 'Tests tactical empathy' },
+};
+
+function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
+  const [showPerspectives, setShowPerspectives] = useState(false);
+  const leadMove = analysis.concrete_moves?.[0] || analysis.opening_strategy;
+  const tension = analysis.disagreements?.[0];
+  const consensus = analysis.consensus?.slice(0, 2) ?? [];
+
+  return (
+    <section className="border border-[var(--ink)] bg-[#fffdf7] shadow-[5px_5px_0_var(--ink)]">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--ink)] bg-[var(--ink)] px-5 py-4 text-white">
+        <div>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--lime)]">
+            Council brief
+          </p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-normal leading-none">
+            The room has a point of tension.
+          </h3>
+        </div>
+        <span className="border border-white/25 px-2 py-1 font-mono text-[9px] font-medium uppercase tracking-[0.08em]">
+          3 lenses
+        </span>
+      </div>
+
+      <div className="grid gap-px bg-[var(--ink)] md:grid-cols-[1.2fr_0.8fr]">
+        <div className="bg-[#e2e8ff] p-5">
+          <p className="mettle-kicker">Recommendation</p>
+          <strong className="block text-base font-extrabold leading-snug">{leadMove}</strong>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-soft)]">
+            The first move should make the decision criteria visible before a number becomes the
+            conversation.
+          </p>
+        </div>
+        <div className="bg-[#fff0eb] p-5">
+          <p className="mettle-kicker text-[var(--tomato)]">Point of tension</p>
+          <strong className="block text-sm font-extrabold leading-snug">
+            {tension || 'The council found no material conflict in the position.'}
+          </strong>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <p className="mettle-kicker">High-confidence signal</p>
+        {consensus.length > 0 ? (
+          <ul className="mt-3 grid gap-2">
+            {consensus.map((item, index) => (
+              <li
+                className="border-l-4 border-[#83a600] bg-[#f1fad2] px-3 py-2 text-xs font-semibold leading-relaxed"
+                key={`${item}-${index}`}
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-[var(--ink-soft)]">The council has not converged yet.</p>
+        )}
+
+        {analysis.perspectives.length > 0 && (
+          <>
+            <button
+              aria-expanded={showPerspectives}
+              className="mettle-icon-action mt-5"
+              onClick={() => setShowPerspectives((value) => !value)}
+              type="button"
+            >
+              <ChevronDown
+                className={`transition-transform duration-200 ${showPerspectives ? 'rotate-180' : ''}`}
+                size={16}
+                aria-hidden="true"
+              />
+              {showPerspectives ? 'Hide the three lenses' : 'Inspect the three lenses'}
+            </button>
+            {showPerspectives && (
+              <div className="mt-3 grid gap-2 border-t border-[var(--line)] pt-3">
+                {analysis.perspectives.map((perspective) => (
+                  <PerspectiveCard key={perspective.name} perspective={perspective} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
+  const meta = PERSPECTIVE_META[perspective.name] ?? {
+    label: perspective.name,
+    icon: Eye,
+    role: 'Adversarial review',
+  };
+  const Icon = meta.icon;
+
+  return (
+    <div className="border border-[var(--line)] bg-[#fffdf7] p-4">
+      <div className="flex items-center gap-2">
+        <Icon size={15} aria-hidden="true" />
+        <strong className="text-sm">{meta.label}</strong>
+        <span className="ml-auto font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--ink-soft)]">
+          {meta.role}
+        </span>
+      </div>
+      <p className="mt-3 whitespace-pre-wrap text-xs leading-relaxed text-[var(--ink-soft)]">
+        {perspective.analysis}
+      </p>
     </div>
   );
 }

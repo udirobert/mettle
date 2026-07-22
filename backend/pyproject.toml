@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
   "langchain==1.2.15",
   "langgraph==1.1.6",
+  "langgraph-checkpoint-postgres>=3.0.3,<4.0.0",
   "langsmith==0.7.33",
   "openai==1.109.1",
   "fastapi>=0.115.5,<1.0.0",
@@ -18,4 +19,10 @@ dependencies = [
   "langgraph-api==0.7.101",
   "pip>=26.0.1",
   "langchain-anthropic==1.4.1",
+  "psycopg[binary]>=3.3.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
 ]

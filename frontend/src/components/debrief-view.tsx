@@ -1,17 +1,25 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useAgent } from "@copilotkit/react-core/v2";
+import { useState } from 'react';
+import { useAgent } from '@copilotkit/react-core/v2';
+import { CheckCircle2, ClipboardList, Flag, MessagesSquare } from 'lucide-react';
 
-import { useConversationState } from "@/hooks/use-conversation-state";
+import { useConversationState } from '@/hooks/use-conversation-state';
 
 /**
- * Debrief view — owned by Person A (before + after).
+ * Post-conversation readout, owned by Person A (before + after).
  *
- * Post-conversation analysis over the accumulated transcript and nudges:
- * outcome, commitments (including accidental soft promises), unanswered
- * objections, weak-point verdicts, and a sendable follow-up email draft.
+ * "Generate debrief" runs the debrief node over the accumulated transcript +
+ * nudges: outcome, commitments (including accidental soft promises),
+ * unanswered objections, weak-point verdicts, and a follow-up email draft.
  */
+function noteTone(note: string): 'risk' | 'signal' | 'accent' | undefined {
+  if (note.startsWith('OUTCOME:')) return 'signal';
+  if (note.startsWith('COMMITMENT:')) return 'risk';
+  if (note.startsWith('OPEN:')) return 'accent';
+  return undefined;
+}
+
 export function DebriefView() {
   const { state, setPartial } = useConversationState();
   const { agent } = useAgent();
@@ -19,90 +27,104 @@ export function DebriefView() {
   const notes = state.debrief_notes ?? [];
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
+  const counterpartLabel =
+    (state.counterpart_profile as { name?: string })?.name || 'Counterpart';
 
   const runDebrief = async () => {
     setRunning(true);
-    // agent.setState replaces state wholesale — send the full object so the
-    // transcript (possibly written client-side by the voice session) survives.
-    setPartial({ ...state, phase: "debrief" });
+    setPartial({ phase: 'debrief' });
     try {
-      await (
-        agent as unknown as { runAgent?: () => Promise<unknown> }
-      ).runAgent?.();
+      await (agent as unknown as { runAgent?: () => Promise<unknown> }).runAgent?.();
     } finally {
       setRunning(false);
     }
   };
 
-  const noteStyle = (note: string) => {
-    if (note.startsWith("COMMITMENT:")) return "border-amber-500/40";
-    if (note.startsWith("OPEN:")) return "border-red-500/40";
-    if (note.startsWith("OUTCOME:")) return "border-green-500/40";
-    return "border-current/10";
-  };
-
   return (
-    <div className="flex flex-col gap-6 h-full overflow-y-auto p-6">
+    <div className="mettle-phase">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Debrief</h2>
-          <p className="text-sm opacity-70 mt-1">
-            What happened, what to follow up on.
+          <p className="mettle-kicker">After the room</p>
+          <h2 className="mettle-headline">Turn the conversation into leverage.</h2>
+          <p className="mettle-copy">
+            Capture commitments, expose what stayed unresolved, and decide what must happen before
+            the next touchpoint.
           </p>
         </div>
         <button
+          className="mettle-action"
           onClick={runDebrief}
           disabled={running || transcript.length === 0}
-          className="px-4 py-2 rounded text-sm font-medium border border-current/20 hover:bg-current/5 disabled:opacity-50"
+          type="button"
         >
-          {running ? "Analyzing…" : "Generate debrief"}
+          {running ? 'Analyzing…' : 'Generate debrief'}
         </button>
       </header>
 
-      <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Notes
-        </h3>
-        <ul className="mt-2 flex flex-col gap-2">
-          {notes.length === 0 && (
-            <li className="text-sm opacity-50">No debrief notes yet.</li>
-          )}
-          {notes.map((note, i) => (
-            <li
-              key={i}
-              className={`text-sm rounded border p-3 whitespace-pre-line ${noteStyle(note)}`}
-            >
-              {note.replaceAll("\\n", "\n")}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="mettle-grid">
+        <section className="mettle-card mettle-card--signal">
+          <p className="mettle-kicker">
+            <MessagesSquare size={13} /> Conversation
+          </p>
+          <strong>{transcript.length} turns captured</strong>
+          <p>The record is available for a clean post-meeting read.</p>
+        </section>
+        <section className="mettle-card mettle-card--risk">
+          <p className="mettle-kicker">
+            <Flag size={13} /> Intervention
+          </p>
+          <strong>{nudges.length} signals surfaced</strong>
+          <p>Review the moments where the conversation started to drift.</p>
+        </section>
+      </div>
 
       <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Transcript ({transcript.length} turns)
-        </h3>
-        <div className="mt-2 flex flex-col gap-1 text-sm">
-          {transcript.map((turn, i) => (
-            <div key={i}>
-              <span className="opacity-50 text-xs">{turn.speaker}: </span>
-              {turn.text}
+        <h3 className="mettle-section-title">Commitments and follow-ups</h3>
+        <div className="grid gap-2 mt-3">
+          {notes.length === 0 ? (
+            <div className="mettle-card mettle-card--accent">
+              <p className="mettle-kicker">
+                <ClipboardList size={13} /> Ready for synthesis
+              </p>
+              <strong>Close the meeting before you close the record.</strong>
+              <p>
+                Generate the debrief to pull out commitments, open objections, and named next
+                actions.
+              </p>
             </div>
-          ))}
+          ) : (
+            notes.map((note, index) => {
+              const tone = noteTone(note);
+              return (
+                <div
+                  className={`mettle-card${tone ? ` mettle-card--${tone}` : ''}`}
+                  key={`${note}-${index}`}
+                >
+                  <p className="mettle-kicker">
+                    <CheckCircle2 size={13} /> {note.split(':')[0]}
+                  </p>
+                  <strong style={{ whiteSpace: 'pre-line' }}>
+                    {(note.split(':').slice(1).join(':').trim() || note).replaceAll('\\n', '\n')}
+                  </strong>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
       <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Nudges sent ({nudges.length})
-        </h3>
-        <div className="mt-2 flex flex-col gap-1 text-sm">
-          {nudges.map((n) => (
-            <div key={n.id}>
-              <span className="opacity-50 text-xs">{n.kind}: </span>
-              {n.message}
-            </div>
-          ))}
+        <h3 className="mettle-section-title">The record</h3>
+        <div className="mettle-list mt-3">
+          {transcript.length === 0 ? (
+            <li>No conversation turns captured yet.</li>
+          ) : (
+            transcript.map((turn, index) => (
+              <li key={`${turn.timestamp}-${index}`}>
+                <strong>{turn.speaker === 'user' ? 'You' : counterpartLabel}:</strong> {turn.text}
+              </li>
+            ))
+          )}
         </div>
       </section>
     </div>
