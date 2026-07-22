@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   ChevronDown,
   CircleAlert,
@@ -16,25 +16,11 @@ import {
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
 
-const AVAILABLE_SCENARIOS = [
-  { id: 'lp_renewal', label: 'LP Renewal' },
-  { id: 'performance_review', label: 'Performance Review' },
-  { id: 'board_update', label: 'Board Update' },
-  { id: 'salary_negotiation', label: 'Salary Negotiation' },
-];
-
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
   const { state, setPartial } = useConversationState();
   const weakPoints = state.user_weak_points ?? [];
   const analysis = state.coach_analysis;
-  const [selectedScenario, setSelectedScenario] = useState(state.scenario_id ?? 'lp_renewal');
-
-  useEffect(() => {
-    if (selectedScenario !== state.scenario_id) {
-      setPartial({ scenario_id: selectedScenario });
-    }
-  }, [selectedScenario, state.scenario_id, setPartial]);
 
   const addWeakPoint = () => {
     setPartial({ user_weak_points: [...weakPoints, 'New weak point - edit me'] });
@@ -50,24 +36,6 @@ export function CoachPanel() {
           terms.
         </p>
       </header>
-
-      <section className="mettle-card">
-        <label className="mettle-kicker" htmlFor="scenario-select">
-          Scenario
-        </label>
-        <select
-          className="mettle-input"
-          id="scenario-select"
-          onChange={(e) => setSelectedScenario(e.target.value)}
-          value={selectedScenario}
-        >
-          {AVAILABLE_SCENARIOS.map((scenario) => (
-            <option key={scenario.id} value={scenario.id}>
-              {scenario.label}
-            </option>
-          ))}
-        </select>
-      </section>
 
       <div className="mettle-grid">
         <section className="mettle-card mettle-card--risk">

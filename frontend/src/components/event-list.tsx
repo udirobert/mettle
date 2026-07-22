@@ -50,35 +50,43 @@ const SCENARIOS: Scenario[] = [
   },
 ];
 
-function getPrepStatus(state: ConversationState, scenarioId: string): string {
-  // Only show actual status for the currently selected scenario
+type PrepProgress = {
+  brief: boolean;
+  rehearsal: boolean;
+  evidence: boolean;
+  live: boolean;
+};
+
+function getPrepProgress(state: ConversationState, scenarioId: string): PrepProgress {
   if (state.scenario_id !== scenarioId) {
-    return 'Not started';
+    return {
+      brief: false,
+      rehearsal: false,
+      evidence: false,
+      live: false,
+    };
   }
 
-  const hasCoach = !!state.coach_analysis;
-  const hasRehearsal = state.transcript.length > 0 && state.phase !== 'prep';
-  const hasLive = state.transcript.length > 0 && state.phase === 'live';
+  const hasBrief = !!state.coach_analysis;
+  const hasRehearsal =
+    state.transcript?.some((t) => t.speaker === 'user' || t.speaker === 'counterpart') ?? false;
+  const hasLiveSupport = !!state.reactive_reply;
 
-  if (hasLive) return 'Live support active';
-  if (hasRehearsal) return 'Rehearsal complete';
-  if (hasCoach) return 'Brief prepared';
-  return 'In progress';
+  return {
+    brief: hasBrief,
+    rehearsal: hasRehearsal,
+    evidence: false, // Not yet implemented - will be added with context ingestion
+    live: hasLiveSupport,
+  };
 }
 
-function getPrepStatusIcon(state: ConversationState, scenarioId: string) {
-  if (state.scenario_id !== scenarioId) {
-    return <Clock size={14} />;
-  }
+function getPrepStatus(state: ConversationState, scenarioId: string): string {
+  const progress = getPrepProgress(state, scenarioId);
+  const completed = [progress.brief, progress.rehearsal, progress.live].filter(Boolean).length;
 
-  const hasCoach = !!state.coach_analysis;
-  const hasRehearsal = state.transcript.length > 0 && state.phase !== 'prep';
-  const hasLive = state.transcript.length > 0 && state.phase === 'live';
-
-  if (hasLive) return <CheckCircle2 size={14} />;
-  if (hasRehearsal) return <CheckCircle2 size={14} />;
-  if (hasCoach) return <FileText size={14} />;
-  return <Clock size={14} />;
+  if (completed === 0) return 'Not started';
+  if (completed === 3) return 'Fully prepared';
+  return `${completed} of 3 phases complete`;
 }
 
 function getRiskColor(risk: string): string {
@@ -140,13 +148,54 @@ export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: strin
                 </div>
 
                 <div className={styles.statusItem}>
-                  {getPrepStatusIcon(state, scenario.id)}
                   <span className={styles.prepStatus}>{getPrepStatus(state, scenario.id)}</span>
                 </div>
+              </div>
 
-                <div className={styles.statusItem}>
-                  <FileText size={14} />
-                  <span className={styles.evidenceStatus}>No evidence imported</span>
+              <div className={styles.progressRow}>
+                <div className={styles.progressItem}>
+                  <CheckCircle2
+                    size={16}
+                    className={
+                      getPrepProgress(state, scenario.id).brief
+                        ? styles.progressComplete
+                        : styles.progressPending
+                    }
+                  />
+                  <span className={styles.progressLabel}>Brief</span>
+                </div>
+                <div className={styles.progressItem}>
+                  <CheckCircle2
+                    size={16}
+                    className={
+                      getPrepProgress(state, scenario.id).rehearsal
+                        ? styles.progressComplete
+                        : styles.progressPending
+                    }
+                  />
+                  <span className={styles.progressLabel}>Rehearsal</span>
+                </div>
+                <div className={styles.progressItem}>
+                  <CheckCircle2
+                    size={16}
+                    className={
+                      getPrepProgress(state, scenario.id).evidence
+                        ? styles.progressComplete
+                        : styles.progressPending
+                    }
+                  />
+                  <span className={styles.progressLabel}>Evidence</span>
+                </div>
+                <div className={styles.progressItem}>
+                  <CheckCircle2
+                    size={16}
+                    className={
+                      getPrepProgress(state, scenario.id).live
+                        ? styles.progressComplete
+                        : styles.progressPending
+                    }
+                  />
+                  <span className={styles.progressLabel}>Live</span>
                 </div>
               </div>
             </div>
