@@ -29,6 +29,52 @@ export type PerspectiveResult = {
   analysis: string;
 };
 
+export type ContextSource = {
+  source_id: string;
+  provider:
+    | 'gmail'
+    | 'calendar'
+    | 'outlook'
+    | 'slack'
+    | 'notion'
+    | 'drive'
+    | 'exa'
+    | 'firecrawl'
+    | 'tinyfish'
+    | 'manual';
+  title: string;
+  author: string | null;
+  timestamp: string | null;
+  url: string | null;
+};
+
+export type EvidenceClaim = {
+  claim: string;
+  source_ids: string[];
+  confidence: 'low' | 'medium' | 'high';
+  relevance:
+    | 'stakes'
+    | 'counterpart'
+    | 'objection'
+    | 'commitment'
+    | 'number'
+    | 'timeline'
+    | 'market'
+    | 'company'
+    | 'person'
+    | 'risk';
+};
+
+export type ContextBrief = {
+  status: 'empty' | 'draft' | 'approved' | 'rejected';
+  sources: ContextSource[];
+  claims: EvidenceClaim[];
+  counterpart_history: string[];
+  open_commitments: string[];
+  sensitive_redactions: string[];
+  user_approved_at: string | null;
+};
+
 export type CoachAnalysis = {
   blind_spots: string[];
   concrete_moves: string[];
@@ -52,6 +98,7 @@ export type ConversationState = {
   reactive_reply?: string | null;
   debrief_notes?: string[];
   coach_analysis?: CoachAnalysis;
+  context_brief?: ContextBrief;
 };
 
 export type ConversationStateUpdate = Partial<ConversationState>;

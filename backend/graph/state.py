@@ -30,6 +30,54 @@ class PerspectiveResult(TypedDict):
     analysis: str  # the perspective's full analysis text
 
 
+class ContextSource(TypedDict):
+    source_id: str
+    provider: Literal[
+        "gmail",
+        "calendar",
+        "outlook",
+        "slack",
+        "notion",
+        "drive",
+        "exa",
+        "firecrawl",
+        "tinyfish",
+        "manual",
+    ]
+    title: str
+    author: str | None
+    timestamp: str | None
+    url: str | None
+
+
+class EvidenceClaim(TypedDict):
+    claim: str
+    source_ids: list[str]
+    confidence: Literal["low", "medium", "high"]
+    relevance: Literal[
+        "stakes",
+        "counterpart",
+        "objection",
+        "commitment",
+        "number",
+        "timeline",
+        "market",
+        "company",
+        "person",
+        "risk",
+    ]
+
+
+class ContextBrief(TypedDict):
+    status: Literal["empty", "draft", "approved", "rejected"]
+    sources: list[ContextSource]
+    claims: list[EvidenceClaim]
+    counterpart_history: list[str]
+    open_commitments: list[str]
+    sensitive_redactions: list[str]
+    user_approved_at: str | None
+
+
 class CoachAnalysis(TypedDict):
     """Structured output from the Coach stress-test.
 
@@ -73,3 +121,6 @@ class ConversationState(TypedDict):
 
     # Coach analysis output — set during prep, read by Wingman for sensitivity.
     coach_analysis: NotRequired[CoachAnalysis]
+
+    # Context ingestion — evidence brief from imported sources (Gmail, Calendar, etc.)
+    context_brief: NotRequired[ContextBrief]

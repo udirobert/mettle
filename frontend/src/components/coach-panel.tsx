@@ -4,7 +4,9 @@ import { useState } from 'react';
 import {
   ChevronDown,
   CircleAlert,
+  Database,
   Eye,
+  FileText,
   MessageCircle,
   Plus,
   Scale,
@@ -15,6 +17,7 @@ import {
 
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
+import { getScenarioEvidence } from '@/fixtures/evidence-fixtures';
 
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
@@ -97,6 +100,8 @@ export function CoachPanel() {
           </div>
         </div>
       </section>
+
+      {state.scenario_id && <EvidenceBrief scenarioId={state.scenario_id} />}
 
       {analysis && <CouncilBrief analysis={analysis} />}
     </div>
@@ -244,5 +249,65 @@ function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
         {perspective.analysis}
       </p>
     </div>
+  );
+}
+
+function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
+  const evidence = getScenarioEvidence(scenarioId);
+
+  if (!evidence || evidence.status !== 'approved') {
+    return null;
+  }
+
+  return (
+    <section className="border border-[var(--line)] bg-[#f1fad2] p-5">
+      <div className="flex items-start gap-3">
+        <Database size={18} className="mt-0.5 text-[var(--lime)]" />
+        <div className="flex-1">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--ink-soft)]">
+            Imported evidence
+          </p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">
+            {evidence.claims.length} claims from {evidence.sources.length} sources
+          </h3>
+        </div>
+      </div>
+
+      <ul className="mt-4 space-y-3">
+        {evidence.claims.map((claim, index) => (
+          <li
+            key={index}
+            className="border-l-2 border-[var(--lime)] bg-white px-3 py-2 text-xs leading-relaxed"
+          >
+            <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
+              <span className="font-mono uppercase">{claim.confidence} confidence</span>
+              <span>•</span>
+              <span className="font-mono uppercase">{claim.relevance}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {evidence.open_commitments.length > 0 && (
+        <div className="mt-4 border-t border-[var(--line)] pt-3">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--tomato)]">
+            Open commitments
+          </p>
+          <ul className="mt-2 space-y-1">
+            {evidence.open_commitments.map((commitment, index) => (
+              <li key={index} className="flex items-start gap-2 text-xs">
+                <FileText size={12} className="mt-0.5 text-[var(--tomato)]" />
+                <span>{commitment}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
+        Evidence imported from {evidence.sources.map((s) => s.provider).join(', ')}
+      </p>
+    </section>
   );
 }
