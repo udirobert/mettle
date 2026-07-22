@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run pre-commit (Python + generic checks)
+if command -v pre-commit >/dev/null 2>&1; then
+  pre-commit run --all-files
+fi
+
+# Run lint-staged for frontend
+cd frontend
+npx --yes lint-staged 2>/dev/null || true
+cd ..

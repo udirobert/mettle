@@ -24,6 +24,13 @@ export type Nudge = {
   source_turn_index: number;
 };
 
+export type CoachAnalysis = {
+  blind_spots: string[];
+  concrete_moves: string[];
+  likely_objections: string[];
+  opening_strategy: string;
+};
+
 export type ConversationState = {
   scenario_id: string;
   stakes: string;
@@ -36,6 +43,7 @@ export type ConversationState = {
   phase: 'prep' | 'rehearsal' | 'live' | 'debrief';
   reactive_reply?: string | null;
   debrief_notes?: string[];
+  coach_analysis?: CoachAnalysis;
 };
 
 export type ConversationStateUpdate = Partial<ConversationState>;

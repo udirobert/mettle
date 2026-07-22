@@ -23,6 +23,19 @@ class Nudge(TypedDict):
     source_turn_index: int
 
 
+class CoachAnalysis(TypedDict):
+    """Structured output from the Coach stress-test.
+
+    Set during prep; the proactive Wingman reads blind_spots and likely_objections
+    to calibrate nudge sensitivity during the live conversation.
+    """
+
+    blind_spots: list[str]
+    concrete_moves: list[str]
+    likely_objections: list[str]
+    opening_strategy: str
+
+
 class ConversationState(TypedDict):
     # Set during Coach and read by all downstream phases.
     scenario_id: str
@@ -42,3 +55,6 @@ class ConversationState(TypedDict):
     awaiting_reactive_query: NotRequired[bool]
     reactive_reply: NotRequired[str | None]
     debrief_notes: NotRequired[list[str]]
+
+    # Coach analysis output — set during prep, read by Wingman for sensitivity.
+    coach_analysis: NotRequired[CoachAnalysis]

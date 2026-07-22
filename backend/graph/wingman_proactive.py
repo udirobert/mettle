@@ -1,24 +1,113 @@
-"""Proactive Wingman evaluation owned by Person B."""
+"""Proactive Wingman evaluation owned by Person B.
+
+Two-stage pipeline:
+  1. Cheap deterministic rules pass (triggers/rules.py) — no LLM call per turn.
+  2. LLM enrichment — only when a candidate nudge fires, to replace the generic
+     rules-based message with context-aware advice. Falls back to the rules
+     message when no API key is configured.
+"""
+
+from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
+
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from triggers.rules import evaluate_latest_turn
 
-from .state import ConversationState, TranscriptTurn
+from .llm import get_llm
+from .state import ConversationState, Nudge, TranscriptTurn
+
+Speaker = Literal["user", "counterpart", "system"]
+
+ENRICHMENT_SYSTEM_PROMPT = """\
+You are a live conversation wingman. A behavioral pattern was just detected \
+in what the user said. Your job is to write a short, specific nudge that \
+helps them course-correct right now.
+
+Rules:
+- Maximum two sentences. This is read mid-conversation.
+- Reference the specific thing they just said, not abstract advice.
+- Tell them what to do next, not what they did wrong.
+- If the counterpart has a known concern that connects to this pattern, \
+name the connection.
+- Do not repeat information they already know from prep."""
+
+ENRICHMENT_USER_TEMPLATE = """\
+Pattern detected: {kind}
+What the user just said: "{turn_text}"
+
+Conversation stakes: {stakes}
+Counterpart: {counterpart_name}
+Counterpart's known concerns: {concerns}
+User's blind spots from prep: {blind_spots}
+
+Write the nudge message:"""
+
+
+def _format_list(items: list[str]) -> str:
+    return "; ".join(items) if items else "(none)"
+
+
+def _enrich_nudge(
+    candidate: Nudge,
+    state: ConversationState,
+    turn_text: str,
+) -> Nudge:
+    """Replace the generic rules message with an LLM-enriched one.
+
+    Falls back to the rules-based message on any error — the nudge must
+    still fire even if the LLM is unavailable.
+    """
+    llm = get_llm()
+    if llm is None:
+        return candidate
+
+    profile = state.get("counterpart_profile", {})
+    analysis = state.get("coach_analysis", {})
+
+    user_message = ENRICHMENT_USER_TEMPLATE.format(
+        kind=candidate["kind"].replace("_", " "),
+        turn_text=turn_text,
+        stakes=state.get("stakes", "(unknown)"),
+        counterpart_name=profile.get("name", "the counterpart"),
+        concerns=_format_list(profile.get("concerns", [])),
+        blind_spots=_format_list(analysis.get("blind_spots", [])),
+    )
+
+    try:
+        response = llm.invoke(
+            [
+                SystemMessage(content=ENRICHMENT_SYSTEM_PROMPT),
+                HumanMessage(content=user_message),
+            ]
+        )
+        enriched_message = (
+            response.content.strip() if response.content else candidate["message"]
+        )
+        return {**candidate, "message": enriched_message}
+    except Exception:
+        return candidate
 
 
 def evaluate_proactive_nudge(state: ConversationState) -> dict:
-    """Run the cheap rules pass before any future LLM escalation."""
-    nudge = evaluate_latest_turn(state)
-    if nudge is None:
+    """Run the cheap rules pass, then enrich any candidate nudge via LLM."""
+    candidate = evaluate_latest_turn(state)
+    if candidate is None:
         return {}
+
+    transcript = state.get("transcript", [])
+    turn_text = transcript[candidate["source_turn_index"]]["text"] if transcript else ""
+
+    nudge = _enrich_nudge(candidate, state, turn_text)
     return {"nudges_sent": [*state.get("nudges_sent", []), nudge]}
 
 
 def ingest_transcript_turn(
     state: ConversationState,
     *,
-    speaker: TranscriptTurn["speaker"],
+    speaker: Speaker,
     text: str,
     timestamp: str | None = None,
 ) -> dict:
@@ -39,8 +128,15 @@ def ingest_transcript_turn(
     }
     transcript = [*state.get("transcript", []), turn]
     candidate_state = {**state, "transcript": transcript}
-    nudge = evaluate_latest_turn(candidate_state)
-    update: dict = {"transcript": transcript, "nudges_sent": [*state.get("nudges_sent", [])]}
-    if nudge is not None:
+    candidate = evaluate_latest_turn(candidate_state)
+
+    update: dict = {
+        "transcript": transcript,
+        "nudges_sent": [*state.get("nudges_sent", [])],
+    }
+    if candidate is not None:
+        nudge = _enrich_nudge(
+            candidate, {**candidate_state, "transcript": transcript}, clean_text
+        )
         update["nudges_sent"].append(nudge)
     return update

@@ -21,7 +21,7 @@ def create_livekit_adapter(compiled_graph: Any) -> Any:
     except ImportError as error:
         raise RuntimeError(
             "LiveKit voice support is optional. Run: uv add "
-            '\"livekit-agents[langchain]~=1.5\"'
+            '"livekit-agents[langchain]~=1.5"'
         ) from error
 
     return langchain.LLMAdapter(
