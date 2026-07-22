@@ -27,11 +27,11 @@ live with the React UI.
 /backend
   /graph
     state.py              # shared LangGraph state schema — the contract
-    coach.py              # Coach node — Person B
+    coach.py              # Coach node — Person A
     opponent.py           # Opponent node — Person A
-    wingman_reactive.py   # reactive Wingman nodes (interrupt + answer) — Person A
+    wingman_reactive.py   # reactive Wingman nodes (interrupt + answer) — Person B
     wingman_proactive.py  # proactive trigger evaluation — Person B
-    debrief.py            # post-conversation node
+    debrief.py            # post-conversation node — Person A
     graph.py              # top-level phase router wiring all nodes
   /triggers
     rules.py              # deterministic proactive nudge rules — Person B
@@ -92,11 +92,11 @@ component-local state.
 
 ## Team Split
 
-- **Person A (reactive)**: `wingman_reactive.py`, `opponent.py`, and the
-  reactive-reply section of `wingman-side-panel.tsx`.
-- **Person B (proactive)**: `coach.py`, `wingman_proactive.py`, `triggers/rules.py`,
-  the proactive-nudge section of `wingman-side-panel.tsx`, and the LiveKit
-  integration once the core graph is stable.
+- **Person A (before + after)**: `coach.py`, `opponent.py`, `debrief.py`, and
+  their UI panels (`coach-panel.tsx`, `opponent-chat.tsx`, `debrief-view.tsx`).
+- **Person B (during)**: `wingman_reactive.py`, `wingman_proactive.py`,
+  `triggers/rules.py`, both sections of `wingman-side-panel.tsx`, and the voice
+  integration for the live call once the core graph is stable.
 
 Both work against the same `state.py` contract and `scenarios/lp_renewal.md`.
 
@@ -121,7 +121,7 @@ Set provider credentials in `.env` before adding LLM-backed node logic.
 
 1. Graph skeleton + state contract + scenario + frontend shells, all stubbed
    (this commit).
-2. Person A fills reactive + opponent; Person B fills coach + proactive
-   escalation — text/typed input only.
-3. Person B layers in LiveKit voice adapter for Wingman. Additive — the demo is
-   complete without it.
+2. Person A fills coach + opponent + debrief; Person B fills reactive +
+   proactive escalation — text/typed input only.
+3. Voice layers on additively — the demo is complete without it. Person A owns
+   rehearsal voice (Opponent), Person B owns live-call voice (Wingman).

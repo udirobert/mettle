@@ -1,4 +1,4 @@
-"""Debrief phase placeholder shared by both owners."""
+"""Debrief phase owned by Person A."""
 
 from .state import ConversationState
 

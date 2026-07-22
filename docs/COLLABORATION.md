@@ -7,8 +7,8 @@ to minimize merge conflicts while preserving one end-to-end graph.
 
 | Owner | Suggested branch | Primary files |
 | --- | --- | --- |
-| Person A | `feature/reactive-opponent` | `opponent.py`, `wingman_reactive.py`, reactive UI |
-| Person B | `feature/proactive-coach` | `coach.py`, `wingman_proactive.py`, `triggers/`, `voice/`, proactive UI |
+| Person A | `feature/before-after` | `coach.py`, `opponent.py`, `debrief.py`, prep/rehearsal/debrief UI |
+| Person B | `feature/live-wingman` | `wingman_reactive.py`, `wingman_proactive.py`, `triggers/`, `voice/`, wingman UI |
 
 Pull `main` before changing any shared file. Keep each commit focused on one
 mode or one integration boundary.
@@ -23,23 +23,28 @@ mode or one integration boundary.
 
 ## First Milestones
 
-### Person A: Reactive and Opponent
+### Person A: Before and After (Coach, Opponent, Debrief)
+
+- Make `run_coach` extract stakes, counterpart profile, and weak points from
+  `lp_renewal.md`, then layer in the LLM stress test.
+- Make `run_opponent` produce a skeptical persona-conditioned rehearsal turn;
+  rehearsal voice (native speech-to-speech with parallel transcription) writes
+  every turn into `state.transcript` so downstream phases work unchanged.
+- Accumulate `user_weak_points` during rehearsal (silent critic pass).
+- Make `run_debrief` read the accumulated transcript and nudges to produce
+  commitments made, objections left unanswered, and follow-up drafts.
+
+### Person B: During (Reactive and Proactive Wingman)
 
 - Replace the deterministic reply in `answer_reactive_query` with a concise
   answer grounded in the scenario, counterpart profile, latest transcript, and
   Coach weak points.
 - Preserve `wait_for_reactive_query` as the sole interrupt boundary.
-- Make `run_opponent` produce a skeptical persona-conditioned rehearsal turn.
-- Render the reactive response distinctly from a proactive nudge.
-
-### Person B: Coach and Proactive
-
-- Make `run_coach` extract stakes, counterpart profile, and weak points from
-  `lp_renewal.md` before introducing an LLM.
 - Add cheap rules to `evaluate_latest_turn` for repetition, overlong monologue,
   and concession language. Keep the newest-turn-only and rate-limit behavior.
-- Define a nudge card model and render it in the Wingman panel.
-- Add the LiveKit adapter only after text transcript updates trigger nudges.
+- Define a nudge card model and render it in the Wingman panel; render the
+  reactive response distinctly from a proactive nudge.
+- Add live-call voice only after text transcript updates trigger nudges.
 
 ## Definition of the First Demo
 

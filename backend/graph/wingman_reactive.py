@@ -1,4 +1,4 @@
-"""On-demand Wingman phase owned by Person A."""
+"""On-demand Wingman phase owned by Person B."""
 
 from langgraph.types import interrupt
 
@@ -18,7 +18,7 @@ def wait_for_reactive_query(state: ConversationState) -> dict:
 
 
 def answer_reactive_query(state: ConversationState) -> dict:
-    """TODO(Person A): replace with a short, context-grounded tactical answer."""
+    """TODO(Person B): replace with a short, context-grounded tactical answer."""
     query = state.get("open_reactive_query") or ""
     return {
         "reactive_reply": (

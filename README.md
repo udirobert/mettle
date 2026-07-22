@@ -7,10 +7,11 @@ Wingman, and Debrief.
 
 - `backend/graph/state.py` is the shared LangGraph state contract. Both owners
   must add fields there, never in mode-local schemas.
-- `backend/graph/wingman_reactive.py` and `backend/graph/opponent.py` belong to
-  Person A.
-- `backend/graph/coach.py`, `backend/graph/wingman_proactive.py`,
-  `backend/triggers/rules.py`, and `backend/voice/` belong to Person B.
+- `backend/graph/coach.py`, `backend/graph/opponent.py`, and
+  `backend/graph/debrief.py` (before + after the meeting) belong to Person A.
+- `backend/graph/wingman_reactive.py`, `backend/graph/wingman_proactive.py`,
+  `backend/triggers/rules.py`, and `backend/voice/` (during the meeting) belong
+  to Person B.
 - `scenarios/lp_renewal.md` is the first vertical-slice scenario.
 - `frontend/` is the CopilotKit Next.js surface. The phase panels
   (`CoachPanel`, `OpponentChat`, `WingmanSidePanel`, `DebriefView`) are committed
@@ -42,9 +43,9 @@ deliberately an unimplemented adapter seam until text-mode Wingman is stable.
 
 1. **This commit** — graph skeleton + state contract + scenario + frontend
    shells, all stubbed. Proven wiring, no LLM logic yet.
-2. **Person A** fills in `wingman_reactive.py` + `opponent.py`; **Person B**
-   fills in `coach.py` + `wingman_proactive.py` escalation, against the same
-   state schema and `lp_renewal.md`. Text/typed input only.
+2. **Person A** fills in `coach.py` + `opponent.py` + `debrief.py`; **Person B**
+   fills in `wingman_reactive.py` + `wingman_proactive.py` escalation, against
+   the same state schema and `lp_renewal.md`. Text/typed input only.
 3. **Person B** layers in `voice/livekit_adapter.py` so Wingman can run against
    a real or simulated live call. Additive — the demo is complete without it.
 
