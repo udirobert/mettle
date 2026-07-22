@@ -130,7 +130,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        <div className={styles.workspace}>
+        <div className={`${styles.workspace} ${localPhase === 'live' ? styles.withSignal : ''}`}>
           <nav className={styles.phaseRail} aria-label="Conversation phases">
             <div className={styles.railLabel}>Sequence</div>
             <div className={styles.phaseList}>

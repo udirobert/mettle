@@ -74,8 +74,12 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr) 282px;
+  grid-template-columns: 248px minmax(0, 1fr);
   min-height: calc(100dvh - 72px);
+}
+
+.workspace.withSignal {
+  grid-template-columns: 248px minmax(0, 1fr) 282px;
 }
 
 .phaseRail {
@@ -83,7 +87,7 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  padding: 28px 14px 18px;
+  padding: 20px 10px 14px;
 }
 
 .railLabel,
@@ -98,11 +102,12 @@
 
 .railLabel {
   color: #a8b5ff;
-  padding: 0 12px 14px;
+  padding: 0 10px 12px;
+  font-size: 9px;
 }
 .phaseList {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .phaseButton {
@@ -112,10 +117,10 @@
   color: #d7ddff;
   cursor: pointer;
   display: grid;
-  gap: 10px;
-  grid-template-columns: 24px 20px minmax(0, 1fr) 8px;
-  min-height: 65px;
-  padding: 10px 11px;
+  gap: 8px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  min-height: 48px;
+  padding: 8px 10px;
   text-align: left;
   transition:
     background 150ms ease,
@@ -140,29 +145,27 @@
 .phaseNumber {
   color: currentColor;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   opacity: 0.7;
 }
 .phaseButtonCopy {
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 .phaseButtonCopy strong {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
 }
 .phaseButtonCopy small {
-  font-size: 10px;
-  line-height: 1.25;
-  opacity: 0.7;
+  display: none;
 }
 .liveDot {
   background: var(--tomato);
   border: 1px solid var(--ink);
   border-radius: 50%;
-  height: 7px;
-  width: 7px;
+  height: 6px;
+  width: 6px;
 }
 
 .railFooter {
@@ -170,11 +173,11 @@
   border-top: 1px solid #5065d9;
   color: #bdc7ff;
   display: flex;
-  font-size: 11px;
-  gap: 8px;
-  line-height: 1.45;
+  font-size: 10px;
+  gap: 6px;
+  line-height: 1.4;
   margin-top: auto;
-  padding: 16px 12px 0;
+  padding: 12px 10px 0;
 }
 
 .canvas {
@@ -326,7 +329,10 @@
 
 @media (max-width: 1100px) {
   .workspace {
-    grid-template-columns: 208px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .workspace.withSignal {
+    grid-template-columns: 180px minmax(0, 1fr);
   }
   .signalStack {
     display: none;
@@ -344,12 +350,13 @@
   .confidential {
     font-size: 9px;
   }
-  .workspace {
+  .workspace,
+  .workspace.withSignal {
     display: flex;
     flex-direction: column;
   }
   .phaseRail {
-    padding: 10px 12px;
+    padding: 10px 10px;
   }
   .railLabel,
   .railFooter {
@@ -357,28 +364,27 @@
   }
   .phaseList {
     display: grid;
-    gap: 5px;
+    gap: 4px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .phaseButton {
     display: flex;
     justify-content: center;
-    min-height: 43px;
-    padding: 8px;
+    min-height: 38px;
+    padding: 6px;
   }
   .phaseNumber,
-  .phaseButtonCopy small,
-  .liveDot {
-    display: none;
-  }
   .phaseButtonCopy {
     display: none;
   }
+  .liveDot {
+    display: none;
+  }
   .canvasBar {
-    padding: 22px 20px 17px;
+    padding: 18px 16px 14px;
   }
   .canvasBar h1 {
-    font-size: 31px;
+    font-size: 28px;
   }
   .canvasMeta {
     font-size: 8px;
