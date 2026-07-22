@@ -19,7 +19,12 @@ export function CoachPanel() {
 
   const runPrep = async () => {
     setRunning(true);
-    setPartial({ phase: "prep", scenario_id: state.scenario_id || "lp_renewal" });
+    // agent.setState replaces state wholesale — send the full object.
+    setPartial({
+      ...state,
+      phase: "prep",
+      scenario_id: state.scenario_id || "lp_renewal",
+    });
     try {
       await (
         agent as unknown as { runAgent?: () => Promise<unknown> }

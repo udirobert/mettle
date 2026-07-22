@@ -43,16 +43,20 @@ export function useConversationState() {
   const { agent } = useAgent();
   const state = (agent.state ?? {}) as ConversationState;
 
+  // agent.setState REPLACES the state object wholesale (AG-UI semantics, no
+  // merge). Spread the current agent state so partial updates behave as the
+  // contract documents — otherwise a tab switch or single-field update wipes
+  // the transcript and prep context.
   const setPartial = (update: ConversationStateUpdate) => {
-    agent.setState(update);
+    agent.setState({ ...(agent.state ?? {}), ...update });
   };
 
   const setPhase = (phase: ConversationState["phase"]) => {
-    agent.setState({ phase });
+    setPartial({ phase });
   };
 
   const appendTranscriptTurn = (turn: TranscriptTurn) => {
-    agent.setState({ transcript: [...(state.transcript ?? []), turn] });
+    setPartial({ transcript: [...(state.transcript ?? []), turn] });
   };
 
   return {

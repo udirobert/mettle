@@ -42,7 +42,7 @@ const OPENING_LINE =
   "Before we discuss a new commitment, explain why we should treat the liquidity timeline as credible this time.";
 
 export function OpponentChat() {
-  const { state, setPartial, appendTranscriptTurn } = useConversationState();
+  const { state, setPartial } = useConversationState();
   const { agent } = useAgent();
   const transcript = state.transcript ?? [];
 
@@ -50,6 +50,9 @@ export function OpponentChat() {
   const sessionRef = useRef<DeepgramVoiceSession | null>(null);
   const transcriptRef = useRef(transcript);
   transcriptRef.current = transcript;
+  // agent.setState REPLACES state (no merge) — always send the full object.
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,7 +68,7 @@ export function OpponentChat() {
       { speaker, text, timestamp: new Date().toISOString() } as const,
     ];
     transcriptRef.current = next;
-    setPartial({ transcript: next, phase: "rehearsal" });
+    setPartial({ ...stateRef.current, transcript: next, phase: "rehearsal" });
   };
 
   const startVoice = async () => {
@@ -94,11 +97,7 @@ export function OpponentChat() {
   };
 
   const sendUserTurn = (text: string) => {
-    appendTranscriptTurn({
-      speaker: "user",
-      text,
-      timestamp: new Date().toISOString(),
-    });
+    appendLive("user", text);
     // Run the graph so the opponent node replies in character (typed fallback).
     (agent as unknown as { runAgent?: () => Promise<unknown> }).runAgent?.();
   };

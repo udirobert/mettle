@@ -22,7 +22,9 @@ export function DebriefView() {
 
   const runDebrief = async () => {
     setRunning(true);
-    setPartial({ phase: "debrief" });
+    // agent.setState replaces state wholesale — send the full object so the
+    // transcript (possibly written client-side by the voice session) survives.
+    setPartial({ ...state, phase: "debrief" });
     try {
       await (
         agent as unknown as { runAgent?: () => Promise<unknown> }
