@@ -105,9 +105,7 @@ function ActionButton({
 const demonstrationCatalogRenderers: CatalogRenderers<DemonstrationCatalogDefinitions> =
   {
     Title: ({ props }) => {
-      const Tag = (
-        props.level === "h1" ? "h1" : props.level === "h3" ? "h3" : "h2"
-      ) as keyof JSX.IntrinsicElements;
+      const Tag = props.level === "h1" ? "h1" : props.level === "h3" ? "h3" : "h2";
       const sizes: Record<string, string> = {
         h1: "1.75rem",
         h2: "1.25rem",
