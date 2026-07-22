@@ -44,7 +44,7 @@ mode or one integration boundary.
   and concession language. Keep the newest-turn-only and rate-limit behavior.
 - Define a nudge card model and render it in the Wingman panel; render the
   reactive response distinctly from a proactive nudge.
-- Add live-call voice only after text transcript updates trigger nudges.
+- Add the LiveKit adapter only after text transcript updates trigger nudges.
 
 ## Definition of the First Demo
 

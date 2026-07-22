@@ -123,5 +123,6 @@ Set provider credentials in `.env` before adding LLM-backed node logic.
    (this commit).
 2. Person A fills coach + opponent + debrief; Person B fills reactive +
    proactive escalation — text/typed input only.
-3. Voice layers on additively — the demo is complete without it. Person A owns
-   rehearsal voice (Opponent), Person B owns live-call voice (Wingman).
+3. Voice layers on additively — the demo is complete without it. Person B keeps
+   the LiveKit adapter for live-call Wingman voice; Person A owns rehearsal
+   voice (Opponent) as a separate seam.
