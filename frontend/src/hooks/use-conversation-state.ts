@@ -170,6 +170,45 @@ export function useConversationState() {
     await copilotkit.runAgent({ agent });
   };
 
+  const runOpponentTurn = async (text: string) => {
+    const cleanText = text.trim();
+    if (!cleanText || agent.isRunning) return;
+
+    const transcript = [
+      ...(state.transcript ?? []),
+      {
+        speaker: 'user' as const,
+        text: cleanText,
+        timestamp: new Date().toISOString(),
+      },
+    ];
+
+    setPartial({
+      phase: 'rehearsal',
+      transcript,
+    });
+    await copilotkit.waitForPendingFrameworkUpdates();
+    agent.addMessage({
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: 'Respond to the latest rehearsal turn as the counterpart.',
+    });
+    await copilotkit.runAgent({ agent });
+  };
+
+  const runDebrief = async () => {
+    if (agent.isRunning) return;
+
+    setPartial({ phase: 'debrief' });
+    await copilotkit.waitForPendingFrameworkUpdates();
+    agent.addMessage({
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: 'Produce a post-conversation debrief from the transcript.',
+    });
+    await copilotkit.runAgent({ agent });
+  };
+
   return {
     state,
     setPartial,
@@ -177,6 +216,8 @@ export function useConversationState() {
     setScenarioId,
     appendTranscriptTurn,
     runLiveTurn,
+    runOpponentTurn,
+    runDebrief,
     startReactiveSession,
     isAgentRunning: agent.isRunning,
   };

@@ -5,7 +5,7 @@ import { useConversationState } from '@/hooks/use-conversation-state';
 
 /** Post-conversation readout shared by the two implementation tracks. */
 export function DebriefView() {
-  const { state } = useConversationState();
+  const { state, runDebrief, isAgentRunning } = useConversationState();
   const notes = state.debrief_notes ?? [];
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
@@ -41,7 +41,20 @@ export function DebriefView() {
       </div>
 
       <section>
-        <h3 className="mettle-section-title">Commitments and follow-ups</h3>
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="mettle-section-title flex-1">Commitments and follow-ups</h3>
+          {notes.length === 0 && (
+            <button
+              className="mettle-action"
+              disabled={isAgentRunning}
+              onClick={() => void runDebrief()}
+              type="button"
+            >
+              <ClipboardList size={14} aria-hidden="true" />
+              Generate debrief
+            </button>
+          )}
+        </div>
         <div className="grid gap-2 mt-3">
           {notes.length === 0 ? (
             <div className="mettle-card mettle-card--accent">

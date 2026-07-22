@@ -5,13 +5,8 @@ import { useConversationState } from '@/hooks/use-conversation-state';
 
 /** Persona-conditioned rehearsal surface, owned by the reactive track. */
 export function OpponentChat() {
-  const { state, appendTranscriptTurn } = useConversationState();
+  const { state, runOpponentTurn, isAgentRunning } = useConversationState();
   const transcript = state.transcript ?? [];
-
-  const sendUserTurn = (text: string) => {
-    appendTranscriptTurn({ speaker: 'user', text, timestamp: new Date().toISOString() });
-    // TODO(Person A): invoke the opponent graph node and append counterpart response.
-  };
 
   return (
     <div className="mettle-phase">
@@ -58,17 +53,28 @@ export function OpponentChat() {
 
       <form
         className="flex gap-2 mt-auto"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
           const input = event.currentTarget.elements.namedItem('turn') as HTMLInputElement;
-          if (input.value.trim()) {
-            sendUserTurn(input.value.trim());
+          const text = input.value.trim();
+          if (text) {
             input.value = '';
+            await runOpponentTurn(text);
           }
         }}
       >
-        <input className="mettle-input flex-1" name="turn" placeholder="Make your opening move" />
-        <button className="mettle-action" type="submit" title="Send rehearsal turn">
+        <input
+          className="mettle-input flex-1"
+          disabled={isAgentRunning}
+          name="turn"
+          placeholder="Make your opening move"
+        />
+        <button
+          className="mettle-action"
+          disabled={isAgentRunning}
+          type="submit"
+          title="Send rehearsal turn"
+        >
           <ArrowUp size={16} aria-hidden="true" />
           Send
         </button>
