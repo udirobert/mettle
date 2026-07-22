@@ -59,7 +59,36 @@
 
 .meetingName {
   gap: 9px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
+
+.counterpartName {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meetingDivider {
+  color: var(--line);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.meetingStakes {
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .confidential {
   gap: 7px;
   justify-self: end;
@@ -116,16 +145,21 @@
   border: 1px solid transparent;
   color: #d7ddff;
   cursor: pointer;
-  display: grid;
+  display: flex;
   gap: 8px;
-  grid-template-columns: 20px minmax(0, 1fr);
-  min-height: 48px;
-  padding: 8px 10px;
+  min-height: 44px;
+  padding: 8px 12px;
   text-align: left;
   transition:
     background 150ms ease,
     color 150ms ease,
     transform 150ms ease;
+}
+
+.phaseLabel {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .phaseButton:hover {
@@ -137,35 +171,20 @@
   background: var(--lime);
   border-color: #273ea8;
   color: var(--ink);
+  transform: translateX(3px);
 }
 .phaseButtonActive:hover {
   background: var(--lime);
   color: var(--ink);
 }
-.phaseNumber {
-  color: currentColor;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  opacity: 0.7;
-}
-.phaseButtonCopy {
-  display: grid;
-  gap: 2px;
-}
-.phaseButtonCopy strong {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0;
-}
-.phaseButtonCopy small {
-  display: none;
-}
+
 .liveDot {
   background: var(--tomato);
   border: 1px solid var(--ink);
   border-radius: 50%;
   height: 6px;
   width: 6px;
+  margin-left: auto;
 }
 
 .railFooter {
@@ -187,33 +206,41 @@
   min-width: 0;
 }
 .canvasBar {
-  align-items: end;
+  align-items: center;
   border-bottom: 1px solid var(--line);
   display: flex;
   justify-content: space-between;
-  padding: 28px 34px 21px;
-}
-.canvasKicker {
-  color: var(--cobalt);
-  display: block;
-  margin-bottom: 5px;
+  gap: 16px;
+  padding: 20px 34px 18px;
 }
 .canvasBar h1 {
   font-family: var(--font-display);
-  font-size: 35px;
+  font-size: 28px;
   font-weight: 400;
   line-height: 1;
   margin: 0;
 }
-.canvasMeta {
+.canvasStakes {
+  align-items: center;
   background: var(--sun);
   color: var(--ink);
+  display: flex;
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   gap: 7px;
-  padding: 8px 10px;
+  letter-spacing: 0.04em;
+  padding: 7px 10px;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+.stakesDot {
+  background: var(--tomato);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+  flex-shrink: 0;
 }
 .phaseCanvas {
   flex: 1;

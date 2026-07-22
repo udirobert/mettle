@@ -1,18 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ArrowUpRight,
-  BadgeCheck,
-  BotMessageSquare,
-  Crosshair,
-  Headphones,
-  Lightbulb,
-  MessageSquareWarning,
-  Radio,
-  ScrollText,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, Radio, ScrollText, Sparkles } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
@@ -25,21 +14,11 @@ import styles from './page.module.css';
 
 type Phase = 'prep' | 'rehearsal' | 'live' | 'debrief';
 
-const PHASES: Array<{
-  id: Phase;
-  label: string;
-  detail: string;
-  icon: typeof Crosshair;
-}> = [
-  { id: 'prep', label: 'Coach', detail: 'Build your position', icon: Crosshair },
-  {
-    id: 'rehearsal',
-    label: 'Opponent',
-    detail: 'Test it under pressure',
-    icon: MessageSquareWarning,
-  },
-  { id: 'live', label: 'Wingman', detail: 'Signals in the room', icon: Headphones },
-  { id: 'debrief', label: 'Debrief', detail: 'Turn talk into action', icon: ScrollText },
+const PHASES: Array<{ id: Phase; label: string }> = [
+  { id: 'prep', label: 'Coach' },
+  { id: 'rehearsal', label: 'Rehearse' },
+  { id: 'live', label: 'Live' },
+  { id: 'debrief', label: 'Debrief' },
 ];
 
 function PhaseCanvas({ phase }: { phase: Phase }) {
@@ -98,6 +77,11 @@ function SignalStack({ phase }: { phase: Phase }) {
   );
 }
 
+function formatScenarioName(id: string | undefined): string {
+  if (!id) return 'Consequential conversation';
+  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function HomePage() {
   const { state, setPhase } = useConversationState();
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
@@ -122,19 +106,25 @@ export default function HomePage() {
           </div>
           <div className={styles.meetingName}>
             <span className={styles.statusDot} />
-            {state.scenario_id?.replace('_', ' ') ?? 'High-stakes conversation'} / {counterpart}
+            <span className={styles.counterpartName}>{counterpart}</span>
+            {state.stakes && (
+              <>
+                <span className={styles.meetingDivider}>&middot;</span>
+                <span className={styles.meetingStakes}>{state.stakes}</span>
+              </>
+            )}
           </div>
           <div className={styles.confidential}>
             <BadgeCheck size={16} aria-hidden="true" />
-            Private briefing
+            {formatScenarioName(state.scenario_id)}
           </div>
         </header>
 
         <div className={`${styles.workspace} ${localPhase === 'live' ? styles.withSignal : ''}`}>
-          <nav className={styles.phaseRail} aria-label="Conversation phases">
-            <div className={styles.railLabel}>Sequence</div>
+          <nav className={styles.phaseRail} aria-label="Preparation sequence">
+            <div className={styles.railLabel}>Prep sequence</div>
             <div className={styles.phaseList}>
-              {PHASES.map(({ id, label, detail, icon: Icon }, index) => {
+              {PHASES.map(({ id, label }) => {
                 const active = localPhase === id;
                 return (
                   <button
@@ -142,37 +132,26 @@ export default function HomePage() {
                     className={`${styles.phaseButton} ${active ? styles.phaseButtonActive : ''}`}
                     onClick={() => selectPhase(id)}
                     aria-current={active ? 'step' : undefined}
-                    title={`${label}: ${detail}`}
                   >
-                    <span className={styles.phaseNumber}>0{index + 1}</span>
-                    <Icon size={19} strokeWidth={2.25} aria-hidden="true" />
-                    <span className={styles.phaseButtonCopy}>
-                      <strong>{label}</strong>
-                      <small>{id === 'live' ? 'Active when live' : detail}</small>
-                    </span>
-                    {id === 'live' && <span className={styles.liveDot} aria-label="Live status" />}
+                    <span className={styles.phaseLabel}>{label}</span>
+                    {id === 'live' && active && (
+                      <span className={styles.liveDot} aria-label="Live" />
+                    )}
                   </button>
                 );
               })}
-            </div>
-            <div className={styles.railFooter}>
-              <BotMessageSquare size={17} aria-hidden="true" />
-              Mettle reads the room, not the script.
             </div>
           </nav>
 
           <section className={styles.canvas}>
             <div className={styles.canvasBar}>
-              <div>
-                <span className={styles.canvasKicker}>
-                  {PHASES.find((item) => item.id === localPhase)?.detail}
-                </span>
-                <h1>{PHASES.find((item) => item.id === localPhase)?.label}</h1>
-              </div>
-              <div className={styles.canvasMeta}>
-                <Lightbulb size={16} aria-hidden="true" />
-                High-stakes mode
-              </div>
+              <h1>{PHASES.find((item) => item.id === localPhase)?.label}</h1>
+              {state.stakes && (
+                <div className={styles.canvasStakes}>
+                  <span className={styles.stakesDot} />
+                  {state.stakes}
+                </div>
+              )}
             </div>
             <div className={styles.phaseCanvas}>
               <PhaseCanvas phase={localPhase} />
