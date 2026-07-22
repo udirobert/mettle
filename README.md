@@ -60,10 +60,10 @@ cd backend && uv run python -m pytest tests/ -v
 
 ## Known gaps
 
-- Docker deployment files reference the pre-rename `agent/` directory; local
-  dev is unaffected.
-- A2UI catalog still carries starter demo components; replace with nudge-specific
-  generative UI when the Wingman proactive surface matures.
+- `opponent.py`, `wingman_reactive.py` (answer function), and `debrief.py`
+  still return placeholder text with TODOs — Person A's work items.
+- A2UI demo catalog was removed; nudge-specific generative UI components
+  should be added when the Wingman proactive surface matures.
 
 ## Upstream
 

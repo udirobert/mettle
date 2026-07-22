@@ -1,14 +1,14 @@
 """
 Thin wrapper to serve the LangGraph agent via AG-UI protocol.
 Used in Docker where langgraph-cli dev (which needs Docker) is unavailable.
-The original main.py and all agent code remain unmodified.
+The original main.py and all backend code remain unmodified.
 """
 
 import os
 import sys
 
-# Add the agent directory to the path so imports work
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "agent"))
+# Add the backend directory to the path so imports work
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 
 import uvicorn
 from fastapi import FastAPI
@@ -47,8 +47,8 @@ async def health():
 add_langgraph_fastapi_endpoint(
     app=app,
     agent=LangGraphAGUIAgent(
-        name="sample_agent",
-        description="LangGraph Python starter agent",
+        name="conversation_agent",
+        description="Mettle high-stakes conversation agent",
         graph=graph,
     ),
     path="/",

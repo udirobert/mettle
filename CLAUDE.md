@@ -47,7 +47,6 @@ live with the React UI.
       page.tsx            # phase switcher + CopilotChat side panel
       layout.tsx          # CopilotKit provider wiring
       api/copilotkit/     # CopilotKit runtime route → LangGraph agent
-      declarative-generative-ui/  # A2UI catalog (demo — replace with nudge components)
     /components
       coach-panel.tsx          # Coach UI shell — Person B
       opponent-chat.tsx        # Opponent rehearsal UI shell — Person A
@@ -228,11 +227,8 @@ If all three agree, say so — that's signal too.
 
 ## Known Gaps
 
-- **Docker deployment** (`frontend/serve.py`, `frontend/docker-route-override.ts`,
-  `frontend/Dockerfile`) references the pre-rename `agent/` directory and needs
-  updating before containerized deployment works. Local dev (`npm run dev`) is
-  unaffected.
-- **A2UI catalog** (`frontend/src/app/declarative-generative-ui/`) still carries
-  the starter demo components (pie chart, meeting picker). Replace with
-  nudge-specific generative UI components when the Wingman proactive surface
-  matures.
+- **Stubbed nodes**: `opponent.py`, `wingman_reactive.py` (answer function),
+  and `debrief.py` still return placeholder text with TODOs. These are Person A's
+  work items per the team split.
+- **A2UI surface**: the demo catalog was removed. Nudge-specific generative UI
+  components should be added when the Wingman proactive surface matures.

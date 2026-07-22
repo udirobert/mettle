@@ -43,7 +43,7 @@ WORKDIR /app
 # Install Python deps — EXCLUDING langgraph-cli and langgraph-api
 # (they need Docker-in-Docker which Railway doesn't provide)
 # Instead serve via ag-ui-langgraph + copilotkit (same protocol, no Docker needed)
-COPY agent/ ./agent/
+COPY backend/ ./backend/
 # Install ag-ui-langgraph FIRST at pinned version (before copilotkit can override it)
 RUN uv pip install --system "ag-ui-langgraph[fastapi]==0.0.37" && \
     uv pip install --system --no-deps "copilotkit==0.1.93" && \
