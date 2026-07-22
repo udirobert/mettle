@@ -1,14 +1,9 @@
-"use client";
+'use client';
 
-import { useConversationState } from "@/hooks/use-conversation-state";
+import { CheckCircle2, ClipboardList, Flag, MessagesSquare } from 'lucide-react';
+import { useConversationState } from '@/hooks/use-conversation-state';
 
-/**
- * Debrief view — shared by both owners.
- *
- * Post-conversation summary: commitments, unanswered objections, next actions.
- * Both owners contribute; this shell renders state.debrief_notes and the
- * transcript/nudge history for review.
- */
+/** Post-conversation readout shared by the two implementation tracks. */
 export function DebriefView() {
   const { state } = useConversationState();
   const notes = state.debrief_notes ?? [];
@@ -16,55 +11,71 @@ export function DebriefView() {
   const nudges = state.nudges_sent ?? [];
 
   return (
-    <div className="flex flex-col gap-6 h-full overflow-y-auto p-6">
+    <div className="mettle-phase">
       <header>
-        <h2 className="text-xl font-semibold">Debrief</h2>
-        <p className="text-sm opacity-70 mt-1">
-          What happened, what to follow up on.
+        <p className="mettle-kicker">After the room</p>
+        <h2 className="mettle-headline">Turn the conversation into leverage.</h2>
+        <p className="mettle-copy">
+          Capture commitments, expose what stayed unresolved, and decide what must happen before the
+          next touchpoint.
         </p>
       </header>
 
-      <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Notes
-        </h3>
-        <ul className="mt-2 flex flex-col gap-2">
-          {notes.length === 0 && (
-            <li className="text-sm opacity-50">No debrief notes yet.</li>
-          )}
-          {notes.map((note, i) => (
-            <li key={i} className="text-sm rounded border border-current/10 p-3">
-              {note}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="mettle-grid">
+        <section className="mettle-card mettle-card--signal">
+          <p className="mettle-kicker">
+            <MessagesSquare size={13} /> Conversation
+          </p>
+          <strong>{transcript.length} turns captured</strong>
+          <p>The record is available for a clean post-meeting read.</p>
+        </section>
+        <section className="mettle-card mettle-card--risk">
+          <p className="mettle-kicker">
+            <Flag size={13} /> Intervention
+          </p>
+          <strong>{nudges.length} signals surfaced</strong>
+          <p>Review the moments where the conversation started to drift.</p>
+        </section>
+      </div>
 
       <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Transcript ({transcript.length} turns)
-        </h3>
-        <div className="mt-2 flex flex-col gap-1 text-sm">
-          {transcript.map((turn, i) => (
-            <div key={i}>
-              <span className="opacity-50 text-xs">{turn.speaker}: </span>
-              {turn.text}
+        <h3 className="mettle-section-title">Commitments and follow-ups</h3>
+        <div className="grid gap-2 mt-3">
+          {notes.length === 0 ? (
+            <div className="mettle-card mettle-card--accent">
+              <p className="mettle-kicker">
+                <ClipboardList size={13} /> Ready for synthesis
+              </p>
+              <strong>Close the meeting before you close the record.</strong>
+              <p>
+                The debrief node will pull out commitments, open objections, and named next actions.
+              </p>
             </div>
-          ))}
+          ) : (
+            notes.map((note, index) => (
+              <div className="mettle-card" key={`${note}-${index}`}>
+                <p className="mettle-kicker">
+                  <CheckCircle2 size={13} /> Action {index + 1}
+                </p>
+                <strong>{note}</strong>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
       <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-          Nudges sent ({nudges.length})
-        </h3>
-        <div className="mt-2 flex flex-col gap-1 text-sm">
-          {nudges.map((n) => (
-            <div key={n.id}>
-              <span className="opacity-50 text-xs">{n.kind}: </span>
-              {n.message}
-            </div>
-          ))}
+        <h3 className="mettle-section-title">The record</h3>
+        <div className="mettle-list mt-3">
+          {transcript.length === 0 ? (
+            <li>No conversation turns captured yet.</li>
+          ) : (
+            transcript.map((turn, index) => (
+              <li key={`${turn.timestamp}-${index}`}>
+                <strong>{turn.speaker === 'user' ? 'You' : 'Elena'}:</strong> {turn.text}
+              </li>
+            ))
+          )}
         </div>
       </section>
     </div>

@@ -1,20 +1,16 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-
 import { useInterrupt } from '@copilotkit/react-core/v2';
-
+import { AlertTriangle, ArrowUp, Radio, Send, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 
-/**
- * The live panel owns transcript submission and proactive cards. The reactive
- * prompt is rendered from LangGraph's native interrupt, not a local form.
- */
+/** Live transcript, proactive nudge cards, and native reactive interrupt UI. */
 export function WingmanSidePanel() {
   const { state, runLiveTurn, startReactiveSession, isAgentRunning } = useConversationState();
+  const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
   const nudges = state.nudges_sent ?? [];
   const reactiveReply = state.reactive_reply ?? null;
-  const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
 
   const reactiveInterrupt = useInterrupt({
     agentId: 'default',
@@ -26,21 +22,21 @@ export function WingmanSidePanel() {
       event.value.kind === 'reactive_query',
     render: ({ resolve }) => (
       <form
+        className="flex gap-2 mt-3"
         onSubmit={(event) => {
           event.preventDefault();
           const query = new FormData(event.currentTarget).get('query');
           if (typeof query === 'string' && query.trim()) resolve(query.trim());
         }}
-        className="mt-2 flex gap-2"
       >
         <input
           autoFocus
+          className="mettle-input flex-1"
           name="query"
-          placeholder="What do you need to say next?"
-          className="min-w-0 flex-1 rounded border border-current/20 bg-transparent px-3 py-2 text-sm"
+          placeholder="What should I say next?"
         />
-        <button type="submit" className="px-3 py-2 rounded bg-current/10 text-sm">
-          Send
+        <button className="mettle-action" type="submit">
+          <Send size={15} aria-hidden="true" /> Ask
         </button>
       </form>
     ),
@@ -55,88 +51,110 @@ export function WingmanSidePanel() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto p-6">
-      <header>
-        <h2 className="text-xl font-semibold">Wingman - Live</h2>
-        <p className="mt-1 text-sm opacity-70">Reactive answers + proactive nudges.</p>
+    <div className="mettle-phase">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="mettle-kicker">Live conversation support</p>
+          <h2 className="mettle-headline">Stay in the room. We will watch the pattern.</h2>
+        </div>
+        <div
+          className="mettle-card mettle-card--signal shrink-0"
+          style={{ minWidth: 133, padding: 11 }}
+        >
+          <p className="mettle-kicker">
+            <Radio size={13} /> Wingman
+          </p>
+          <strong>{isAgentRunning ? 'Thinking' : 'Listening'}</strong>
+        </div>
       </header>
 
+      <section className="mettle-card mettle-card--accent">
+        <p className="mettle-kicker">
+          <Zap size={13} /> Say this next
+        </p>
+        <strong>
+          {reactiveReply || 'Get the question, then answer the concern underneath it.'}
+        </strong>
+        <p>
+          {reactiveReply
+            ? 'A targeted response from the live context.'
+            : 'Use Quick Answer when you need a short, specific line in the moment.'}
+        </p>
+        {reactiveInterrupt ?? (
+          <button
+            className="mettle-action"
+            disabled={isAgentRunning}
+            onClick={() => void startReactiveSession()}
+            type="button"
+            style={{ marginTop: 12 }}
+          >
+            <Zap size={14} aria-hidden="true" /> Quick answer
+          </button>
+        )}
+      </section>
+
       <section>
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">
-            Live transcript
-          </h3>
-          <div className="flex gap-1" role="group" aria-label="Transcript speaker">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="mettle-section-title flex-1">Live transcript</h3>
+          <div
+            className="flex border border-[var(--line)] bg-[#fffdf7] p-1"
+            role="group"
+            aria-label="Transcript speaker"
+          >
             <button
-              type="button"
+              className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'user' ? 'bg-[var(--cobalt)] text-white' : 'text-[var(--ink-soft)]'}`}
               onClick={() => setSpeaker('user')}
-              className={`px-2 py-1 text-xs ${speaker === 'user' ? 'bg-current/10' : 'opacity-60'}`}
+              type="button"
             >
               Me
             </button>
             <button
-              type="button"
+              className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'counterpart' ? 'bg-[var(--tomato)] text-white' : 'text-[var(--ink-soft)]'}`}
               onClick={() => setSpeaker('counterpart')}
-              className={`px-2 py-1 text-xs ${speaker === 'counterpart' ? 'bg-current/10' : 'opacity-60'}`}
+              type="button"
             >
               Elena
             </button>
           </div>
         </div>
-        <form onSubmit={submitTranscript} className="mt-2 flex gap-2">
+        <form className="flex gap-2 mt-3" onSubmit={submitTranscript}>
           <input
+            className="mettle-input flex-1"
+            disabled={isAgentRunning}
             name="transcript"
-            placeholder="Add a finalized transcript turn"
-            disabled={isAgentRunning}
-            className="min-w-0 flex-1 rounded border border-current/20 bg-transparent px-3 py-2 text-sm"
+            placeholder="Add the latest finalized turn"
           />
-          <button
-            type="submit"
-            disabled={isAgentRunning}
-            className="px-3 py-2 rounded bg-current/10 text-sm disabled:opacity-50"
-          >
-            Add
+          <button className="mettle-action" disabled={isAgentRunning} type="submit">
+            <ArrowUp size={16} aria-hidden="true" /> Add
           </button>
         </form>
       </section>
 
       <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">Nudges</h3>
-        <div className="mt-2 flex flex-col gap-2">
-          {nudges.length === 0 && <p className="text-sm opacity-50">No nudges yet.</p>}
-          {nudges.map((nudge) => (
-            <div
-              key={nudge.id}
-              className="rounded-lg border-l-4 border-amber-400 bg-amber-400/10 p-3 text-sm"
-            >
-              <span className="mb-1 block text-xs uppercase tracking-wide opacity-60">
-                {nudge.kind.replace('_', ' ')}
-              </span>
-              {nudge.message}
+        <h3 className="mettle-section-title">Signals worth interrupting for</h3>
+        <div className="grid gap-2 mt-3">
+          {nudges.length === 0 ? (
+            <div className="mettle-card">
+              <p className="mettle-kicker">
+                <AlertTriangle size={13} /> Standing by
+              </p>
+              <strong>No pattern has crossed the threshold.</strong>
+              <p>
+                Wingman only interrupts for repetition, a long answer, a concession, or a material
+                timing signal.
+              </p>
             </div>
-          ))}
+          ) : (
+            nudges.map((nudge) => (
+              <div className="mettle-card mettle-card--risk" key={nudge.id}>
+                <p className="mettle-kicker">
+                  <AlertTriangle size={13} /> {nudge.kind.replace('_', ' ')}
+                </p>
+                <strong>{nudge.message}</strong>
+              </div>
+            ))
+          )}
         </div>
-      </section>
-
-      <section>
-        <h3 className="text-sm font-medium uppercase tracking-wide opacity-60">Quick answer</h3>
-        {reactiveReply ? (
-          <div className="mt-2 rounded border border-current/15 p-3 text-sm">{reactiveReply}</div>
-        ) : (
-          <p className="mt-2 text-sm opacity-50">
-            Ask a quick question to get a fast targeted answer.
-          </p>
-        )}
-        {reactiveInterrupt ?? (
-          <button
-            type="button"
-            onClick={() => void startReactiveSession()}
-            disabled={isAgentRunning}
-            className="mt-2 px-3 py-2 rounded bg-current/10 text-sm disabled:opacity-50"
-          >
-            Ask Wingman
-          </button>
-        )}
       </section>
     </div>
   );

@@ -1,81 +1,75 @@
-"use client";
+'use client';
 
-import { useConversationState } from "@/hooks/use-conversation-state";
+import { ArrowUp, Flame, MessageSquareWarning } from 'lucide-react';
+import { useConversationState } from '@/hooks/use-conversation-state';
 
-/**
- * Opponent rehearsal UI — owned by Person A (reactive).
- *
- * Persona-conditioned roleplay surface. Person A implements the in-character
- * skeptical counterpart; this shell renders the transcript and an input that
- * appends user turns to shared state. The opponent's replies come back through
- * agent state (transcript turns with speaker "counterpart").
- */
+/** Persona-conditioned rehearsal surface, owned by the reactive track. */
 export function OpponentChat() {
   const { state, appendTranscriptTurn } = useConversationState();
   const transcript = state.transcript ?? [];
 
   const sendUserTurn = (text: string) => {
-    appendTranscriptTurn({
-      speaker: "user",
-      text,
-      timestamp: new Date().toISOString(),
-    });
-    // TODO(Person A): trigger the opponent node to produce an in-character
-    // counterpart reply and append it as a "counterpart" transcript turn.
+    appendTranscriptTurn({ speaker: 'user', text, timestamp: new Date().toISOString() });
+    // TODO(Person A): invoke the opponent graph node and append counterpart response.
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full p-6">
+    <div className="mettle-phase">
       <header>
-        <h2 className="text-xl font-semibold">Opponent — Rehearsal</h2>
-        <p className="text-sm opacity-70 mt-1">
-          Roleplay the counterpart. They are not your friend.
-        </p>
+        <p className="mettle-kicker">Rehearsal / no soft balls</p>
+        <h2 className="mettle-headline">Make the case to someone who does not need to agree.</h2>
       </header>
 
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3">
-        {transcript.length === 0 && (
-          <p className="text-sm opacity-50">No turns yet. Say something to begin.</p>
-        )}
-        {transcript.map((turn, i) => (
-          <div
-            key={i}
-            className={`text-sm rounded-lg p-3 max-w-[80%] ${
-              turn.speaker === "user"
-                ? "self-end bg-current/10"
-                : "self-start border border-current/15"
-            }`}
-          >
-            <span className="text-xs opacity-50 block mb-1">
-              {turn.speaker}
-            </span>
-            {turn.text}
+      <section className="mettle-card mettle-card--risk">
+        <p className="mettle-kicker">
+          <Flame size={13} /> In character
+        </p>
+        <strong>Elena Markova, skeptical LP</strong>
+        <p>
+          She will test conviction, operating detail, and any implied promise. Expect her to press
+          the number you least want to discuss.
+        </p>
+      </section>
+
+      <section className="mettle-transcript" aria-label="Rehearsal transcript">
+        {transcript.length === 0 ? (
+          <div className="mettle-card">
+            <p className="mettle-kicker">
+              <MessageSquareWarning size={13} /> Start the room
+            </p>
+            <strong>Your opening is your first negotiation.</strong>
+            <p>
+              Try the opening you plan to use. The opponent should answer with the objection you are
+              avoiding.
+            </p>
           </div>
-        ))}
-      </div>
+        ) : (
+          transcript.map((turn, index) => (
+            <div
+              key={`${turn.timestamp}-${index}`}
+              className={`mettle-turn ${turn.speaker === 'user' ? 'mettle-turn--user' : 'mettle-turn--counterpart'}`}
+            >
+              <span className="mettle-turn-label">{turn.speaker === 'user' ? 'You' : 'Elena'}</span>
+              {turn.text}
+            </div>
+          ))
+        )}
+      </section>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          const input = (e.currentTarget.elements.namedItem(
-            "turn",
-          ) as HTMLInputElement);
+        className="flex gap-2 mt-auto"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const input = event.currentTarget.elements.namedItem('turn') as HTMLInputElement;
           if (input.value.trim()) {
             sendUserTurn(input.value.trim());
-            input.value = "";
+            input.value = '';
           }
         }}
-        className="flex gap-2"
       >
-        <input
-          name="turn"
-          placeholder="Make your move…"
-          className="flex-1 rounded border border-current/20 px-3 py-2 bg-transparent"
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 rounded bg-current/10 text-sm font-medium"
-        >
+        <input className="mettle-input flex-1" name="turn" placeholder="Make your opening move" />
+        <button className="mettle-action" type="submit" title="Send rehearsal turn">
+          <ArrowUp size={16} aria-hidden="true" />
           Send
         </button>
       </form>

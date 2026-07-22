@@ -2,7 +2,6 @@
 
 from typing import Literal
 
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
@@ -47,6 +46,18 @@ builder.add_edge("reactive_wait", "reactive_answer")
 builder.add_edge("reactive_answer", END)
 builder.add_edge("debrief", END)
 
-# The local checkpointer makes the reactive interrupt resumable by thread ID.
-# Replace it with durable persistence before multi-process production deploys.
-graph = builder.compile(checkpointer=MemorySaver())
+
+def build_graph(*, checkpointer: object | None = None):
+    """Compile for either the LangGraph Platform or an explicit local store.
+
+    The Platform owns checkpoint persistence and rejects graphs that embed a
+    custom checkpointer. Local interrupt tests can pass ``MemorySaver()`` here
+    when they need to invoke and resume a graph in one process.
+    """
+    if checkpointer is None:
+        return builder.compile()
+    return builder.compile(checkpointer=checkpointer)
+
+
+# Export the Platform-compatible graph used by backend/langgraph.json.
+graph = build_graph()

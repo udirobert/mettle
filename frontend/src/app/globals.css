@@ -1,125 +1,285 @@
-/* CopilotKit brand fonts */
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..800&family=Spline+Sans+Mono:wght@400;500;600&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
 
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-:root {
-  --background: #ffffff;
-  --foreground: #010507;
-
-  /* Semantic tokens — CopilotKit brand */
-  --card: #ffffff;
-  --card-foreground: #010507;
-  --primary: #010507;
-  --primary-foreground: #ffffff;
-  --secondary: #ededf5;
-  --secondary-foreground: #010507;
-  --muted: #ededf5;
-  --muted-foreground: #57575b;
-  --accent: #eee6fe;
-  --accent-foreground: #010507;
-  --destructive: #fa5f67;
-  --destructive-foreground: #ffffff;
-  --border: #dbdbe5;
-  --input: #dbdbe5;
-  --ring: #bec2ff;
-
-  /* Chart tokens */
-  --chart-tooltip-bg: #ffffff;
-  --chart-tooltip-border: #dbdbe5;
-  --chart-axis: #57575b;
-
-  --radius: 0.75rem;
-
-  /* Override CopilotKit font */
-  --cpk-default-font-family: var(--font-body);
-
-  /* Fonts */
-  --font-body: "Plus Jakarta Sans", "DM Sans", "Segoe UI", sans-serif;
-  --font-code:
-    "Spline Sans Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
-
-  /* Brand accent colors */
-  --cpk-mint-400: #85ecce;
-  --cpk-mint-800: #189370;
-  --cpk-lilac-400: #bec2ff;
-  --cpk-orange-400: #ffac4d;
-  --cpk-yellow-400: #fff388;
-  --cpk-ambient-gradient: linear-gradient(
-    90deg,
-    #bec2ff 0%,
-    #85ecce 45.673%,
-    #ffac4d 100%
-  );
-}
-
+:root,
 :root.dark,
 .dark {
-  --background: #010507;
-  --foreground: #ffffff;
+  --canvas: #f7f4ec;
+  --background: var(--canvas);
+  --foreground: #162039;
+  --ink: #162039;
+  --ink-soft: #566070;
+  --line: #d8d2c5;
+  --cobalt: #2545c7;
+  --tomato: #ef5d49;
+  --lime: #d8f35e;
+  --sun: #ffc94a;
 
-  --card: #191a1e;
-  --card-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #010507;
-  --secondary: #242529;
-  --secondary-foreground: #ffffff;
-  --muted: #242529;
-  --muted-foreground: #adadb2;
-  --accent: #303136;
-  --accent-foreground: #ffffff;
-  --destructive: #fa5f67;
+  --card: #fffdf7;
+  --card-foreground: var(--ink);
+  --primary: var(--cobalt);
+  --primary-foreground: #ffffff;
+  --secondary: #ece7dc;
+  --secondary-foreground: var(--ink);
+  --muted: #ece7dc;
+  --muted-foreground: var(--ink-soft);
+  --accent: #e2e8ff;
+  --accent-foreground: var(--ink);
+  --destructive: var(--tomato);
   --destructive-foreground: #ffffff;
-  --border: #303136;
-  --input: #303136;
-  --ring: #bec2ff;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--cobalt);
+  --chart-tooltip-bg: #fffdf7;
+  --chart-tooltip-border: var(--line);
+  --chart-axis: var(--ink-soft);
+  --radius: 0.25rem;
 
-  --chart-tooltip-bg: #191a1e;
-  --chart-tooltip-border: #303136;
-  --chart-axis: #adadb2;
+  --font-body: 'Manrope', 'Avenir Next', sans-serif;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'DM Mono', 'SFMono-Regular', Consolas, monospace;
+  --font-code: var(--font-mono);
+  --cpk-default-font-family: var(--font-body);
+  --cpk-mint-400: var(--lime);
+  --cpk-mint-800: #5a7500;
+  --cpk-lilac-400: #aebeff;
+  --cpk-orange-400: var(--sun);
+  --cpk-yellow-400: var(--sun);
+  --cpk-ambient-gradient: linear-gradient(90deg, var(--cobalt), var(--lime), var(--tomato));
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--ink);
   font-family: var(--font-body);
 }
 
-body,
-html {
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.mettle-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
   height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 30px 34px 36px;
 }
 
-/*
- * Showcase highlight for suggestion pills.
- * Applied via className in use-example-suggestions.tsx when showcase.json
- * is set to a non-default mode (e.g. "a2ui", "opengenui"). Uses CopilotKit
- * brand colors with a subtle tinted background.
- * Add new showcase variants here following the same pattern.
- */
-[data-copilotkit] button[data-slot="suggestion-pill"].a2ui-highlight {
-  border-color: var(--cpk-lilac-400);
-  background: color-mix(in srgb, var(--cpk-lilac-400) 15%, var(--background));
+.mettle-section-title {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  gap: 9px;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
 }
 
-[data-copilotkit] button[data-slot="suggestion-pill"].opengenui-highlight {
-  border-color: var(--cpk-mint-400);
-  background: color-mix(in srgb, var(--cpk-mint-400) 15%, var(--background));
+.mettle-section-title::after {
+  background: var(--line);
+  content: '';
+  flex: 1;
+  height: 1px;
 }
 
-/*
- * Position the CopilotKit inspector FAB BENEATH the Chat/App toggle in the
- * top-right, instead of the header row where it would overlap it. The gap below
- * the toggle matches the toggle's own 16px gap from the top of the viewport.
- * The toggle is 16px from the top and 46px tall (both breakpoints), so its
- * bottom is at 62px; a 16px gap puts the FAB circle at 78px. The visible circle
- * renders ~16px below the host's `top`, so host top = 78 - 16 = 62px. Right edge
- * matches the toggle's 16px inset.
- */
-cpk-web-inspector {
-  top: 62px !important;
-  bottom: auto !important;
-  right: 16px !important;
+.mettle-kicker {
+  color: var(--cobalt);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  margin: 0 0 7px;
+  text-transform: uppercase;
+}
+
+.mettle-headline {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.08;
+  margin: 0;
+}
+.mettle-copy {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 6px 0 0;
+}
+
+.mettle-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.mettle-card {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  padding: 16px;
+}
+.mettle-card--accent {
+  background: #e2e8ff;
+  border-color: #aab8fa;
+  border-left: 5px solid var(--cobalt);
+}
+.mettle-card--risk {
+  background: #fff0eb;
+  border-color: #f5ada0;
+  border-left: 5px solid var(--tomato);
+}
+.mettle-card--signal {
+  background: #f1fad2;
+  border-color: #cde36c;
+  border-left: 5px solid #83a600;
+}
+.mettle-card:hover {
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.mettle-card strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+}
+.mettle-card p {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 7px 0 0;
+}
+
+.mettle-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mettle-list li {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+.mettle-list li::before {
+  color: var(--tomato);
+  content: '>';
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-right: 9px;
+}
+
+.mettle-action,
+.mettle-icon-action {
+  align-items: center;
+  background: var(--cobalt);
+  border: 1px solid var(--cobalt);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  gap: 7px;
+  letter-spacing: 0.03em;
+  padding: 10px 12px;
+  text-transform: uppercase;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.mettle-action:hover,
+.mettle-icon-action:hover {
+  background: var(--lime);
+  color: var(--ink);
+  transform: translateY(-2px);
+}
+.mettle-action:disabled {
+  cursor: wait;
+  opacity: 0.55;
+  transform: none;
+}
+.mettle-icon-action {
+  background: transparent;
+  color: var(--ink);
+}
+
+.mettle-input {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  min-width: 0;
+  padding: 11px 12px;
+}
+.mettle-input::placeholder {
+  color: #8991a0;
+}
+
+.mettle-transcript {
+  display: grid;
+  gap: 9px;
+}
+.mettle-turn {
+  border: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.55;
+  max-width: 86%;
+  padding: 12px 14px;
+}
+.mettle-turn--user {
+  background: #e2e8ff;
+  border-color: #aab8fa;
+  justify-self: end;
+}
+.mettle-turn--counterpart {
+  background: #fffdf7;
+  border-left: 4px solid var(--tomato);
+}
+.mettle-turn-label {
+  color: var(--ink-soft);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .mettle-phase {
+    gap: 18px;
+    padding: 23px 20px 28px;
+  }
+  .mettle-grid {
+    grid-template-columns: 1fr;
+  }
+  .mettle-headline {
+    font-size: 25px;
+  }
 }
