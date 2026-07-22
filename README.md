@@ -31,22 +31,35 @@ The frontend starts Next.js and the local LangGraph deployment at port `8123`.
 Set the required provider credentials in `.env` before adding LLM-backed node
 logic. The graph ID is `conversation_agent`.
 
+## Test
+
+```bash
+cd backend && python -m pytest tests/ -v
+```
+
 ## Current scope
 
-The graph wiring, native reactive interrupt, deterministic proactive trigger
-pass, LP renewal state contract, and frontend phase-panel shells are committed
-first. Node bodies are explicit TODOs with ownership markers. LiveKit is
-deliberately an unimplemented adapter seam until text-mode Wingman is stable.
+Graph wiring, reactive interrupt, deterministic proactive triggers, LP renewal
+scenario loading, and frontend phase-panel shells are in place. Node bodies
+carry explicit TODOs with ownership markers. All 5 backend tests pass.
+LiveKit is an unimplemented seam until text-mode Wingman is stable.
 
 ## Build order
 
-1. **This commit** — graph skeleton + state contract + scenario + frontend
-   shells, all stubbed. Proven wiring, no LLM logic yet.
+1. **Done** — graph skeleton + state contract + scenario + frontend shells,
+   all stubbed. Proven wiring, no LLM logic yet.
 2. **Person A** fills in `wingman_reactive.py` + `opponent.py`; **Person B**
    fills in `coach.py` + `wingman_proactive.py` escalation, against the same
    state schema and `lp_renewal.md`. Text/typed input only.
 3. **Person B** layers in `voice/livekit_adapter.py` so Wingman can run against
    a real or simulated live call. Additive — the demo is complete without it.
+
+## Known gaps
+
+- Docker deployment files reference the pre-rename `agent/` directory; local
+  dev is unaffected.
+- A2UI catalog still carries starter demo components; replace with nudge-specific
+  generative UI when the Wingman proactive surface matures.
 
 ## Upstream
 

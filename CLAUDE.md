@@ -27,16 +27,18 @@ live with the React UI.
 /backend
   /graph
     state.py              # shared LangGraph state schema — the contract
+    scenarios.py          # deterministic scenario loader (lp_renewal)
     coach.py              # Coach node — Person B
     opponent.py           # Opponent node — Person A
     wingman_reactive.py   # reactive Wingman nodes (interrupt + answer) — Person A
-    wingman_proactive.py  # proactive trigger evaluation — Person B
+    wingman_proactive.py  # proactive trigger evaluation + turn ingestion — Person B
     debrief.py            # post-conversation node
     graph.py              # top-level phase router wiring all nodes
   /triggers
     rules.py              # deterministic proactive nudge rules — Person B
   /voice
     livekit_adapter.py    # LiveKit LLMAdapter seam — stretch goal, Person B
+  /tests                  # unittest specs — run with: python -m pytest
   main.py                 # LangGraph server entrypoint (graph id: conversation_agent)
   langgraph.json
 /frontend
@@ -45,16 +47,29 @@ live with the React UI.
       page.tsx            # phase switcher + CopilotChat side panel
       layout.tsx          # CopilotKit provider wiring
       api/copilotkit/     # CopilotKit runtime route → LangGraph agent
+      declarative-generative-ui/  # A2UI catalog (demo — replace with nudge components)
     /components
       coach-panel.tsx          # Coach UI shell — Person B
       opponent-chat.tsx        # Opponent rehearsal UI shell — Person A
       wingman-side-panel.tsx   # reactive replies (A) + proactive nudge cards (B)
       debrief-view.tsx         # debrief UI shell
+      ui/                      # reusable shadcn primitives (button, card, input, …)
     /hooks
       use-conversation-state.ts  # typed wrapper around CopilotKit shared state
+      use-theme.tsx              # dark/light theme provider
 /scenarios
   lp_renewal.md           # first vertical-slice demo scenario
 ```
+
+## Testing
+
+```bash
+cd backend && python -m pytest tests/ -v
+```
+
+Tests are executable specs: `test_coach.py` defines the Coach scenario-loading
+contract, `test_proactive.py` defines the trigger rules + ingestion contract.
+Both pass against the current deterministic stubs.
 
 ## Key Pattern: Shared State as the Contract
 
@@ -120,8 +135,19 @@ Set provider credentials in `.env` before adding LLM-backed node logic.
 ## Build Order
 
 1. Graph skeleton + state contract + scenario + frontend shells, all stubbed
-   (this commit).
+   (done).
 2. Person A fills reactive + opponent; Person B fills coach + proactive
    escalation — text/typed input only.
 3. Person B layers in LiveKit voice adapter for Wingman. Additive — the demo is
    complete without it.
+
+## Known Gaps
+
+- **Docker deployment** (`frontend/serve.py`, `frontend/docker-route-override.ts`,
+  `frontend/Dockerfile`) references the pre-rename `agent/` directory and needs
+  updating before containerized deployment works. Local dev (`npm run dev`) is
+  unaffected.
+- **A2UI catalog** (`frontend/src/app/declarative-generative-ui/`) still carries
+  the starter demo components (pie chart, meeting picker). Replace with
+  nudge-specific generative UI components when the Wingman proactive surface
+  matures.
