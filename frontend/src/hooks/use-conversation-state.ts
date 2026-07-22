@@ -62,15 +62,17 @@ export function useConversationState() {
   const state = (agent.state ?? {}) as ConversationState;
 
   const setPartial = (update: ConversationStateUpdate) => {
-    agent.setState(update);
+    // AG-UI state updates replace the full object. Preserve fields owned by
+    // other phases when applying a partial UI update.
+    agent.setState({ ...(agent.state ?? {}), ...update });
   };
 
   const setPhase = (phase: ConversationState['phase']) => {
-    agent.setState({ phase });
+    setPartial({ phase });
   };
 
   const appendTranscriptTurn = (turn: TranscriptTurn) => {
-    agent.setState({ transcript: [...(state.transcript ?? []), turn] });
+    setPartial({ transcript: [...(state.transcript ?? []), turn] });
   };
 
   const runLiveTurn = async (speaker: TranscriptTurn['speaker'], text: string) => {
@@ -86,7 +88,7 @@ export function useConversationState() {
       },
     ];
 
-    agent.setState({
+    setPartial({
       phase: 'live',
       transcript,
       awaiting_reactive_query: false,
@@ -103,7 +105,7 @@ export function useConversationState() {
   const startReactiveSession = async () => {
     if (agent.isRunning) return;
 
-    agent.setState({
+    setPartial({
       phase: 'live',
       awaiting_reactive_query: true,
       open_reactive_query: null,
