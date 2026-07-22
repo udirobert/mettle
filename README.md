@@ -18,6 +18,8 @@ Wingman, and Debrief.
   around CopilotKit's shared agent state and mirrors `state.py`.
 - `WingmanSidePanel` renders both reactive replies (Person A) and proactive
   nudge cards (Person B) from the same shared state.
+- `docs/NORTH_STAR.md` defines the product vision: a stakes-aware calendar and
+  live counsel layer, not a generic meeting assistant.
 - `docs/CONTEXT_INGESTION.md` defines the planned Composio/email import path:
   private import and public research -> evidence brief -> user approval ->
   shared state.
@@ -55,6 +57,8 @@ cd backend && uv run python -m pytest tests/ -v
 - **Later** — context ingestion for Gmail/Calendar plus public research via
   Exa/Firecrawl/Tinyfish-style providers. Start with static evidence fixtures
   for demos; do not block the core graph on OAuth or browsing.
+- **Product north star** — calendar-native high-stakes conversation flow. See
+  `docs/NORTH_STAR.md` before making major frontend changes.
 
 ## Build order
 

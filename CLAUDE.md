@@ -2,9 +2,17 @@
 
 ## Purpose
 
-An agent for high-stakes conversations people can't afford to get wrong — a
-founder pitching a skeptical investor, a fund manager in an LP renewal meeting,
-a rough board update. The agent operates in four phases:
+Mettle is a stakes-aware calendar and live counsel layer for conversations
+people can't afford to get wrong — a founder pitching a skeptical investor, a
+fund manager in an LP renewal meeting, a rough board update.
+
+See `docs/NORTH_STAR.md` before making major product or frontend changes. Mettle
+should not be positioned as a generic AI meeting assistant, meeting-notes tool,
+or chat interface. The product starts from consequential calendar events and
+moves the user through brief, pressure test, rehearsal, live support, and
+debrief.
+
+The agent operates in four phases:
 
 - **Coach** — prepares the user before the conversation (stress-tests position,
   surfaces blind spots, gives concrete moves).
