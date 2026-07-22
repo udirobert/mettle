@@ -18,6 +18,8 @@ Wingman, and Debrief.
   around CopilotKit's shared agent state and mirrors `state.py`.
 - `WingmanSidePanel` renders both reactive replies (Person A) and proactive
   nudge cards (Person B) from the same shared state.
+- `docs/CONTEXT_INGESTION.md` defines the planned Composio/email import path:
+  bounded import -> evidence brief -> user approval -> shared state.
 
 ## Run
 
@@ -49,6 +51,8 @@ cd backend && uv run python -m pytest tests/ -v
 - **Next (Person B)** — multi-perspective Coach debate (Skeptic + Counterpart +
   Voss Negotiator → synthesis) + Debrief. See CLAUDE.md for design.
 - **Stretch** — LiveKit voice adapter. Additive — the demo is complete without it.
+- **Later** — Composio-backed context ingestion for Gmail/Calendar. Start with a
+  static evidence fixture for demos; do not block the core graph on OAuth.
 
 ## Build order
 
