@@ -22,14 +22,24 @@ export class DeepgramVoiceSession {
   private audioContext: AudioContext | null = null;
   private processor: ScriptProcessorNode | null = null;
   private micStream: MediaStream | null = null;
+  private playbackDest: MediaStreamAudioDestinationNode | null = null;
+  private audioEl: HTMLAudioElement | null = null;
   private playingSources: AudioBufferSourceNode[] = [];
   private nextPlayTime = 0;
+  // Half-duplex gate: mic frames are dropped until this AudioContext time.
+  // Chrome's echo canceller ignores Web Audio playback, so without the gate
+  // the mic hears the agent's own voice and the agent talks to itself.
+  private micGateUntil = 0;
   private keepAlive: ReturnType<typeof setInterval> | null = null;
 
   async start(options: VoiceSessionOptions): Promise<void> {
     options.onStatus("requesting microphone…");
     this.micStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     });
 
     options.onStatus("connecting…");
@@ -39,6 +49,12 @@ export class DeepgramVoiceSession {
     if (error) throw new Error(error);
 
     this.audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+    // Play agent audio through an <audio> element instead of the Web Audio
+    // graph — that makes it part of the browser's echo-cancellation reference.
+    this.playbackDest = this.audioContext.createMediaStreamDestination();
+    this.audioEl = new Audio();
+    this.audioEl.srcObject = this.playbackDest.stream;
+    void this.audioEl.play();
     const ws = new WebSocket(AGENT_URL, [scheme, token]);
     ws.binaryType = "arraybuffer";
     this.ws = ws;
@@ -105,6 +121,10 @@ export class DeepgramVoiceSession {
     this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
     this.processor.onaudioprocess = (e) => {
       if (this.ws?.readyState !== WebSocket.OPEN) return;
+      // Drop mic frames while the agent is speaking (plus a short tail) so
+      // speaker bleed never becomes phantom "user" turns.
+      const context = this.audioContext;
+      if (context && context.currentTime < this.micGateUntil) return;
       const float32 = e.inputBuffer.getChannelData(0);
       const int16 = new Int16Array(float32.length);
       for (let i = 0; i < float32.length; i++) {
@@ -126,10 +146,11 @@ export class DeepgramVoiceSession {
     buffer.copyToChannel(float32, 0);
     const sourceNode = context.createBufferSource();
     sourceNode.buffer = buffer;
-    sourceNode.connect(context.destination);
+    sourceNode.connect(this.playbackDest ?? context.destination);
     this.nextPlayTime = Math.max(this.nextPlayTime, context.currentTime);
     sourceNode.start(this.nextPlayTime);
     this.nextPlayTime += buffer.duration;
+    this.micGateUntil = this.nextPlayTime + 0.3;
     this.playingSources.push(sourceNode);
     sourceNode.onended = () => {
       this.playingSources = this.playingSources.filter((s) => s !== sourceNode);
@@ -146,6 +167,7 @@ export class DeepgramVoiceSession {
     }
     this.playingSources = [];
     this.nextPlayTime = 0;
+    this.micGateUntil = 0;
   }
 
   stop() {
@@ -153,11 +175,14 @@ export class DeepgramVoiceSession {
     this.flushPlayback();
     this.processor?.disconnect();
     this.micStream?.getTracks().forEach((track) => track.stop());
+    this.audioEl?.pause();
     this.ws?.close();
     this.audioContext?.close();
     this.ws = null;
     this.audioContext = null;
     this.processor = null;
     this.micStream = null;
+    this.playbackDest = null;
+    this.audioEl = null;
   }
 }
