@@ -53,8 +53,10 @@ RUN uv pip install --system "ag-ui-langgraph[fastapi]==0.0.37" && \
     "langchain-openai>=1.1.0" \
     "langchain-anthropic>=1.3.4" \
     "langgraph==1.0.5" \
+    "langgraph-checkpoint-postgres>=3.0.3,<4.0.0" \
     "langsmith>=0.4.49" \
     "openai>=1.68.2,<2.0.0" \
+    "psycopg[binary,pool]>=3.2,<4.0" \
     "python-dotenv>=1.0.0,<2.0.0" \
     "fastapi>=0.115.5,<1.0.0" \
     "uvicorn>=0.29.0,<1.0.0"
