@@ -64,12 +64,13 @@ live with the React UI.
 ## Testing
 
 ```bash
-cd backend && python -m pytest tests/ -v
+cd backend && uv run python -m pytest tests/ -v
 ```
 
-Tests are executable specs: `test_coach.py` defines the Coach scenario-loading
-contract, `test_proactive.py` defines the trigger rules + ingestion contract.
-Both pass against the current deterministic stubs.
+11 tests pass (4 coach, 7 proactive). Tests are executable specs:
+`test_coach.py` covers scenario loading + fallback analysis content;
+`test_proactive.py` covers trigger rules, ingestion, enrichment fallback,
+empty text, and counterpart turns.
 
 ## Key Pattern: Shared State as the Contract
 
@@ -101,9 +102,27 @@ component-local state.
 - **Reactive Wingman**: `wait_for_reactive_query` uses LangGraph's native
   `interrupt()` to pause until the UI resumes with the user's quick question,
   then `answer_reactive_query` produces the response.
-- **Proactive Wingman**: a cheap rules-based pass (`triggers/rules.py`) runs
-  against new transcript turns — no LLM call per turn. LLM escalation is a
-  future addition only when a candidate pattern fires.
+- **Proactive Wingman**: two-stage pipeline — cheap rules pass
+  (`triggers/rules.py`, no LLM per turn) → LLM enrichment only when a candidate
+  nudge fires. Enrichment reads `coach_analysis` and `counterpart_profile` to
+  produce context-aware nudge text. Falls back to rules message on any error.
+
+## LLM Integration
+
+All LLM calls go through `backend/graph/llm.py` (`get_llm()`), which returns
+`None` when no `OPENAI_API_KEY` is set. Every call site wraps invocations in
+try/except with deterministic fallback — the graph never crashes because the
+LLM is unavailable. Model is configurable via `OPENAI_MODEL` (default: gpt-4o).
+
+**Coach** (`coach.py`): loads scenario deterministically, then runs an LLM
+stress-test via `with_structured_output(CoachAnalysis)` producing blind spots,
+concrete moves, likely objections, and opening strategy. Falls back to
+`FALLBACK_ANALYSIS` on any error.
+
+**Proactive** (`wingman_proactive.py`): rules pass detects candidate nudges,
+then LLM enrichment replaces the generic message with context-aware advice
+(max 2 sentences, references the specific turn and counterpart concerns).
+Falls back to rules message on any error.
 
 ## Team Split
 
@@ -134,12 +153,78 @@ Set provider credentials in `.env` before adding LLM-backed node logic.
 
 ## Build Order
 
-1. Graph skeleton + state contract + scenario + frontend shells, all stubbed
-   (done).
-2. Person A fills reactive + opponent; Person B fills coach + proactive
-   escalation — text/typed input only.
-3. Person B layers in LiveKit voice adapter for Wingman. Additive — the demo is
+1. **Done** — graph skeleton + state contract + scenario + frontend shells.
+2. **Done (Person B)** — Coach LLM stress-test + proactive nudge enrichment,
+   both with graceful fallback. 11 tests passing.
+3. **In progress (Person A)** — reactive Wingman answer + opponent roleplay.
+   `answer_reactive_query` and `opponent.py` still stubbed.
+4. **Next (Person B)** — multi-perspective Coach debate (see below) + Debrief.
+5. **Stretch (Person B)** — LiveKit voice adapter. Additive — the demo is
    complete without it.
+
+## Direction: Multi-Perspective Coach Debate
+
+The Coach phase has time budget — the user is preparing, not in the moment.
+This is where multiple adversarial perspectives earn their cost. Wingman (live)
+is the wrong place for debate: latency matters and the two-stage rules→LLM
+pipeline already provides a cheap "second perspective."
+
+### Why not a single agent
+
+A single LLM agent tends to anchor on one framing and toward encouragement
+(because that feels helpful). Multiple perspectives force the system to
+confront failure modes a single agent would miss.
+
+### The risk: LLMs converge
+
+If three agents get vague "different perspective" prompts, they often produce
+similar advice with different wording — the debate is theater. The architecture
+only earns its complexity if prompts are genuinely adversarial and the
+synthesis surfaces disagreement, not averages it out.
+
+### Design: three fixed adversarial perspectives + synthesis (not a swarm)
+
+No free-form back-and-forth rounds (expensive, rarely changes minds). Three
+parallel perspectives, then one synthesis pass — 4 LLM calls total, all in
+Coach where latency is acceptable.
+
+1. **The Skeptic** — "Where is the hole in this position? What's the strongest
+   argument against renewing at full size?" Devil's advocate. Finds what's weak.
+2. **The Counterpart (Elena)** — "You are Elena. You've heard this pitch. What
+   do you actually think? What do you say next?" Tests whether the plan survives
+   contact with the counterpart's priorities. (Distinct from Opponent roleplay —
+   this is analysis input, not rehearsal.)
+3. **The Negotiator (Voss)** — "Does this plan make Elena feel heard or
+   cornered? Where does it trade logic for tactical empathy? What calibrated
+   question should the user ask instead of asserting?" Catches the failure mode
+   where a logically perfect pitch still loses because it makes the counterpart
+   defensive. This is the genuinely additive perspective — without it, the other
+   two both optimize for argument quality and miss the trust dimension.
+
+**Synthesis** — "Three advisors analyzed this position. They agreed on X.
+They disagreed on Y. Here's what to do." Must surface disagreement explicitly.
+If all three agree, say so — that's signal too.
+
+### Framing notes
+
+- **Netflix (sports team vs family)**: the argument is that the agent should
+  not be a cheerleader. A family protects feelings; a sports team fields the
+  best players and gives honest feedback. The debate architecture forces this
+  by construction — the Skeptic is explicitly not on the user's side.
+- **Voss (negotiation)**: high-stakes conversations are won by making the other
+  side feel heard and in control, not by having better arguments. The Voss
+  agent catches the trust/emotional dimension that the Skeptic and Counterpart
+  miss because they optimize for logic.
+
+### Implementation constraints
+
+- Build as three named perspectives with hardcoded prompts, not a general
+  framework. A framework invites adding more agents → convergence + cost.
+- Run in parallel, not sequentially.
+- Fallback: if any perspective fails, synthesize from the ones that succeeded.
+  If all fail, fall back to `FALLBACK_ANALYSIS`.
+- Output feeds into the existing `CoachAnalysis` shape (or an extended version
+  that includes `perspectives` and `disagreements` fields).
 
 ## Known Gaps
 

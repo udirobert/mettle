@@ -34,25 +34,29 @@ logic. The graph ID is `conversation_agent`.
 ## Test
 
 ```bash
-cd backend && python -m pytest tests/ -v
+cd backend && uv run python -m pytest tests/ -v
 ```
 
 ## Current scope
 
-Graph wiring, reactive interrupt, deterministic proactive triggers, LP renewal
-scenario loading, and frontend phase-panel shells are in place. Node bodies
-carry explicit TODOs with ownership markers. All 5 backend tests pass.
-LiveKit is an unimplemented seam until text-mode Wingman is stable.
+- **Done** — graph wiring, reactive interrupt, deterministic proactive triggers,
+  LP renewal scenario loading, frontend phase-panel shells.
+- **Done (Person B)** — Coach LLM stress-test (structured output: blind spots,
+  concrete moves, likely objections, opening strategy) + proactive nudge
+  enrichment (rules pass → LLM, context-aware). Both with graceful fallback.
+  11 tests passing.
+- **In progress (Person A)** — reactive Wingman answer + opponent roleplay.
+- **Next (Person B)** — multi-perspective Coach debate (Skeptic + Counterpart +
+  Voss Negotiator → synthesis) + Debrief. See CLAUDE.md for design.
+- **Stretch** — LiveKit voice adapter. Additive — the demo is complete without it.
 
 ## Build order
 
-1. **Done** — graph skeleton + state contract + scenario + frontend shells,
-   all stubbed. Proven wiring, no LLM logic yet.
-2. **Person A** fills in `wingman_reactive.py` + `opponent.py`; **Person B**
-   fills in `coach.py` + `wingman_proactive.py` escalation, against the same
-   state schema and `lp_renewal.md`. Text/typed input only.
-3. **Person B** layers in `voice/livekit_adapter.py` so Wingman can run against
-   a real or simulated live call. Additive — the demo is complete without it.
+1. **Done** — graph skeleton + state contract + scenario + frontend shells.
+2. **Done (Person B)** — Coach LLM stress-test + proactive nudge enrichment.
+3. **In progress (Person A)** — reactive Wingman + opponent roleplay.
+4. **Next (Person B)** — multi-perspective Coach debate + Debrief.
+5. **Stretch (Person B)** — LiveKit voice adapter.
 
 ## Known gaps
 
