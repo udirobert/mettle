@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ChevronDown,
   CircleAlert,
@@ -16,11 +16,25 @@ import {
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
 
+const AVAILABLE_SCENARIOS = [
+  { id: 'lp_renewal', label: 'LP Renewal' },
+  { id: 'performance_review', label: 'Performance Review' },
+  { id: 'board_update', label: 'Board Update' },
+  { id: 'salary_negotiation', label: 'Salary Negotiation' },
+];
+
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
   const { state, setPartial } = useConversationState();
   const weakPoints = state.user_weak_points ?? [];
   const analysis = state.coach_analysis;
+  const [selectedScenario, setSelectedScenario] = useState(state.scenario_id ?? 'lp_renewal');
+
+  useEffect(() => {
+    if (selectedScenario !== state.scenario_id) {
+      setPartial({ scenario_id: selectedScenario });
+    }
+  }, [selectedScenario, state.scenario_id, setPartial]);
 
   const addWeakPoint = () => {
     setPartial({ user_weak_points: [...weakPoints, 'New weak point - edit me'] });
@@ -37,20 +51,38 @@ export function CoachPanel() {
         </p>
       </header>
 
+      <section className="mettle-card">
+        <label className="mettle-kicker" htmlFor="scenario-select">
+          Scenario
+        </label>
+        <select
+          className="mettle-input"
+          id="scenario-select"
+          onChange={(e) => setSelectedScenario(e.target.value)}
+          value={selectedScenario}
+        >
+          {AVAILABLE_SCENARIOS.map((scenario) => (
+            <option key={scenario.id} value={scenario.id}>
+              {scenario.label}
+            </option>
+          ))}
+        </select>
+      </section>
+
       <div className="mettle-grid">
         <section className="mettle-card mettle-card--risk">
           <p className="mettle-kicker">
             <CircleAlert size={13} /> Stakes
           </p>
-          <strong>{state.stakes || '$40M LP renewal'}</strong>
-          <p>Second-largest investor. This is an expectation-setting meeting, not a status call.</p>
+          <strong>{state.stakes || 'High-stakes conversation'}</strong>
+          <p>This is an expectation-setting meeting, not a status call.</p>
         </section>
         <section className="mettle-card mettle-card--signal">
           <p className="mettle-kicker">
             <Target size={13} /> Win condition
           </p>
-          <strong>Protect the renewal standard</strong>
-          <p>Leave with a credible path to a full renewal, not a premature concession.</p>
+          <strong>Protect your position</strong>
+          <p>Leave with a credible path forward, not a premature concession.</p>
         </section>
       </div>
 
@@ -60,12 +92,9 @@ export function CoachPanel() {
         </p>
         <strong>
           {analysis?.opening_strategy ||
-            'Lead with the portfolio evidence, then ask what would make renewal simple.'}
+            'Lead with the evidence, then ask what would make this decision simple.'}
         </strong>
-        <p>
-          Put the operating picture on the table before Elena can frame the discussion around a
-          number.
-        </p>
+        <p>Put the facts on the table before they can frame the discussion around a number.</p>
       </section>
 
       <section>

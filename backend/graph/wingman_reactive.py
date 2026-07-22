@@ -43,6 +43,79 @@ FALLBACK_REPLY = (
     "then ask what would make this decision simple for them."
 )
 
+_STOP_WORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "are",
+        "but",
+        "not",
+        "you",
+        "all",
+        "can",
+        "has",
+        "her",
+        "was",
+        "one",
+        "our",
+        "out",
+        "day",
+        "had",
+        "how",
+        "its",
+        "may",
+        "new",
+        "now",
+        "old",
+        "see",
+        "way",
+        "who",
+        "did",
+        "get",
+        "him",
+        "let",
+        "say",
+        "she",
+        "too",
+        "use",
+        "that",
+        "with",
+        "have",
+        "from",
+        "this",
+        "will",
+        "your",
+        "than",
+        "them",
+        "been",
+        "what",
+        "when",
+        "more",
+        "does",
+        "also",
+        "just",
+        "very",
+        "after",
+        "before",
+        "most",
+        "into",
+        "about",
+        "could",
+        "would",
+        "which",
+        "their",
+        "there",
+        "other",
+    }
+)
+
+
+def _extract_keywords(text: str) -> list[str]:
+    """Extract meaningful keywords from text, filtering stop words and short words."""
+    words = text.lower().replace("-", " ").split()
+    return [w for w in words if len(w) > 2 and w not in _STOP_WORDS]
+
 
 def _format_list(items: list[str]) -> str:
     return "; ".join(items) if items else "(none)"
@@ -60,37 +133,31 @@ def _format_transcript_context(transcript: list, max_turns: int = 4) -> str:
 
 
 def _build_fallback_reply(state: ConversationState) -> str:
-    """Produce a deterministic reply that references the actual query."""
+    """Produce a deterministic reply that references the actual query and concerns."""
     query = (state.get("open_reactive_query") or "").lower()
     profile = state.get("counterpart_profile", {})
     concerns = profile.get("concerns", [])
+    counterpart_name = profile.get("name", "the counterpart")
+    first_name = counterpart_name.split()[0] if counterpart_name else "they"
 
     if not query:
         return FALLBACK_REPLY
 
-    if "liquidity" in query or "distribut" in query:
-        return (
-            "Name a specific date and milestone for the next liquidity event. "
-            "Do not hedge with a range."
-        )
-    if "fee" in query or "step-up" in query or "cost" in query:
-        return (
-            "Don't defend the fee with math. Ask what would make the fee feel fair "
-            "given what they've experienced so far."
-        )
-    if "concentrat" in query or "risk" in query or "position" in query:
-        return (
-            "Name the operational change that reduces concentration risk, "
-            "not the return that justifies it."
-        )
-    if "ask" in query or "renew" in query or "commit" in query:
-        return (
-            "State the full renewal number explicitly. Do not let them frame "
-            "a reduced allocation as the default."
-        )
+    # Match the query to the most relevant concern and give tactical advice
+    query_words = _extract_keywords(query)
+    for concern in concerns:
+        concern_keywords = _extract_keywords(concern)
+        if any(word in query_words for word in concern_keywords):
+            return (
+                f"Address {concern}. Be specific about what's changed or what you can commit to. "
+                f"Then pause and let {counterpart_name} respond."
+            )
 
-    concern = concerns[0] if concerns else "the liquidity timeline"
-    return f"Address {concern.lower()} directly, then pause and let them respond."
+    # No clear concern match — give a generic but actionable reply
+    return (
+        f"Acknowledge what {first_name} just said, then name the concern underneath it. "
+        "Give them something specific they can react to, not an explanation."
+    )
 
 
 def wait_for_reactive_query(state: ConversationState) -> dict:

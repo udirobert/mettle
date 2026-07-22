@@ -9,6 +9,7 @@ export function DebriefView() {
   const notes = state.debrief_notes ?? [];
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
+  const counterpartName = String(state.counterpart_profile?.name?.split(' ')[0] ?? 'Counterpart');
 
   return (
     <div className="mettle-phase">
@@ -72,7 +73,7 @@ export function DebriefView() {
           ) : (
             transcript.map((turn, index) => (
               <li key={`${turn.timestamp}-${index}`}>
-                <strong>{turn.speaker === 'user' ? 'You' : 'Elena'}:</strong> {turn.text}
+                <strong>{turn.speaker === 'user' ? 'You' : counterpartName}:</strong> {turn.text}
               </li>
             ))
           )}

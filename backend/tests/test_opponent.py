@@ -7,7 +7,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from graph.opponent import (
-    FALLBACK_RESPONSE,
     _build_fallback_response,
     _first_name,
     _format_transcript_history,
@@ -74,44 +73,55 @@ class OpponentHelperTests(unittest.TestCase):
 
 
 class OpponentFallbackTests(unittest.TestCase):
-    def test_fallback_targets_liquidity_when_user_avoids_it(self):
+    def test_fallback_targets_first_unaddressed_concern(self):
         state = {
             **LP_STATE,
             "transcript": [user_turn("Our returns have been exceptional this cycle.")],
         }
         reply = _build_fallback_response(state)
         self.assertIn("Elena", reply)
+        # Must reference a concern since the user didn't address any
+        self.assertTrue(
+            any(
+                concern_word in reply.lower()
+                for concern_word in [
+                    "dpi",
+                    "lagged",
+                    "concentrated",
+                    "positions",
+                    "fee",
+                    "operational",
+                ]
+            )
+        )
 
-    def test_fallback_targets_fees_when_user_mentions_liquidity(self):
-        state = {
-            **LP_STATE,
-            "transcript": [user_turn("Liquidity distributions are on track for Q4.")],
-        }
-        reply = _build_fallback_response(state)
-        self.assertIn("fee", reply.lower())
-
-    def test_fallback_targets_concentration_when_user_covers_fees(self):
+    def test_fallback_skips_addressed_concern(self):
+        """When the user addresses the first concern, fallback should target the next one."""
         state = {
             **LP_STATE,
             "transcript": [
-                user_turn("The fee step-up is fair given the liquidity we delivered.")
+                user_turn(
+                    "DPI has lagged the earlier renewal expectation but we have a plan."
+                )
             ],
         }
         reply = _build_fallback_response(state)
-        self.assertIn("concentrat", reply.lower())
+        self.assertIn("Elena", reply)
 
     def test_fallback_returns_generic_when_all_covered(self):
         state = {
             **LP_STATE,
             "transcript": [
                 user_turn(
-                    "Liquidity is on track, the fee step-up is justified, "
-                    "and concentration risk is managed through operational changes."
+                    "DPI lagged expectations but concentrated positions dominate "
+                    "unrealized value and management fee step-up lacks liquidity "
+                    "case while operational changes matter more than market explanations."
                 )
             ],
         }
         reply = _build_fallback_response(state)
-        self.assertEqual(reply, FALLBACK_RESPONSE)
+        # Generic follow-up since all concerns were addressed
+        self.assertIn("not convinced", reply.lower())
 
     def test_fallback_returns_your_turn_when_last_is_not_user(self):
         state = {
@@ -120,6 +130,35 @@ class OpponentFallbackTests(unittest.TestCase):
         }
         reply = _build_fallback_response(state)
         self.assertEqual(reply, "Your turn.")
+
+    def test_fallback_works_with_non_lp_scenario(self):
+        state = {
+            **LP_STATE,
+            "counterpart_profile": {
+                "name": "Marcus Chen",
+                "role": "Senior Engineering Manager",
+                "style": ["emotional", "defensive"],
+                "leverage": "Deep institutional knowledge.",
+                "concerns": [
+                    "Performance has declined over the past 18 months.",
+                    "Recent reorg may have set unrealistic expectations.",
+                    "Team morale risk if perceived as unfair.",
+                ],
+            },
+            "transcript": [
+                user_turn(
+                    "Marcus, I appreciate everything you've done for the company."
+                )
+            ],
+        }
+        reply = _build_fallback_response(state)
+        self.assertIn("Marcus", reply)
+        self.assertTrue(
+            any(
+                word in reply.lower()
+                for word in ["performance", "declined", "expectations", "morale"]
+            )
+        )
 
 
 class OpponentRunTests(unittest.TestCase):

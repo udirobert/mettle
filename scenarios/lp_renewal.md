@@ -1,3 +1,20 @@
+---
+stakes: "$40M LP renewal from the fund's second-largest investor."
+counterpart_name: Elena Park
+counterpart_role: CIO, Northstar Foundation
+counterpart_style: analytical, terse, skeptical
+counterpart_leverage: Can renew at a reduced allocation before the next close.
+counterpart_concerns:
+  - DPI has lagged the earlier renewal expectation.
+  - Two concentrated positions dominate unrealized value.
+  - The management-fee step-up lacks a clear liquidity case.
+  - Operational changes matter more than another market explanation.
+user_weak_points:
+  - May defend headline return before answering the liquidity question.
+  - May over-explain portfolio detail instead of naming the renewal ask.
+  - May accept a reduced allocation before testing what would unlock full renewal.
+---
+
 # LP Renewal: Northstar Foundation
 
 ## Stakes

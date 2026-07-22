@@ -84,17 +84,16 @@ def _build_fallback_response(state: ConversationState) -> str:
     concerns = profile.get("concerns", [])
     first_name = _first_name(profile.get("name", "Elena"))
 
-    # Pick the concern the user seems least prepared for
-    if "liquidity" not in text and "distribut" not in text:
-        concern = concerns[0] if concerns else "DPI has lagged."
-        return f"{first_name}: You haven't addressed {concern.lower()} What's different this time?"
-    if "fee" not in text and "step-up" not in text:
-        concern = concerns[2] if len(concerns) > 2 else "The fee step-up."
-        return f"{first_name}: {concern} Why should I pay more for the same liquidity profile?"
-    if "concentrat" not in text and "two positions" not in text:
-        concern = concerns[1] if len(concerns) > 1 else "Two positions."
-        return f"{first_name}: {concern} What happens to the portfolio if one of them unwinds?"
-    return FALLBACK_RESPONSE
+    # Pick the first concern that hasn't been addressed in the user's turn
+    for concern in concerns:
+        # Extract key words from the concern (first 3 meaningful words)
+        concern_words = [w for w in concern.lower().split() if len(w) > 3][:3]
+        # Check if any of these words appear in the user's text
+        if not any(word in text for word in concern_words):
+            return f"{first_name}: You haven't addressed {concern.lower()} What's different this time?"
+
+    # If all concerns seem addressed, use a generic follow-up
+    return f"{first_name}: That's interesting. But I'm still not convinced. What's the concrete evidence that this time is different?"
 
 
 def run_opponent(state: ConversationState) -> dict:

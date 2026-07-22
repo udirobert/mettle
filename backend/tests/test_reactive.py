@@ -70,48 +70,49 @@ class ReactiveHelperTests(unittest.TestCase):
 
 
 class ReactiveFallbackTests(unittest.TestCase):
-    def test_fallback_liquidity_query(self):
+    def test_fallback_matches_concern_keyword(self):
         state = {
             **LP_STATE,
-            "open_reactive_query": "How do I address liquidity concerns?",
+            "open_reactive_query": "How do I address the DPI lag concern?",
         }
         reply = _build_fallback_reply(state)
-        self.assertIn("date", reply.lower())
+        self.assertIn("dpi", reply.lower())
         self.assertNotEqual(reply, FALLBACK_REPLY)
 
-    def test_fallback_fee_query(self):
-        state = {**LP_STATE, "open_reactive_query": "What about the fee step-up?"}
-        reply = _build_fallback_reply(state)
-        self.assertIn("fee", reply.lower())
-        self.assertNotEqual(reply, FALLBACK_REPLY)
-
-    def test_fallback_concentration_query(self):
+    def test_fallback_matches_fee_concern(self):
         state = {
             **LP_STATE,
-            "open_reactive_query": "How do I handle concentration risk?",
+            "open_reactive_query": "What about the management fee issue?",
         }
         reply = _build_fallback_reply(state)
-        self.assertIn("concentration", reply.lower())
+        self.assertIn("management", reply.lower())
         self.assertNotEqual(reply, FALLBACK_REPLY)
 
-    def test_fallback_renewal_query(self):
+    def test_fallback_matches_concentration_concern(self):
         state = {
             **LP_STATE,
-            "open_reactive_query": "Should I ask for the full renewal?",
+            "open_reactive_query": "How do I handle the concentrated positions risk?",
         }
         reply = _build_fallback_reply(state)
-        self.assertIn("renewal", reply.lower())
+        self.assertIn("concentrated", reply.lower())
         self.assertNotEqual(reply, FALLBACK_REPLY)
 
-    def test_fallback_generic_query(self):
+    def test_fallback_generic_when_no_concern_matches(self):
         state = {**LP_STATE, "open_reactive_query": "What should I say next?"}
         reply = _build_fallback_reply(state)
-        self.assertTrue(reply.strip())
+        # Generic response that references the counterpart
+        self.assertIn("acknowledge", reply.lower())
+        self.assertIn("elena", reply.lower())
 
     def test_fallback_empty_query(self):
         state = {**LP_STATE, "open_reactive_query": ""}
         reply = _build_fallback_reply(state)
         self.assertEqual(reply, FALLBACK_REPLY)
+
+    def test_fallback_uses_first_name(self):
+        state = {**LP_STATE, "open_reactive_query": "How do I respond?"}
+        reply = _build_fallback_reply(state)
+        self.assertIn("elena", reply.lower())
 
 
 class ReactiveAnswerTests(unittest.TestCase):
@@ -133,11 +134,32 @@ class ReactiveAnswerTests(unittest.TestCase):
     def test_answer_references_query_content(self):
         state = {
             **LP_STATE,
-            "open_reactive_query": "How do I address the liquidity timeline?",
+            "open_reactive_query": "How do I address the DPI lag concern?",
         }
         result = answer_reactive_query(state)
         reply = result["reactive_reply"].lower()
         self.assertTrue(
-            "date" in reply or "milestone" in reply or "liquidity" in reply,
-            f"Reply should reference liquidity/date/milestone: {result['reactive_reply']}",
+            "dpi" in reply or "lag" in reply or "directly" in reply,
+            f"Reply should reference DPI/lag/directly: {result['reactive_reply']}",
+        )
+
+    def test_answer_references_fee_concern(self):
+        state = {
+            **LP_STATE,
+            "open_reactive_query": "What about the management fee issue?",
+        }
+        result = answer_reactive_query(state)
+        reply = result["reactive_reply"].lower()
+        self.assertIn("management", reply)
+
+    def test_answer_references_concentration_concern(self):
+        state = {
+            **LP_STATE,
+            "open_reactive_query": "How do I handle the concentrated positions risk?",
+        }
+        result = answer_reactive_query(state)
+        reply = result["reactive_reply"].lower()
+        self.assertTrue(
+            "concentrated" in reply or "positions" in reply,
+            f"Reply should reference concentrated/positions: {result['reactive_reply']}",
         )

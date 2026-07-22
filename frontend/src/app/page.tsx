@@ -117,7 +117,7 @@ export default function HomePage() {
           </div>
           <div className={styles.meetingName}>
             <span className={styles.statusDot} />
-            LP renewal / Elena Markova
+            {state.scenario_id?.replace('_', ' ') ?? 'High-stakes conversation'} / {counterpart}
           </div>
           <div className={styles.confidential}>
             <BadgeCheck size={16} aria-hidden="true" />

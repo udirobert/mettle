@@ -113,7 +113,7 @@ export function WingmanSidePanel() {
               onClick={() => setSpeaker('counterpart')}
               type="button"
             >
-              Elena
+              {String(state.counterpart_profile?.name?.split(' ')[0] ?? 'Counterpart')}
             </button>
           </div>
         </div>
