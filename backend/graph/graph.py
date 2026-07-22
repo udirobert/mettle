@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
@@ -42,6 +43,6 @@ builder.add_edge("reactive_wait", "reactive_answer")
 builder.add_edge("reactive_answer", END)
 builder.add_edge("debrief", END)
 
-# A checkpointer is added when the graph is deployed so LangGraph can resume
-# reactive interrupts against the correct conversation thread.
-graph = builder.compile()
+# The local checkpointer makes the reactive interrupt resumable by thread ID.
+# Replace it with durable persistence before multi-process production deploys.
+graph = builder.compile(checkpointer=MemorySaver())
