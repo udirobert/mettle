@@ -107,6 +107,11 @@ export default function HomePage() {
     setPhase(phase);
   };
 
+  const counterpart =
+    typeof state.counterpart_profile?.name === 'string'
+      ? state.counterpart_profile.name
+      : 'Counterpart';
+
   return (
     <CopilotChatConfigurationProvider agentId="default">
       <main className={styles.shell}>
@@ -174,7 +179,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <SignalStack phase={localPhase} />
+          {localPhase === 'live' && <SignalStack phase={localPhase} />}
         </div>
       </main>
     </CopilotChatConfigurationProvider>
