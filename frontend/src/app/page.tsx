@@ -1,8 +1,6 @@
 "use client";
 
-import { ExampleLayout } from "@/components/example-layout";
-import { ExampleCanvas } from "@/components/example-canvas";
-import { useGenerativeUIExamples, useExampleSuggestions } from "@/hooks";
+import { useState } from "react";
 
 import {
   CopilotChat,
@@ -10,38 +8,88 @@ import {
   CopilotThreadsDrawer,
 } from "@copilotkit/react-core/v2";
 
+import { CoachPanel } from "@/components/coach-panel";
+import { OpponentChat } from "@/components/opponent-chat";
+import { WingmanSidePanel } from "@/components/wingman-side-panel";
+import { DebriefView } from "@/components/debrief-view";
+import { useConversationState } from "@/hooks/use-conversation-state";
+
 import styles from "./page.module.css";
 
+type Phase = "prep" | "rehearsal" | "live" | "debrief";
+
+const PHASE_LABELS: Record<Phase, string> = {
+  prep: "Coach",
+  rehearsal: "Opponent",
+  live: "Wingman",
+  debrief: "Debrief",
+};
+
+function PhaseCanvas({ phase }: { phase: Phase }) {
+  switch (phase) {
+    case "prep":
+      return <CoachPanel />;
+    case "rehearsal":
+      return <OpponentChat />;
+    case "live":
+      return <WingmanSidePanel />;
+    case "debrief":
+      return <DebriefView />;
+  }
+}
+
+function PhaseSwitcher({
+  phase,
+  onChange,
+}: {
+  phase: Phase;
+  onChange: (p: Phase) => void;
+}) {
+  return (
+    <nav className="flex gap-1 p-2 border-b border-current/10">
+      {(Object.keys(PHASE_LABELS) as Phase[]).map((p) => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className={`px-3 py-1.5 rounded text-sm font-medium ${
+            phase === p ? "bg-current/10" : "hover:bg-current/5"
+          }`}
+        >
+          {PHASE_LABELS[p]}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 export default function HomePage() {
-  useGenerativeUIExamples();
-  useExampleSuggestions();
+  const { state, setPhase } = useConversationState();
+  const [localPhase, setLocalPhase] = useState<Phase>(
+    state.phase ?? "prep",
+  );
+
+  const selectPhase = (p: Phase) => {
+    setLocalPhase(p);
+    setPhase(p);
+  };
 
   return (
-    /*
-      One UNCONTROLLED CopilotChatConfigurationProvider (no `threadId` prop) owns
-      the active thread for the whole surface. The SDK <CopilotThreadsDrawer> drives it
-      directly — picking a row sets the active thread, "+ New" resets to a fresh
-      thread (clearing the chat) — with no host thread-state. The chat and the
-      canvas read the same active thread from the provider (the canvas's
-      `useAgent()` falls back to it), so they stay on the same per-thread agent
-      clone the chat's /connect replay populates. A *controlled* provider would
-      block "+ New" from resetting the chat, so uncontrolled-inside-provider is
-      required, not optional.
-    */
     <CopilotChatConfigurationProvider agentId="default">
       <div className={styles.layout}>
-        {/* SDK threads drawer (replaces the hand-rolled fork). License-gated: the locked view's Upgrade CTA opens the Intelligence docs by default. */}
         <CopilotThreadsDrawer agentId="default" />
         <div className={styles.mainPanel}>
-          <ExampleLayout
-            chatContent={
-              <CopilotChat
-                attachments={{ enabled: true }}
-                input={{ disclaimer: () => null, className: "pb-6" }}
-              />
-            }
-            appContent={<ExampleCanvas />}
-          />
+          <div className="flex flex-col h-full">
+            <PhaseSwitcher phase={localPhase} onChange={selectPhase} />
+            <div className="flex-1 min-h-0">
+              <PhaseCanvas phase={localPhase} />
+            </div>
+          </div>
+          <aside className="w-[420px] border-l border-current/10 flex flex-col">
+            <CopilotChat
+              attachments={{ enabled: true }}
+              input={{ disclaimer: () => null, className: "pb-6" }}
+            />
+          </aside>
         </div>
       </div>
     </CopilotChatConfigurationProvider>

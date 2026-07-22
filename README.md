@@ -12,8 +12,12 @@ Wingman, and Debrief.
 - `backend/graph/coach.py`, `backend/graph/wingman_proactive.py`,
   `backend/triggers/rules.py`, and `backend/voice/` belong to Person B.
 - `scenarios/lp_renewal.md` is the first vertical-slice scenario.
-- `frontend/` is the CopilotKit Next.js surface; it still carries the upstream
-  starter UI while the phase panels are implemented.
+- `frontend/` is the CopilotKit Next.js surface. The phase panels
+  (`CoachPanel`, `OpponentChat`, `WingmanSidePanel`, `DebriefView`) are committed
+  as shells; `frontend/src/hooks/use-conversation-state.ts` is the typed wrapper
+  around CopilotKit's shared agent state and mirrors `state.py`.
+- `WingmanSidePanel` renders both reactive replies (Person A) and proactive
+  nudge cards (Person B) from the same shared state.
 
 ## Run
 
@@ -30,8 +34,19 @@ logic. The graph ID is `conversation_agent`.
 ## Current scope
 
 The graph wiring, native reactive interrupt, deterministic proactive trigger
-pass, and LP renewal state contract are committed first. LiveKit is deliberately
-an unimplemented adapter seam until text-mode Wingman is stable.
+pass, LP renewal state contract, and frontend phase-panel shells are committed
+first. Node bodies are explicit TODOs with ownership markers. LiveKit is
+deliberately an unimplemented adapter seam until text-mode Wingman is stable.
+
+## Build order
+
+1. **This commit** — graph skeleton + state contract + scenario + frontend
+   shells, all stubbed. Proven wiring, no LLM logic yet.
+2. **Person A** fills in `wingman_reactive.py` + `opponent.py`; **Person B**
+   fills in `coach.py` + `wingman_proactive.py` escalation, against the same
+   state schema and `lp_renewal.md`. Text/typed input only.
+3. **Person B** layers in `voice/livekit_adapter.py` so Wingman can run against
+   a real or simulated live call. Additive — the demo is complete without it.
 
 ## Upstream
 
