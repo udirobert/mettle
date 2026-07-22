@@ -1,17 +1,33 @@
 "use client";
 
+import { useState } from "react";
+import { useAgent } from "@copilotkit/react-core/v2";
+
 import { useConversationState } from "@/hooks/use-conversation-state";
 
 /**
- * Coach phase UI — owned by Person B (proactive).
+ * Coach phase UI — owned by Person A (before + after).
  *
  * Renders the pre-conversation prep surface: stakes, counterpart profile, and
- * the weak points surfaced during prep. Person B fills in the LLM-driven
- * stress-test and blind-spot analysis; this shell proves the shared-state
- * read/write against the prep fields.
+ * the weak points surfaced during prep. "Run prep" executes the coach node,
+ * which loads the scenario and sharpens weak points with the LLM stress test.
  */
 export function CoachPanel() {
   const { state, setPartial } = useConversationState();
+  const { agent } = useAgent();
+  const [running, setRunning] = useState(false);
+
+  const runPrep = async () => {
+    setRunning(true);
+    setPartial({ phase: "prep", scenario_id: state.scenario_id || "lp_renewal" });
+    try {
+      await (
+        agent as unknown as { runAgent?: () => Promise<unknown> }
+      ).runAgent?.();
+    } finally {
+      setRunning(false);
+    }
+  };
 
   const weakPoints = state.user_weak_points ?? [];
 
@@ -22,11 +38,20 @@ export function CoachPanel() {
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-y-auto p-6">
-      <header>
-        <h2 className="text-xl font-semibold">Coach — Prep</h2>
-        <p className="text-sm opacity-70 mt-1">
-          Scenario: {state.scenario_id || "—"}
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Coach — Prep</h2>
+          <p className="text-sm opacity-70 mt-1">
+            Scenario: {state.scenario_id || "—"}
+          </p>
+        </div>
+        <button
+          onClick={runPrep}
+          disabled={running}
+          className="px-4 py-2 rounded text-sm font-medium border border-current/20 hover:bg-current/5 disabled:opacity-50"
+        >
+          {running ? "Preparing…" : "Run prep"}
+        </button>
       </header>
 
       <section>
@@ -63,8 +88,6 @@ export function CoachPanel() {
         </ul>
       </section>
 
-      {/* TODO(Person B): stress-test interaction, blind-spot surfacing,
-          concrete move suggestions — all driven through setPartial(). */}
     </div>
   );
 }
