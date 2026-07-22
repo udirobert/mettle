@@ -4,16 +4,19 @@ import {
   createCopilotEndpoint,
   InMemoryAgentRunner,
 } from "@copilotkit/runtime/v2";
-import { LangGraphAgent } from "@copilotkit/runtime/langgraph";
+import { HttpAgent } from "@ag-ui/client";
 import { handle } from "hono/vercel";
 
-const defaultAgent = new LangGraphAgent({
-  deploymentUrl:
-    process.env.AGENT_URL ||
-    process.env.LANGGRAPH_DEPLOYMENT_URL ||
-    "http://localhost:8123",
-  graphId: "conversation_agent",
-  langsmithApiKey: process.env.LANGSMITH_API_KEY || "",
+const agentUrl =
+  process.env.AGENT_URL ||
+  process.env.LANGGRAPH_DEPLOYMENT_URL ||
+  "http://localhost:8123";
+
+// The standalone FastAPI service exposes an AG-UI endpoint at `/`. HttpAgent
+// keeps Vercel as a thin CopilotKit runtime proxy while the graph stays on the
+// long-lived backend that owns checkpoint persistence.
+const defaultAgent = new HttpAgent({
+  url: `${agentUrl.replace(/\/$/, "")}/`,
 });
 
 const runtime = new CopilotRuntime({
