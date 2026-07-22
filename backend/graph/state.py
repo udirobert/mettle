@@ -39,5 +39,6 @@ class ConversationState(TypedDict):
     phase: Literal["prep", "rehearsal", "live", "debrief"]
 
     # Integration fields. Keep these here rather than inventing a second mode state.
+    awaiting_reactive_query: NotRequired[bool]
     reactive_reply: NotRequired[str | None]
     debrief_notes: NotRequired[list[str]]

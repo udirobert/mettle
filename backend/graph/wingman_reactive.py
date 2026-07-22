@@ -26,4 +26,5 @@ def answer_reactive_query(state: ConversationState) -> dict:
             f"Prompt received: {query}"
         ),
         "open_reactive_query": None,
+        "awaiting_reactive_query": False,
     }
