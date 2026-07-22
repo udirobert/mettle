@@ -227,14 +227,16 @@ If all three agree, say so — that's signal too.
 
 ## Direction: Context Ingestion
 
-See `docs/CONTEXT_INGESTION.md` for the Composio/email import plan. Treat
-Composio as a bounded context-ingestion primitive, not a live-call dependency.
-The product flow is import scoped records, extract an evidence brief, show it to
-the user, then write only the approved brief into shared LangGraph state.
+See `docs/CONTEXT_INGESTION.md` for the private import and public research
+plan. Treat Composio as a bounded context-ingestion primitive and tools such as
+Exa, Firecrawl, and Tinyfish as evidence-retrieval primitives, not live-call
+dependencies. The product flow is import/search scoped records, extract an
+evidence brief, show it to the user, then write only the approved brief into
+shared LangGraph state.
 
 Near-term demo work should use a static evidence fixture for `lp_renewal.md`.
-Do not add OAuth, raw mailbox storage, or Composio triggers until the core
-Coach/Opponent/Wingman graph is stable.
+Do not add OAuth, raw mailbox storage, public browsing, or Composio triggers
+until the core Coach/Opponent/Wingman graph is stable.
 
 ## Known Gaps
 
