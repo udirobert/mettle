@@ -178,6 +178,17 @@
   color: var(--ink);
 }
 
+.phaseButtonMuted {
+  opacity: 0.45;
+  color: #a8b5ff;
+  cursor: pointer;
+}
+
+.phaseButtonMuted:hover {
+  opacity: 0.85;
+  color: #fff;
+}
+
 .liveDot {
   background: var(--tomato);
   border: 1px solid var(--ink);

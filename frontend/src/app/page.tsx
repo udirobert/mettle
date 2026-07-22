@@ -8,8 +8,9 @@ import { CoachPanel } from '@/components/coach-panel';
 import { DebriefView } from '@/components/debrief-view';
 import { EventList } from '@/components/event-list';
 import { OpponentChat } from '@/components/opponent-chat';
+import { WelcomeOverlay } from '@/components/welcome-overlay';
 import { WingmanSidePanel } from '@/components/wingman-side-panel';
-import { useConversationState } from '@/hooks/use-conversation-state';
+import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 
 import styles from './page.module.css';
 
@@ -21,6 +22,37 @@ const PHASES: Array<{ id: Phase; label: string }> = [
   { id: 'live', label: 'Live' },
   { id: 'debrief', label: 'Debrief' },
 ];
+
+function isPhaseUnlocked(phase: Phase, state: ConversationState): boolean {
+  switch (phase) {
+    case 'prep':
+      return true;
+    case 'rehearsal':
+      return !!state.coach_analysis;
+    case 'live':
+      return (state.transcript?.length ?? 0) > 0;
+    case 'debrief':
+      return (state.nudges_sent?.length ?? 0) > 0;
+    default:
+      return true;
+  }
+}
+
+function getPhaseHint(phase: Phase, state: ConversationState): string {
+  if (isPhaseUnlocked(phase, state)) {
+    return `Switch to ${PHASES.find((p) => p.id === phase)?.label}`;
+  }
+  switch (phase) {
+    case 'rehearsal':
+      return 'Finish the Coach brief before rehearsing';
+    case 'live':
+      return 'Run a rehearsal before going live';
+    case 'debrief':
+      return 'Complete a live conversation before debriefing';
+    default:
+      return '';
+  }
+}
 
 function PhaseCanvas({ phase }: { phase: Phase }) {
   if (phase === 'prep') return <CoachPanel />;
@@ -119,6 +151,7 @@ export default function HomePage() {
               <span>Mettle</span>
             </div>
           </header>
+          <WelcomeOverlay />
           <EventList onSelectEvent={handleSelectEvent} />
         </main>
       </CopilotChatConfigurationProvider>
@@ -163,12 +196,15 @@ export default function HomePage() {
             <div className={styles.phaseList}>
               {PHASES.map(({ id, label }) => {
                 const active = localPhase === id;
+                const unlocked = isPhaseUnlocked(id, state);
+                const muted = !active && !unlocked;
                 return (
                   <button
                     key={id}
-                    className={`${styles.phaseButton} ${active ? styles.phaseButtonActive : ''}`}
+                    className={`${styles.phaseButton} ${active ? styles.phaseButtonActive : ''} ${muted ? styles.phaseButtonMuted : ''}`}
                     onClick={() => selectPhase(id)}
                     aria-current={active ? 'step' : undefined}
+                    title={active ? `${label} — current phase` : getPhaseHint(id, state)}
                   >
                     <span className={styles.phaseLabel}>{label}</span>
                     {id === 'live' && active && (

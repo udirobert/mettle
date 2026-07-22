@@ -1,0 +1,63 @@
+.collapsible {
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  margin-top: 1rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.collapsibleHeader {
+  padding: 1rem 1.25rem;
+  background: #fffdf7;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: background 0.15s ease;
+}
+
+.collapsibleHeader:hover {
+  background: var(--canvas);
+}
+
+.collapsibleLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.collapsibleIcon {
+  flex-shrink: 0;
+  color: var(--cobalt);
+}
+
+.collapsibleTitle {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.collapsibleSummary {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.collapsibleChevron {
+  color: var(--ink-soft);
+  transition: transform 0.2s ease;
+}
+
+.collapsibleChevronOpen {
+  transform: rotate(180deg);
+}
+
+.collapsibleContent {
+  padding: 1.25rem;
+  background: #fffdf7;
+}

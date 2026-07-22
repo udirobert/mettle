@@ -99,6 +99,22 @@ function getRiskColor(risk: string): string {
 export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: string) => void }) {
   const { state } = useConversationState();
 
+  const anyProgress = SCENARIOS.some((s) => {
+    const p = getPrepProgress(state, s.id);
+    return p.brief || p.rehearsal || p.live;
+  });
+
+  const briefingDone = SCENARIOS.some((s) => {
+    const p = getPrepProgress(state, s.id);
+    return p.brief && !p.rehearsal;
+  });
+
+  const hint = anyProgress
+    ? briefingDone
+      ? "You're briefed on at least one conversation. Time to rehearse."
+      : 'Good progress. Keep preparing to build your edge.'
+    : "Start with your most urgent conversation. We'll walk you through each phase.";
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -107,6 +123,10 @@ export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: strin
           High-stakes conversations deserve preparation, rehearsal, and live support.
         </p>
       </header>
+
+      <div className={styles.hintBanner}>
+        <span className={styles.hintText}>{hint}</span>
+      </div>
 
       <div className={styles.grid}>
         {SCENARIOS.map((scenario) => (

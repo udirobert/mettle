@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ChevronDown,
   CircleAlert,
@@ -17,8 +17,79 @@ import {
 } from 'lucide-react';
 
 import { useConversationState } from '@/hooks/use-conversation-state';
-import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
+import type {
+  CoachAnalysis,
+  ConversationState,
+  PerspectiveResult,
+} from '@/hooks/use-conversation-state';
 import { getScenarioEvidence, getScenarioResearch } from '@/fixtures/evidence-fixtures';
+import styles from './coach-disclosure.module.css';
+
+function calculateReadiness(state: ConversationState, analysis: CoachAnalysis | undefined): number {
+  const hasAnalysis =
+    !!analysis &&
+    (analysis.blind_spots?.length ?? 0) > 0 &&
+    (analysis.concrete_moves?.length ?? 0) > 0;
+  const hasWeakPoints = (state.user_weak_points?.length ?? 0) > 0;
+
+  const evidence = getScenarioEvidence(state.scenario_id ?? '');
+  const hasEvidence = evidence?.status === 'approved' && (evidence.claims?.length ?? 0) > 0;
+
+  const research = getScenarioResearch(state.scenario_id ?? '');
+  const hasResearch = research?.status === 'approved' && (research.claims?.length ?? 0) > 0;
+
+  const completed = [hasAnalysis, hasWeakPoints, hasEvidence, hasResearch].filter(Boolean).length;
+  return Math.round((completed / 4) * 100);
+}
+
+type CollapsibleSectionProps = {
+  title: string;
+  summary?: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  defaultOpen?: boolean;
+  className?: string;
+  headerClassName?: string;
+  contentClassName?: string;
+  children: ReactNode;
+};
+
+function CollapsibleSection({
+  title,
+  summary,
+  icon: Icon,
+  defaultOpen = false,
+  className = '',
+  headerClassName = '',
+  contentClassName = '',
+  children,
+}: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className={`${styles.collapsible} ${className}`}>
+      <button
+        type="button"
+        className={`${styles.collapsibleHeader} ${headerClassName}`}
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <div className={styles.collapsibleLeft}>
+          {Icon && <Icon size={16} className={styles.collapsibleIcon} aria-hidden="true" />}
+          <div>
+            <h3 className={styles.collapsibleTitle}>{title}</h3>
+            {summary && <p className={styles.collapsibleSummary}>{summary}</p>}
+          </div>
+        </div>
+        <ChevronDown
+          size={18}
+          aria-hidden="true"
+          className={`${styles.collapsibleChevron} ${open ? styles.collapsibleChevronOpen : ''}`}
+        />
+      </button>
+      {open && <div className={`${styles.collapsibleContent} ${contentClassName}`}>{children}</div>}
+    </div>
+  );
+}
 
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
@@ -29,6 +100,8 @@ export function CoachPanel() {
   const addWeakPoint = () => {
     setPartial({ user_weak_points: [...weakPoints, 'New weak point - edit me'] });
   };
+
+  const readiness = calculateReadiness(state, analysis);
 
   return (
     <div className="mettle-phase">
@@ -41,6 +114,7 @@ export function CoachPanel() {
         </p>
       </header>
 
+      {/* Prep snapshot - always visible */}
       <div className="mettle-grid">
         <section className="mettle-card mettle-card--risk">
           <p className="mettle-kicker">
@@ -69,17 +143,46 @@ export function CoachPanel() {
         <p>Put the facts on the table before they can frame the discussion around a number.</p>
       </section>
 
-      <section>
-        <h3 className="mettle-section-title">Pressure test</h3>
-        <div className="mettle-grid" style={{ marginTop: 12 }}>
-          <AnalysisCard title="Blind spots" items={analysis?.blind_spots} tone="risk" />
-          <AnalysisCard title="Concrete moves" items={analysis?.concrete_moves} tone="signal" />
-          <AnalysisCard
-            title="Likely objections"
-            items={analysis?.likely_objections}
-            tone="accent"
-          />
-          <div className="mettle-card">
+      <section className="mettle-card">
+        <p className="mettle-kicker">Prep readiness</p>
+        <div className="flex items-center gap-4 mt-2">
+          <div className="flex-1">
+            <div className="h-2 bg-[var(--line)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--lime)] transition-all duration-300"
+                style={{ width: `${readiness}%` }}
+              />
+            </div>
+          </div>
+          <span className="text-sm font-semibold text-[var(--ink)]">{readiness}%</span>
+        </div>
+        <p className="text-xs text-[var(--ink-soft)] mt-2">
+          {readiness === 100
+            ? 'Ready to rehearse. Your position is stress-tested.'
+            : readiness >= 50
+              ? 'Good foundation. Expand the pressure test to find gaps.'
+              : 'Start building your edge. Add weak points and evidence.'}
+        </p>
+      </section>
+
+      {/* Collapsible pressure test */}
+      {analysis && (
+        <CollapsibleSection
+          title="Pressure test"
+          summary={`${analysis.blind_spots?.length || 0} blind spots, ${analysis.concrete_moves?.length || 0} moves, ${analysis.likely_objections?.length || 0} objections`}
+          icon={Swords}
+        >
+          <div className="mettle-grid" style={{ marginTop: 12 }}>
+            <AnalysisCard title="Blind spots" items={analysis.blind_spots} tone="risk" />
+            <AnalysisCard title="Concrete moves" items={analysis.concrete_moves} tone="signal" />
+            <AnalysisCard
+              title="Likely objections"
+              items={analysis.likely_objections}
+              tone="accent"
+            />
+          </div>
+
+          <div className="mettle-card" style={{ marginTop: 12 }}>
             <p className="mettle-kicker">
               <ShieldCheck size={13} /> Your weak points
             </p>
@@ -99,9 +202,10 @@ export function CoachPanel() {
               <Plus size={14} aria-hidden="true" /> Add weak point
             </button>
           </div>
-        </div>
-      </section>
+        </CollapsibleSection>
+      )}
 
+      {/* Collapsible evidence sections */}
       {state.scenario_id && (
         <>
           <EvidenceBrief scenarioId={state.scenario_id} />
@@ -109,6 +213,7 @@ export function CoachPanel() {
         </>
       )}
 
+      {/* Collapsible council brief */}
       {analysis && <CouncilBrief analysis={analysis} />}
     </div>
   );
@@ -154,23 +259,17 @@ function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
   const leadMove = analysis.concrete_moves?.[0] || analysis.opening_strategy;
   const tension = analysis.disagreements?.[0];
   const consensus = analysis.consensus?.slice(0, 2) ?? [];
+  const perspectives = analysis.perspectives ?? [];
+  const hasPerspectives = perspectives.length > 0;
 
   return (
-    <section className="border border-[var(--ink)] bg-[#fffdf7] shadow-[5px_5px_0_var(--ink)]">
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--ink)] bg-[var(--ink)] px-5 py-4 text-white">
-        <div>
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--lime)]">
-            Council brief
-          </p>
-          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-normal leading-none">
-            The room has a point of tension.
-          </h3>
-        </div>
-        <span className="border border-white/25 px-2 py-1 font-mono text-[9px] font-medium uppercase tracking-[0.08em]">
-          3 lenses
-        </span>
-      </div>
-
+    <CollapsibleSection
+      title="Council brief"
+      summary={hasPerspectives ? `${perspectives.length} lenses` : 'Advisors not loaded'}
+      icon={ShieldCheck}
+      className="border-[var(--ink)] shadow-[5px_5px_0_var(--ink)]"
+      contentClassName="p-0"
+    >
       <div className="grid gap-px bg-[var(--ink)] md:grid-cols-[1.2fr_0.8fr]">
         <div className="bg-[#e2e8ff] p-5">
           <p className="mettle-kicker">Recommendation</p>
@@ -205,7 +304,7 @@ function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
           <p className="mt-2 text-sm text-[var(--ink-soft)]">The council has not converged yet.</p>
         )}
 
-        {analysis.perspectives.length > 0 && (
+        {hasPerspectives && (
           <>
             <button
               aria-expanded={showPerspectives}
@@ -222,7 +321,7 @@ function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
             </button>
             {showPerspectives && (
               <div className="mt-3 grid gap-2 border-t border-[var(--line)] pt-3">
-                {analysis.perspectives.map((perspective) => (
+                {perspectives.map((perspective) => (
                   <PerspectiveCard key={perspective.name} perspective={perspective} />
                 ))}
               </div>
@@ -230,7 +329,7 @@ function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
           </>
         )}
       </div>
-    </section>
+    </CollapsibleSection>
   );
 }
 
@@ -266,20 +365,14 @@ function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
   }
 
   return (
-    <section className="border border-[var(--line)] bg-[#f1fad2] p-5">
-      <div className="flex items-start gap-3">
-        <Inbox size={18} className="mt-0.5 text-[var(--lime)]" />
-        <div className="flex-1">
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--ink-soft)]">
-            Private context
-          </p>
-          <h3 className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">
-            {evidence.claims.length} claims from {evidence.sources.length} sources
-          </h3>
-        </div>
-      </div>
-
-      <ul className="mt-4 space-y-3">
+    <CollapsibleSection
+      title="Private context"
+      summary={`${evidence.claims.length} claims from ${evidence.sources.length} sources`}
+      icon={Inbox}
+      className="border-[var(--lime)]"
+      contentClassName="bg-[#f1fad2]"
+    >
+      <ul className="space-y-3">
         {evidence.claims.map((claim, index) => (
           <li
             key={index}
@@ -314,7 +407,7 @@ function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
       <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
         Imported from {evidence.sources.map((s) => s.provider).join(', ')}
       </p>
-    </section>
+    </CollapsibleSection>
   );
 }
 
@@ -326,20 +419,14 @@ function ResearchBrief({ scenarioId }: { scenarioId: string }) {
   }
 
   return (
-    <section className="border border-[var(--line)] bg-[#e2e8ff] p-5">
-      <div className="flex items-start gap-3">
-        <Globe size={18} className="mt-0.5 text-[var(--cobalt)]" />
-        <div className="flex-1">
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--ink-soft)]">
-            External research
-          </p>
-          <h3 className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">
-            {research.claims.length} claims from {research.sources.length} public sources
-          </h3>
-        </div>
-      </div>
-
-      <ul className="mt-4 space-y-3">
+    <CollapsibleSection
+      title="External research"
+      summary={`${research.claims.length} claims from ${research.sources.length} public sources`}
+      icon={Globe}
+      className="border-[#aab8fa]"
+      contentClassName="bg-[#e2e8ff]"
+    >
+      <ul className="space-y-3">
         {research.claims.map((claim, index) => (
           <li
             key={index}
@@ -358,6 +445,6 @@ function ResearchBrief({ scenarioId }: { scenarioId: string }) {
       <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
         Research from {research.sources.map((s) => s.provider).join(', ')}
       </p>
-    </section>
+    </CollapsibleSection>
   );
 }

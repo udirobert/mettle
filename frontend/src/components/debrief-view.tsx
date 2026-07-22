@@ -9,7 +9,8 @@ export function DebriefView() {
   const notes = state.debrief_notes ?? [];
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
-  const counterpartName = String(state.counterpart_profile?.name?.split(' ')[0] ?? 'Counterpart');
+  const counterpartName =
+    String(state.counterpart_profile?.name ?? '').split(' ')[0] || 'Counterpart';
 
   return (
     <div className="mettle-phase">
