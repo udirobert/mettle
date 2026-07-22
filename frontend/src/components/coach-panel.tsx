@@ -1,19 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import {
+  ChevronDown,
   CircleAlert,
   Eye,
-  Flame,
-  Handshake,
-  MessageCircleQuote,
+  MessageCircle,
   Plus,
   Scale,
   ShieldCheck,
   Swords,
   Target,
 } from 'lucide-react';
+
 import { useConversationState } from '@/hooks/use-conversation-state';
-import type { PerspectiveResult } from '@/hooks/use-conversation-state';
+import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
 
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
@@ -100,47 +101,7 @@ export function CoachPanel() {
         </div>
       </section>
 
-      {analysis?.perspectives && analysis.perspectives.length > 0 && (
-        <section>
-          <h3 className="mettle-section-title">Three advisors weighed in</h3>
-          <p className="mettle-copy" style={{ marginBottom: 12 }}>
-            The Skeptic attacks the position. The Counterpart speaks from their seat. The Negotiator
-            checks the emotional leverage. They ran independently — the synthesis surfaced where
-            they clashed.
-          </p>
-          <div className="mettle-grid" style={{ marginTop: 12 }}>
-            {analysis.perspectives.map((p) => (
-              <PerspectiveCard key={p.name} perspective={p} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {analysis?.disagreements && analysis.disagreements.length > 0 && (
-        <section className="mettle-card mettle-card--risk">
-          <p className="mettle-kicker">
-            <Flame size={13} /> Where they disagreed
-          </p>
-          <ul className="mettle-list" style={{ marginTop: 11 }}>
-            {analysis.disagreements.map((d, i) => (
-              <li key={`${d}-${i}`}>{d}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {analysis?.consensus && analysis.consensus.length > 0 && (
-        <section className="mettle-card mettle-card--signal">
-          <p className="mettle-kicker">
-            <Handshake size={13} /> Where they agreed
-          </p>
-          <ul className="mettle-list" style={{ marginTop: 11 }}>
-            {analysis.consensus.map((c, i) => (
-              <li key={`${c}-${i}`}>{c}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {analysis && <CouncilBrief analysis={analysis} />}
     </div>
   );
 }
@@ -174,29 +135,115 @@ function AnalysisCard({
   );
 }
 
-const PERSPECTIVE_META: Record<
-  string,
-  { label: string; icon: typeof Eye; tone: 'risk' | 'accent' | 'signal' }
-> = {
-  skeptic: { label: 'The Skeptic', icon: Eye, tone: 'risk' },
-  counterpart: { label: 'The Counterpart', icon: MessageCircleQuote, tone: 'accent' },
-  negotiator: { label: 'The Negotiator', icon: Scale, tone: 'signal' },
+const PERSPECTIVE_META: Record<string, { label: string; icon: typeof Eye; role: string }> = {
+  skeptic: { label: 'The Skeptic', icon: Eye, role: 'Finds the argument against you' },
+  counterpart: { label: 'The Counterpart', icon: MessageCircle, role: "Speaks from Elena's seat" },
+  negotiator: { label: 'The Negotiator', icon: Scale, role: 'Tests tactical empathy' },
 };
+
+function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
+  const [showPerspectives, setShowPerspectives] = useState(false);
+  const leadMove = analysis.concrete_moves?.[0] || analysis.opening_strategy;
+  const tension = analysis.disagreements?.[0];
+  const consensus = analysis.consensus?.slice(0, 2) ?? [];
+
+  return (
+    <section className="border border-[var(--ink)] bg-[#fffdf7] shadow-[5px_5px_0_var(--ink)]">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--ink)] bg-[var(--ink)] px-5 py-4 text-white">
+        <div>
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--lime)]">
+            Council brief
+          </p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-normal leading-none">
+            The room has a point of tension.
+          </h3>
+        </div>
+        <span className="border border-white/25 px-2 py-1 font-mono text-[9px] font-medium uppercase tracking-[0.08em]">
+          3 lenses
+        </span>
+      </div>
+
+      <div className="grid gap-px bg-[var(--ink)] md:grid-cols-[1.2fr_0.8fr]">
+        <div className="bg-[#e2e8ff] p-5">
+          <p className="mettle-kicker">Recommendation</p>
+          <strong className="block text-base font-extrabold leading-snug">{leadMove}</strong>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-soft)]">
+            The first move should make the decision criteria visible before a number becomes the
+            conversation.
+          </p>
+        </div>
+        <div className="bg-[#fff0eb] p-5">
+          <p className="mettle-kicker text-[var(--tomato)]">Point of tension</p>
+          <strong className="block text-sm font-extrabold leading-snug">
+            {tension || 'The council found no material conflict in the position.'}
+          </strong>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <p className="mettle-kicker">High-confidence signal</p>
+        {consensus.length > 0 ? (
+          <ul className="mt-3 grid gap-2">
+            {consensus.map((item, index) => (
+              <li
+                className="border-l-4 border-[#83a600] bg-[#f1fad2] px-3 py-2 text-xs font-semibold leading-relaxed"
+                key={`${item}-${index}`}
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-[var(--ink-soft)]">The council has not converged yet.</p>
+        )}
+
+        {analysis.perspectives.length > 0 && (
+          <>
+            <button
+              aria-expanded={showPerspectives}
+              className="mettle-icon-action mt-5"
+              onClick={() => setShowPerspectives((value) => !value)}
+              type="button"
+            >
+              <ChevronDown
+                className={`transition-transform duration-200 ${showPerspectives ? 'rotate-180' : ''}`}
+                size={16}
+                aria-hidden="true"
+              />
+              {showPerspectives ? 'Hide the three lenses' : 'Inspect the three lenses'}
+            </button>
+            {showPerspectives && (
+              <div className="mt-3 grid gap-2 border-t border-[var(--line)] pt-3">
+                {analysis.perspectives.map((perspective) => (
+                  <PerspectiveCard key={perspective.name} perspective={perspective} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
   const meta = PERSPECTIVE_META[perspective.name] ?? {
     label: perspective.name,
     icon: Eye,
-    tone: 'risk' as const,
+    role: 'Adversarial review',
   };
   const Icon = meta.icon;
 
   return (
-    <div className={`mettle-card mettle-card--${meta.tone}`}>
-      <p className="mettle-kicker">
-        <Icon size={13} /> {meta.label}
-      </p>
-      <p style={{ marginTop: 11, whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.5 }}>
+    <div className="border border-[var(--line)] bg-[#fffdf7] p-4">
+      <div className="flex items-center gap-2">
+        <Icon size={15} aria-hidden="true" />
+        <strong className="text-sm">{meta.label}</strong>
+        <span className="ml-auto font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--ink-soft)]">
+          {meta.role}
+        </span>
+      </div>
+      <p className="mt-3 whitespace-pre-wrap text-xs leading-relaxed text-[var(--ink-soft)]">
         {perspective.analysis}
       </p>
     </div>
