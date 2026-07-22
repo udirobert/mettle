@@ -8,7 +8,7 @@
 
 import type { ContextBrief } from '@/hooks/use-conversation-state';
 
-const LP_RENEWAL_FIXTURE: ContextBrief = {
+const LP_RENEWAL_PRIVATE: ContextBrief = {
   status: 'approved',
   sources: [
     {
@@ -26,22 +26,6 @@ const LP_RENEWAL_FIXTURE: ContextBrief = {
       author: 'You',
       timestamp: '2024-10-16T09:15:00Z',
       url: null,
-    },
-    {
-      source_id: 'exa-market-dpi',
-      provider: 'exa',
-      title: 'LP Scrutiny on DPI and Distributions in 2024',
-      author: 'Private Equity International',
-      timestamp: '2024-11-01T00:00:00Z',
-      url: 'https://example.com/dpi-trends-2024',
-    },
-    {
-      source_id: 'exa-pension-fees',
-      provider: 'exa',
-      title: 'Pension Allocator Fee Sensitivity Analysis',
-      author: 'Institutional Investor Research',
-      timestamp: '2024-09-20T00:00:00Z',
-      url: 'https://example.com/pension-fee-sensitivity',
     },
   ],
   claims: [
@@ -69,18 +53,6 @@ const LP_RENEWAL_FIXTURE: ContextBrief = {
       confidence: 'high',
       relevance: 'risk',
     },
-    {
-      claim: 'LPs are scrutinizing DPI and distributions more heavily in 2024',
-      source_ids: ['exa-market-dpi'],
-      confidence: 'high',
-      relevance: 'market',
-    },
-    {
-      claim: 'Pension-style allocators tend to pressure fees when liquidity slows',
-      source_ids: ['exa-pension-fees'],
-      confidence: 'medium',
-      relevance: 'counterpart',
-    },
   ],
   counterpart_history: [
     'Elena expressed concern about DPI in Q3 review',
@@ -98,15 +70,72 @@ const LP_RENEWAL_FIXTURE: ContextBrief = {
   user_approved_at: '2024-11-10T16:45:00Z',
 };
 
+const LP_RENEWAL_RESEARCH: ContextBrief = {
+  status: 'approved',
+  sources: [
+    {
+      source_id: 'exa-market-dpi',
+      provider: 'exa',
+      title: 'LP Scrutiny on DPI and Distributions in 2024',
+      author: 'Private Equity International',
+      timestamp: '2024-11-01T00:00:00Z',
+      url: 'https://example.com/dpi-trends-2024',
+    },
+    {
+      source_id: 'exa-pension-fees',
+      provider: 'exa',
+      title: 'Pension Allocator Fee Sensitivity Analysis',
+      author: 'Institutional Investor Research',
+      timestamp: '2024-09-20T00:00:00Z',
+      url: 'https://example.com/pension-fee-sensitivity',
+    },
+  ],
+  claims: [
+    {
+      claim: 'LPs are scrutinizing DPI and distributions more heavily in 2024',
+      source_ids: ['exa-market-dpi'],
+      confidence: 'high',
+      relevance: 'market',
+    },
+    {
+      claim: 'Pension-style allocators tend to pressure fees when liquidity slows',
+      source_ids: ['exa-pension-fees'],
+      confidence: 'medium',
+      relevance: 'counterpart',
+    },
+    {
+      claim:
+        'Private markets renewal conversations are more sensitive to cash-back timing than headline IRR',
+      source_ids: ['exa-market-dpi'],
+      confidence: 'high',
+      relevance: 'market',
+    },
+  ],
+  counterpart_history: [],
+  open_commitments: [],
+  sensitive_redactions: [],
+  user_approved_at: '2024-11-10T16:45:00Z',
+};
+
 export function getScenarioEvidence(scenarioId: string): ContextBrief | null {
-  // Only lp_renewal has a fixture for now
   if (scenarioId === 'lp_renewal') {
-    return LP_RENEWAL_FIXTURE;
+    return LP_RENEWAL_PRIVATE;
+  }
+  return null;
+}
+
+export function getScenarioResearch(scenarioId: string): ContextBrief | null {
+  if (scenarioId === 'lp_renewal') {
+    return LP_RENEWAL_RESEARCH;
   }
   return null;
 }
 
 export function hasApprovedEvidence(scenarioId: string): boolean {
   const brief = getScenarioEvidence(scenarioId);
-  return brief?.status === 'approved' && brief.claims.length > 0;
+  const research = getScenarioResearch(scenarioId);
+  return (
+    (brief?.status === 'approved' && brief.claims.length > 0) ||
+    (research?.status === 'approved' && research.claims.length > 0)
+  );
 }

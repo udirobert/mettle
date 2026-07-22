@@ -4,9 +4,10 @@ import { useState } from 'react';
 import {
   ChevronDown,
   CircleAlert,
-  Database,
   Eye,
   FileText,
+  Globe,
+  Inbox,
   MessageCircle,
   Plus,
   Scale,
@@ -17,7 +18,7 @@ import {
 
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type { CoachAnalysis, PerspectiveResult } from '@/hooks/use-conversation-state';
-import { getScenarioEvidence } from '@/fixtures/evidence-fixtures';
+import { getScenarioEvidence, getScenarioResearch } from '@/fixtures/evidence-fixtures';
 
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
@@ -101,7 +102,12 @@ export function CoachPanel() {
         </div>
       </section>
 
-      {state.scenario_id && <EvidenceBrief scenarioId={state.scenario_id} />}
+      {state.scenario_id && (
+        <>
+          <EvidenceBrief scenarioId={state.scenario_id} />
+          <ResearchBrief scenarioId={state.scenario_id} />
+        </>
+      )}
 
       {analysis && <CouncilBrief analysis={analysis} />}
     </div>
@@ -262,10 +268,10 @@ function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
   return (
     <section className="border border-[var(--line)] bg-[#f1fad2] p-5">
       <div className="flex items-start gap-3">
-        <Database size={18} className="mt-0.5 text-[var(--lime)]" />
+        <Inbox size={18} className="mt-0.5 text-[var(--lime)]" />
         <div className="flex-1">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--ink-soft)]">
-            Imported evidence
+            Private context
           </p>
           <h3 className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">
             {evidence.claims.length} claims from {evidence.sources.length} sources
@@ -306,7 +312,51 @@ function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
       )}
 
       <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
-        Evidence imported from {evidence.sources.map((s) => s.provider).join(', ')}
+        Imported from {evidence.sources.map((s) => s.provider).join(', ')}
+      </p>
+    </section>
+  );
+}
+
+function ResearchBrief({ scenarioId }: { scenarioId: string }) {
+  const research = getScenarioResearch(scenarioId);
+
+  if (!research || research.status !== 'approved') {
+    return null;
+  }
+
+  return (
+    <section className="border border-[var(--line)] bg-[#e2e8ff] p-5">
+      <div className="flex items-start gap-3">
+        <Globe size={18} className="mt-0.5 text-[var(--cobalt)]" />
+        <div className="flex-1">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--ink-soft)]">
+            External research
+          </p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">
+            {research.claims.length} claims from {research.sources.length} public sources
+          </h3>
+        </div>
+      </div>
+
+      <ul className="mt-4 space-y-3">
+        {research.claims.map((claim, index) => (
+          <li
+            key={index}
+            className="border-l-2 border-[var(--cobalt)] bg-white px-3 py-2 text-xs leading-relaxed"
+          >
+            <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
+              <span className="font-mono uppercase">{claim.confidence} confidence</span>
+              <span>•</span>
+              <span className="font-mono uppercase">{claim.relevance}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
+        Research from {research.sources.map((s) => s.provider).join(', ')}
       </p>
     </section>
   );
