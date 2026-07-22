@@ -5,9 +5,14 @@ import { useAgent } from "@copilotkit/react-core/v2";
 
 import { useConversationState } from "@/hooks/use-conversation-state";
 import { DeepgramVoiceSession } from "@/lib/deepgram-voice";
+import { EXAMPLE_SCENARIOS } from "@/lib/example-scenarios";
 
 /**
  * Opponent rehearsal UI — owned by Person A (before + after).
+ *
+ * Scenario setup lives here too, not only in Coach: the same description
+ * (or example chip) is sent through the coach node to synthesize a
+ * counterpart persona + opening line, so rehearsal can start standalone.
  *
  * Two input modes against one transcript shape:
  * - Voice (primary demo path): Deepgram Voice Agent in the browser plays the
@@ -15,6 +20,15 @@ import { DeepgramVoiceSession } from "@/lib/deepgram-voice";
  * - Typed (fallback): a user turn is appended and the LangGraph opponent node
  *   produces the counterpart reply.
  */
+
+type CounterpartProfile = {
+  name?: string;
+  role?: string;
+  style?: string[];
+  leverage?: string;
+  concerns?: string[];
+  opening_line?: string;
+};
 
 function buildPersonaPrompt(state: {
   stakes?: string;
@@ -45,15 +59,17 @@ export function OpponentChat() {
   const { state, setPartial } = useConversationState();
   const { agent } = useAgent();
   const transcript = state.transcript ?? [];
+  const profile = (state.counterpart_profile ?? {}) as CounterpartProfile;
 
   const [voiceStatus, setVoiceStatus] = useState<string | null>(null);
   const sessionRef = useRef<DeepgramVoiceSession | null>(null);
   const transcriptRef = useRef(transcript);
   transcriptRef.current = transcript;
-  // agent.setState REPLACES state (no merge) — always send the full object.
-  const stateRef = useRef(state);
-  stateRef.current = state;
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [editingScenario, setEditingScenario] = useState(!profile.name);
+  const [description, setDescription] = useState("");
+  const [settingScenario, setSettingScenario] = useState(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -61,6 +77,11 @@ export function OpponentChat() {
 
   // Stop the mic/socket if the user navigates away mid-session.
   useEffect(() => () => sessionRef.current?.stop(), []);
+  // Leave edit mode once a scenario lands (e.g. set from the Coach tab).
+  useEffect(() => {
+    if (profile.name && !settingScenario) setEditingScenario(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.name]);
 
   const appendLive = (speaker: "user" | "counterpart", text: string) => {
     const next = [
@@ -68,16 +89,44 @@ export function OpponentChat() {
       { speaker, text, timestamp: new Date().toISOString() } as const,
     ];
     transcriptRef.current = next;
-    setPartial({ ...stateRef.current, transcript: next, phase: "rehearsal" });
+    setPartial({ transcript: next, phase: "rehearsal" });
+  };
+
+  const setOpponent = async () => {
+    stopVoice();
+    setSettingScenario(true);
+    const newTranscript = description.trim()
+      ? [
+          {
+            speaker: "user" as const,
+            text: `My situation: ${description.trim()}`,
+            timestamp: new Date().toISOString(),
+          },
+        ]
+      : [];
+    setPartial({
+      phase: "prep",
+      transcript: newTranscript,
+      scenario_id: newTranscript.length > 0 ? "custom" : "lp_renewal",
+    });
+    try {
+      await (
+        agent as unknown as { runAgent?: () => Promise<unknown> }
+      ).runAgent?.();
+    } finally {
+      // Hand control back to rehearsal with a clean transcript against the
+      // freshly synthesized opponent.
+      setPartial({ phase: "rehearsal", transcript: [] });
+      setDescription("");
+      setEditingScenario(false);
+      setSettingScenario(false);
+    }
   };
 
   const startVoice = async () => {
     const session = new DeepgramVoiceSession();
     sessionRef.current = session;
-    const opening =
-      String(
-        (state.counterpart_profile as { opening_line?: string })?.opening_line ?? "",
-      ) || OPENING_LINE;
+    const opening = profile.opening_line || OPENING_LINE;
     try {
       await session.start({
         prompt: buildPersonaPrompt(state),
@@ -120,7 +169,8 @@ export function OpponentChat() {
         <div className="flex flex-col items-end gap-1">
           <button
             onClick={voiceActive ? stopVoice : startVoice}
-            className={`px-4 py-2 rounded text-sm font-medium border ${
+            disabled={settingScenario}
+            className={`px-4 py-2 rounded text-sm font-medium border disabled:opacity-50 ${
               voiceActive
                 ? "border-red-500/50 text-red-500"
                 : "border-current/20 hover:bg-current/5"
@@ -133,6 +183,76 @@ export function OpponentChat() {
           )}
         </div>
       </header>
+
+      {!editingScenario && profile.name && (
+        <div className="rounded border border-current/10 p-3 flex items-start justify-between gap-4">
+          <div className="text-sm">
+            <span className="font-medium">{profile.name}</span>
+            {profile.role && (
+              <span className="opacity-70"> — {profile.role}</span>
+            )}
+            {profile.concerns && profile.concerns.length > 0 && (
+              <p className="opacity-60 mt-1">
+                Concerned about: {profile.concerns.slice(0, 2).join("; ")}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setEditingScenario(true)}
+            className="text-xs px-2.5 py-1 rounded-full border border-current/20 hover:bg-current/5 shrink-0"
+          >
+            Change opponent
+          </button>
+        </div>
+      )}
+
+      {editingScenario && (
+        <div className="rounded border border-current/10 p-3 flex flex-col gap-2">
+          <span className="text-sm font-medium">
+            Who are you rehearsing against?
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {EXAMPLE_SCENARIOS.map((example) => (
+              <button
+                key={example.label}
+                type="button"
+                onClick={() => setDescription(example.text)}
+                className={`text-xs px-2.5 py-1 rounded-full border ${
+                  description === example.text
+                    ? "border-current/60 bg-current/10"
+                    : "border-current/20 hover:bg-current/5"
+                }`}
+              >
+                {example.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe who you're facing and what's at stake. Leave empty for the demo scenario (LP renewal)."
+            rows={3}
+            className="w-full rounded border border-current/20 bg-transparent px-3 py-2 text-sm"
+          />
+          <div className="flex gap-2 self-end">
+            {profile.name && (
+              <button
+                onClick={() => setEditingScenario(false)}
+                className="px-3 py-1.5 rounded text-sm border border-current/20 hover:bg-current/5"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={setOpponent}
+              disabled={settingScenario}
+              className="px-3 py-1.5 rounded text-sm font-medium border border-current/20 hover:bg-current/5 disabled:opacity-50"
+            >
+              {settingScenario ? "Setting up…" : "Set opponent"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col gap-3">
         {transcript.length === 0 && (
