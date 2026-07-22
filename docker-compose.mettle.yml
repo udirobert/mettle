@@ -18,6 +18,16 @@ services:
         condition: service_healthy
     expose:
       - "8123"
+    networks:
+      - default
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.routers.mettle-agent.entrypoints=https
+      - traefik.http.routers.mettle-agent.rule=Host(`agent.mettle.persidian.com`)
+      - traefik.http.routers.mettle-agent.tls.certresolver=letsencrypt
+      - traefik.http.services.mettle-agent.loadbalancer.server.port=8123
     healthcheck:
       test:
         [
@@ -49,3 +59,7 @@ services:
 
 volumes:
   mettle-postgres-data:
+
+networks:
+  coolify:
+    external: true
