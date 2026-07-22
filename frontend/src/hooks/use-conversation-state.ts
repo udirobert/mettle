@@ -71,6 +71,10 @@ export function useConversationState() {
     setPartial({ phase });
   };
 
+  const setScenarioId = (scenarioId: string) => {
+    setPartial({ scenario_id: scenarioId });
+  };
+
   const appendTranscriptTurn = (turn: TranscriptTurn) => {
     setPartial({ transcript: [...(state.transcript ?? []), turn] });
   };
@@ -123,6 +127,7 @@ export function useConversationState() {
     state,
     setPartial,
     setPhase,
+    setScenarioId,
     appendTranscriptTurn,
     runLiveTurn,
     startReactiveSession,

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowUpRight, BadgeCheck, Radio, ScrollText, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, BadgeCheck, Radio, ScrollText, Sparkles } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
 import { DebriefView } from '@/components/debrief-view';
+import { EventList } from '@/components/event-list';
 import { OpponentChat } from '@/components/opponent-chat';
 import { WingmanSidePanel } from '@/components/wingman-side-panel';
 import { useConversationState } from '@/hooks/use-conversation-state';
@@ -83,18 +84,46 @@ function formatScenarioName(id: string | undefined): string {
 }
 
 export default function HomePage() {
-  const { state, setPhase } = useConversationState();
+  const { state, setPhase, setScenarioId } = useConversationState();
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
+  const [showEventList, setShowEventList] = useState(!state.scenario_id);
 
   const selectPhase = (phase: Phase) => {
     setLocalPhase(phase);
     setPhase(phase);
   };
 
+  const handleSelectEvent = (scenarioId: string) => {
+    setScenarioId(scenarioId);
+    setShowEventList(false);
+    setLocalPhase('prep');
+    setPhase('prep');
+  };
+
+  const handleBackToEvents = () => {
+    setShowEventList(true);
+  };
+
   const counterpart =
     typeof state.counterpart_profile?.name === 'string'
       ? state.counterpart_profile.name
       : 'Counterpart';
+
+  if (showEventList) {
+    return (
+      <CopilotChatConfigurationProvider agentId="default">
+        <main className={styles.shell}>
+          <header className={styles.topbar}>
+            <div className={styles.wordmark} aria-label="Mettle">
+              <span className={styles.wordmarkMark}>M</span>
+              <span>Mettle</span>
+            </div>
+          </header>
+          <EventList onSelectEvent={handleSelectEvent} />
+        </main>
+      </CopilotChatConfigurationProvider>
+    );
+  }
 
   return (
     <CopilotChatConfigurationProvider agentId="default">
@@ -122,6 +151,14 @@ export default function HomePage() {
 
         <div className={`${styles.workspace} ${localPhase === 'live' ? styles.withSignal : ''}`}>
           <nav className={styles.phaseRail} aria-label="Preparation sequence">
+            <button
+              className={styles.backButton}
+              onClick={handleBackToEvents}
+              aria-label="Back to events"
+            >
+              <ArrowLeft size={16} />
+              <span>All events</span>
+            </button>
             <div className={styles.railLabel}>Prep sequence</div>
             <div className={styles.phaseList}>
               {PHASES.map(({ id, label }) => {

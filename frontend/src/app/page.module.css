@@ -199,6 +199,33 @@
   padding: 12px 10px 0;
 }
 
+.backButton {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #d7ddff;
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+  padding: 8px 10px;
+  text-transform: uppercase;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.backButton:hover {
+  background: #314ad0;
+  color: #fff;
+  transform: translateX(3px);
+}
+
 .canvas {
   background: #fffdf7;
   display: flex;
