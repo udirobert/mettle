@@ -1,8 +1,22 @@
 """Coach phase owned by Person A."""
 
+import json
+
 from .llm import complete
 from .scenarios import load_scenario
 from .state import ConversationState
+
+_SCENARIO_SYSTEM = (
+    "You turn a user's description of an upcoming high-stakes conversation "
+    "into a structured scenario. Return ONLY valid JSON, no code fences, with "
+    "exactly these keys:\n"
+    '{"stakes": "<one sentence, concrete>", "counterpart_profile": {"name": '
+    '"<name or a plausible one>", "role": "<their role>", "style": ["<3 '
+    'adjectives>"], "leverage": "<what power they hold>", "concerns": ["<3-4 '
+    'objections they will raise>"], "opening_line": "<the hard first line '
+    'they would open the meeting with, in their voice>"}, "user_weak_points": '
+    '["<3 likely failure patterns for the user>"]}'
+)
 
 _STRESS_TEST_SYSTEM = (
     "You are a preparation coach for high-stakes conversations. Given a "
@@ -22,24 +36,41 @@ def run_coach(state: ConversationState) -> dict:
     state.transcript; it is consumed here to personalize the weak points and
     then cleared so rehearsal starts with a clean transcript.
     """
-    scenario = load_scenario(state.get("scenario_id", "lp_renewal"))
-
-    weak_points = state.get("user_weak_points") or scenario["user_weak_points"]
-
     interview_turns = state.get("transcript") or []
     interview = "\n".join(
         f"{'Coach' if t['speaker'] == 'system' else 'User'}: {t['text']}"
         for t in interview_turns
     )
 
+    scenario_id = state.get("scenario_id", "lp_renewal")
+    scenario = None
+    if scenario_id == "custom" and interview:
+        generated = complete(_SCENARIO_SYSTEM, interview, temperature=0.4)
+        if generated:
+            try:
+                cleaned = generated.strip().removeprefix("```json").removeprefix("```").removesuffix("```")
+                data = json.loads(cleaned)
+                scenario = {
+                    "scenario_id": "custom",
+                    "stakes": str(data["stakes"]),
+                    "counterpart_profile": dict(data["counterpart_profile"]),
+                    "user_weak_points": [str(w) for w in data["user_weak_points"]],
+                }
+            except (json.JSONDecodeError, KeyError, TypeError):
+                scenario = None
+    if scenario is None:
+        scenario = load_scenario("lp_renewal")
+
+    weak_points = state.get("user_weak_points") or scenario["user_weak_points"]
+
     profile = scenario["counterpart_profile"]
     stress_test = complete(
         _STRESS_TEST_SYSTEM,
         (
             f"Stakes: {scenario['stakes']}\n"
-            f"Counterpart: {profile['name']} ({profile['role']}), "
-            f"style: {', '.join(profile['style'])}.\n"
-            f"Counterpart concerns: {'; '.join(profile['concerns'])}\n"
+            f"Counterpart: {profile.get('name')} ({profile.get('role')}), "
+            f"style: {', '.join(profile.get('style', []))}.\n"
+            f"Counterpart concerns: {'; '.join(profile.get('concerns', []))}\n"
             f"Known tendencies of the user: {'; '.join(weak_points)}\n"
             + (
                 f"\nCoaching interview with the user:\n{interview}"

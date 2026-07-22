@@ -17,7 +17,7 @@ _OPENING_LINE = (
 )
 
 _PERSONA_SYSTEM = (
-    "You are {name}, {role}, in a live renewal meeting. Style: {style}. "
+    "You are {name}, {role}, in a live high-stakes meeting. Style: {style}. "
     "Your leverage: {leverage} Your concerns: {concerns}\n"
     "Stay in character. You are not a coach and not friendly. Be terse — two "
     "to four sentences. Push back on vague claims, ask for specifics, and do "
@@ -37,19 +37,21 @@ def _turn(speaker: str, text: str) -> TranscriptTurn:
 def run_opponent(state: ConversationState) -> dict:
     """Produce a persona-conditioned skeptical counterpart turn."""
     transcript = list(state.get("transcript") or [])
+    profile = state.get("counterpart_profile") or {}
 
-    # Open the meeting with the scenario's seed line.
+    # Open the meeting with the counterpart's opening line (generated for
+    # custom scenarios, scenario seed otherwise).
     if not transcript:
+        opening = str(profile.get("opening_line") or _OPENING_LINE)
         return {
             "phase": "rehearsal",
-            "transcript": [_turn("counterpart", _OPENING_LINE)],
+            "transcript": [_turn("counterpart", opening)],
         }
 
     # Only respond when the user has made a move since Elena's last line.
     if transcript[-1]["speaker"] != "user":
         return {"phase": "rehearsal"}
 
-    profile = state.get("counterpart_profile") or {}
     system = _PERSONA_SYSTEM.format(
         name=profile.get("name", "Elena Park"),
         role=profile.get("role", "CIO, Northstar Foundation"),

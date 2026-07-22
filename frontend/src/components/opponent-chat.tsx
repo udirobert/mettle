@@ -74,10 +74,14 @@ export function OpponentChat() {
   const startVoice = async () => {
     const session = new DeepgramVoiceSession();
     sessionRef.current = session;
+    const opening =
+      String(
+        (state.counterpart_profile as { opening_line?: string })?.opening_line ?? "",
+      ) || OPENING_LINE;
     try {
       await session.start({
         prompt: buildPersonaPrompt(state),
-        greeting: transcriptRef.current.length === 0 ? OPENING_LINE : undefined,
+        greeting: transcriptRef.current.length === 0 ? opening : undefined,
         onTranscript: (role, text) =>
           appendLive(role === "assistant" ? "counterpart" : "user", text),
         onStatus: setVoiceStatus,
