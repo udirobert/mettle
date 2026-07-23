@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, CheckCircle2, Clock, FileText, Shield, User } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, Shield, User } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type { ConversationState } from '@/hooks/use-conversation-state';
 import { hasApprovedEvidence } from '@/fixtures/evidence-fixtures';
@@ -94,6 +94,19 @@ function getRiskColor(risk: string): string {
   if (risk === 'High') return 'var(--tomato)';
   if (risk === 'Medium-High') return 'var(--amber)';
   return 'var(--lime)';
+}
+
+function getRecommendedNextMove(state: ConversationState, scenarioId: string): string {
+  if (state.scenario_id !== scenarioId) {
+    return 'Open this conversation to begin preparation.';
+  }
+
+  const progress = getPrepProgress(state, scenarioId);
+  if (!progress.brief) return 'Start with Coach to stress-test your position.';
+  if (!progress.evidence) return 'Import or review context to ground the brief.';
+  if (!progress.rehearsal) return 'Rehearse with the opponent before the real room.';
+  if (!progress.live) return 'Go live when the conversation starts.';
+  return 'Review the debrief and lock in follow-ups.';
 }
 
 export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: string) => void }) {
@@ -218,6 +231,11 @@ export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: strin
                   />
                   <span className={styles.progressLabel}>Live</span>
                 </div>
+              </div>
+
+              <div className={styles.nextMove}>
+                <ArrowRight size={14} aria-hidden="true" />
+                <span>{getRecommendedNextMove(state, scenario.id)}</span>
               </div>
             </div>
           </button>
