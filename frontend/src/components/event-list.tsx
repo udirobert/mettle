@@ -3,7 +3,6 @@
 import { AlertTriangle, ArrowRight, CheckCircle2, Clock, Shield, User } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type { ConversationState } from '@/hooks/use-conversation-state';
-import { hasApprovedEvidence } from '@/fixtures/evidence-fixtures';
 
 import styles from './event-list.module.css';
 
@@ -72,11 +71,13 @@ function getPrepProgress(state: ConversationState, scenarioId: string): PrepProg
   const hasRehearsal =
     state.transcript?.some((t) => t.speaker === 'user' || t.speaker === 'counterpart') ?? false;
   const hasLiveSupport = !!state.reactive_reply;
+  const hasEvidence =
+    state.context_brief?.status === 'approved' && (state.context_brief.claims?.length ?? 0) > 0;
 
   return {
     brief: hasBrief,
     rehearsal: hasRehearsal,
-    evidence: hasApprovedEvidence(scenarioId),
+    evidence: hasEvidence,
     live: hasLiveSupport,
   };
 }

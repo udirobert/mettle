@@ -139,3 +139,72 @@ export function hasApprovedEvidence(scenarioId: string): boolean {
     (research?.status === 'approved' && research.claims.length > 0)
   );
 }
+
+const PRIVATE_PROVIDERS: Set<ContextBrief['sources'][number]['provider']> = new Set([
+  'gmail',
+  'calendar',
+  'outlook',
+  'slack',
+  'notion',
+  'drive',
+  'manual',
+]);
+
+const PUBLIC_PROVIDERS: Set<ContextBrief['sources'][number]['provider']> = new Set([
+  'exa',
+  'firecrawl',
+  'tinyfish',
+]);
+
+export function getScenarioContextBrief(scenarioId: string): ContextBrief | null {
+  if (scenarioId !== 'lp_renewal') {
+    return null;
+  }
+  return {
+    status: 'draft',
+    sources: [...LP_RENEWAL_PRIVATE.sources, ...LP_RENEWAL_RESEARCH.sources],
+    claims: [...LP_RENEWAL_PRIVATE.claims, ...LP_RENEWAL_RESEARCH.claims],
+    counterpart_history: [
+      ...LP_RENEWAL_PRIVATE.counterpart_history,
+      ...LP_RENEWAL_RESEARCH.counterpart_history,
+    ],
+    open_commitments: LP_RENEWAL_PRIVATE.open_commitments,
+    sensitive_redactions: [
+      ...LP_RENEWAL_PRIVATE.sensitive_redactions,
+      ...LP_RENEWAL_RESEARCH.sensitive_redactions,
+    ],
+    user_approved_at: null,
+  };
+}
+
+function sourceIdsForProviders(brief: ContextBrief, providers: Set<string>): Set<string> {
+  return new Set(
+    brief.sources.filter((s) => providers.has(s.provider)).map((s) => s.source_id)
+  );
+}
+
+export function getPrivateSources(brief: ContextBrief): ContextBrief['sources'] {
+  return brief.sources.filter((s) => PRIVATE_PROVIDERS.has(s.provider));
+}
+
+export function getPublicSources(brief: ContextBrief): ContextBrief['sources'] {
+  return brief.sources.filter((s) => PUBLIC_PROVIDERS.has(s.provider));
+}
+
+export function getPrivateClaims(brief: ContextBrief): ContextBrief['claims'] {
+  const ids = sourceIdsForProviders(brief, PRIVATE_PROVIDERS);
+  return brief.claims.filter((c) => c.source_ids.some((id) => ids.has(id)));
+}
+
+export function getPublicClaims(brief: ContextBrief): ContextBrief['claims'] {
+  const ids = sourceIdsForProviders(brief, PUBLIC_PROVIDERS);
+  return brief.claims.filter((c) => c.source_ids.some((id) => ids.has(id)));
+}
+
+export function hasPrivateEvidence(brief: ContextBrief): boolean {
+  return getPrivateSources(brief).length > 0 && getPrivateClaims(brief).length > 0;
+}
+
+export function hasPublicResearch(brief: ContextBrief): boolean {
+  return getPublicSources(brief).length > 0 && getPublicClaims(brief).length > 0;
+}

@@ -19,10 +19,19 @@ import {
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type {
   CoachAnalysis,
+  ContextBrief,
   ConversationState,
   PerspectiveResult,
 } from '@/hooks/use-conversation-state';
-import { getScenarioEvidence, getScenarioResearch } from '@/fixtures/evidence-fixtures';
+import {
+  getPrivateClaims,
+  getPrivateSources,
+  getPublicClaims,
+  getPublicSources,
+  getScenarioContextBrief,
+  hasPrivateEvidence,
+  hasPublicResearch,
+} from '@/fixtures/evidence-fixtures';
 import styles from './coach-disclosure.module.css';
 
 function calculateReadiness(state: ConversationState, analysis: CoachAnalysis | undefined): number {
@@ -32,11 +41,10 @@ function calculateReadiness(state: ConversationState, analysis: CoachAnalysis | 
     (analysis.concrete_moves?.length ?? 0) > 0;
   const hasWeakPoints = (state.user_weak_points?.length ?? 0) > 0;
 
-  const evidence = getScenarioEvidence(state.scenario_id ?? '');
-  const hasEvidence = evidence?.status === 'approved' && (evidence.claims?.length ?? 0) > 0;
-
-  const research = getScenarioResearch(state.scenario_id ?? '');
-  const hasResearch = research?.status === 'approved' && (research.claims?.length ?? 0) > 0;
+  const contextBrief = state.context_brief;
+  const contextApproved = contextBrief?.status === 'approved';
+  const hasEvidence = contextApproved && hasPrivateEvidence(contextBrief);
+  const hasResearch = contextApproved && hasPublicResearch(contextBrief);
 
   const completed = [hasAnalysis, hasWeakPoints, hasEvidence, hasResearch].filter(Boolean).length;
   return Math.round((completed / 4) * 100);
@@ -205,11 +213,17 @@ export function CoachPanel() {
         </CollapsibleSection>
       )}
 
-      {/* Collapsible evidence sections */}
-      {state.scenario_id && (
+      {/* Context import / approval / evidence sections */}
+      {state.scenario_id && getScenarioContextBrief(state.scenario_id) && !state.context_brief && (
+        <ContextImportPanel scenarioId={state.scenario_id} />
+      )}
+      {state.context_brief?.status === 'draft' && (
+        <ContextApprovalPanel brief={state.context_brief} />
+      )}
+      {state.context_brief?.status === 'approved' && (
         <>
-          <EvidenceBrief scenarioId={state.scenario_id} />
-          <ResearchBrief scenarioId={state.scenario_id} />
+          <EvidenceBrief brief={state.context_brief} />
+          <ResearchBrief brief={state.context_brief} />
         </>
       )}
 
@@ -357,23 +371,99 @@ function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
   );
 }
 
-function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
-  const evidence = getScenarioEvidence(scenarioId);
+function ContextImportPanel({ scenarioId }: { scenarioId: string }) {
+  const { setPartial } = useConversationState();
 
-  if (!evidence || evidence.status !== 'approved') {
+  const importContext = () => {
+    const brief = getScenarioContextBrief(scenarioId);
+    if (!brief) return;
+    setPartial({ context_brief: brief });
+  };
+
+  return (
+    <section className="mettle-card mettle-card--accent">
+      <p className="mettle-kicker">
+        <Inbox size={13} /> Context
+      </p>
+      <strong>Ground the brief in prior emails and public research.</strong>
+      <p className="mt-2">
+        Importing adds source-backed claims about Elena, prior commitments, and market context. You
+        will review and approve each claim before it affects the prep.
+      </p>
+      <button
+        className="mettle-action"
+        onClick={importContext}
+        type="button"
+        style={{ marginTop: 12 }}
+      >
+        <Plus size={14} aria-hidden="true" /> Import context
+      </button>
+    </section>
+  );
+}
+
+function ContextApprovalPanel({ brief }: { brief: ContextBrief }) {
+  const { setPartial } = useConversationState();
+  const privateSources = getPrivateSources(brief);
+  const publicSources = getPublicSources(brief);
+
+  const approve = () => {
+    setPartial({
+      context_brief: {
+        ...brief,
+        status: 'approved',
+        user_approved_at: new Date().toISOString(),
+      },
+    });
+  };
+
+  const reject = () => {
+    setPartial({ context_brief: undefined });
+  };
+
+  return (
+    <section className="mettle-card">
+      <p className="mettle-kicker">
+        <ShieldCheck size={13} /> Review imported context
+      </p>
+      <strong>
+        {brief.claims.length} claims from {brief.sources.length} sources
+      </strong>
+      <p className="mt-2">
+        {privateSources.length} private source{privateSources.length === 1 ? '' : 's'} and{' '}
+        {publicSources.length} public source{publicSources.length === 1 ? '' : 's'} were found.
+        Approve to include them in the Coach and Wingman brief.
+      </p>
+      <div className="flex gap-3 mt-3">
+        <button className="mettle-action" onClick={approve} type="button">
+          <ShieldCheck size={14} aria-hidden="true" /> Approve for prep
+        </button>
+        <button className="mettle-icon-action" onClick={reject} type="button">
+          Reject
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function EvidenceBrief({ brief }: { brief: ContextBrief }) {
+  const claims = getPrivateClaims(brief);
+  const sources = getPrivateSources(brief);
+
+  if (sources.length === 0 || claims.length === 0) {
     return null;
   }
 
   return (
     <CollapsibleSection
       title="Private context"
-      summary={`${evidence.claims.length} claims from ${evidence.sources.length} sources`}
+      summary={`${claims.length} claims from ${sources.length} sources`}
       icon={Inbox}
       className="border-[var(--lime)]"
       contentClassName="bg-[#f1fad2]"
     >
       <ul className="space-y-3">
-        {evidence.claims.map((claim, index) => (
+        {claims.map((claim, index) => (
           <li
             key={index}
             className="border-l-2 border-[var(--lime)] bg-white px-3 py-2 text-xs leading-relaxed"
@@ -388,13 +478,13 @@ function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
         ))}
       </ul>
 
-      {evidence.open_commitments.length > 0 && (
+      {brief.open_commitments.length > 0 && (
         <div className="mt-4 border-t border-[var(--line)] pt-3">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--tomato)]">
             Open commitments
           </p>
           <ul className="mt-2 space-y-1">
-            {evidence.open_commitments.map((commitment, index) => (
+            {brief.open_commitments.map((commitment, index) => (
               <li key={index} className="flex items-start gap-2 text-xs">
                 <FileText size={12} className="mt-0.5 text-[var(--tomato)]" />
                 <span>{commitment}</span>
@@ -405,29 +495,30 @@ function EvidenceBrief({ scenarioId }: { scenarioId: string }) {
       )}
 
       <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
-        Imported from {evidence.sources.map((s) => s.provider).join(', ')}
+        Imported from {sources.map((s) => s.provider).join(', ')}
       </p>
     </CollapsibleSection>
   );
 }
 
-function ResearchBrief({ scenarioId }: { scenarioId: string }) {
-  const research = getScenarioResearch(scenarioId);
+function ResearchBrief({ brief }: { brief: ContextBrief }) {
+  const claims = getPublicClaims(brief);
+  const sources = getPublicSources(brief);
 
-  if (!research || research.status !== 'approved') {
+  if (sources.length === 0 || claims.length === 0) {
     return null;
   }
 
   return (
     <CollapsibleSection
       title="External research"
-      summary={`${research.claims.length} claims from ${research.sources.length} public sources`}
+      summary={`${claims.length} claims from ${sources.length} public sources`}
       icon={Globe}
       className="border-[#aab8fa]"
       contentClassName="bg-[#e2e8ff]"
     >
       <ul className="space-y-3">
-        {research.claims.map((claim, index) => (
+        {claims.map((claim, index) => (
           <li
             key={index}
             className="border-l-2 border-[var(--cobalt)] bg-white px-3 py-2 text-xs leading-relaxed"
@@ -443,7 +534,7 @@ function ResearchBrief({ scenarioId }: { scenarioId: string }) {
       </ul>
 
       <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
-        Research from {research.sources.map((s) => s.provider).join(', ')}
+        Research from {sources.map((s) => s.provider).join(', ')}
       </p>
     </CollapsibleSection>
   );
