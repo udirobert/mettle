@@ -28,10 +28,25 @@ function NudgeSurface() {
 export function A2UINudgeHost() {
   const { startReactiveSession } = useConversationState();
 
+  const getReframeQuery = (kind: string, message: string) => {
+    const base = message.trim();
+    switch (kind) {
+      case 'concession':
+        return `I may have just conceded on "${base}". What should I say to qualify it?`;
+      case 'long_monologue':
+        return `I just gave a long answer about "${base}". How do I invite them back in?`;
+      case 'repetition':
+        return `I repeated myself about "${base}". What calibrated question should I ask instead?`;
+      default:
+        return `The wingman flagged: "${base}". What should I say next?`;
+    }
+  };
+
   const handleAction = (message: any) => {
-    const actionName = message?.userAction?.name;
-    if (actionName === 'get_reframe') {
-      void startReactiveSession();
+    const userAction = message?.userAction;
+    if (userAction?.name === 'get_reframe') {
+      const { kind, message: nudgeMessage } = userAction?.context ?? {};
+      void startReactiveSession(getReframeQuery(kind, nudgeMessage));
     }
   };
 

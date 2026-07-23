@@ -216,4 +216,5 @@ def answer_reactive_query(state: ConversationState) -> dict:
         "reactive_reply": reply,
         "open_reactive_query": None,
         "awaiting_reactive_query": False,
+        "reactive_query_prefill": None,
     }

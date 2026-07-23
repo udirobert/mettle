@@ -100,6 +100,7 @@ export type ConversationState = {
   coach_analysis?: CoachAnalysis;
   context_brief?: ContextBrief;
   a2ui_surface?: string | null;
+  reactive_query_prefill?: string | null;
 };
 
 export type ConversationStateUpdate = Partial<ConversationState>;
@@ -154,13 +155,14 @@ export function useConversationState() {
     await copilotkit.runAgent({ agent });
   };
 
-  const startReactiveSession = async () => {
+  const startReactiveSession = async (prefillQuery?: string) => {
     if (agent.isRunning) return;
 
     setPartial({
       phase: 'live',
       awaiting_reactive_query: true,
       open_reactive_query: null,
+      reactive_query_prefill: prefillQuery ?? null,
     });
     await copilotkit.waitForPendingFrameworkUpdates();
     agent.addMessage({

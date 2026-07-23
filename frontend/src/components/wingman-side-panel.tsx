@@ -32,8 +32,10 @@ export function WingmanSidePanel() {
         }}
       >
         <input
+          key={state.reactive_query_prefill ?? 'empty'}
           autoFocus
           className="mettle-input flex-1"
+          defaultValue={state.reactive_query_prefill ?? ''}
           name="query"
           placeholder="What should I say next?"
         />
