@@ -53,4 +53,5 @@ add_langgraph_fastapi_endpoint(
 
 if __name__ == "__main__":
     port = int(os.getenv("AGENT_PORT", "8123"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    reload = os.getenv("METTLE_ENV", "development").lower() == "development"
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=reload)

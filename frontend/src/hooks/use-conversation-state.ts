@@ -99,7 +99,6 @@ export type ConversationState = {
   debrief_notes?: string[];
   coach_analysis?: CoachAnalysis;
   context_brief?: ContextBrief;
-  a2ui_surface?: string | null;
   reactive_query_prefill?: string | null;
 };
 

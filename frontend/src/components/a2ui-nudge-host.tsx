@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useAgent, UseAgentUpdate } from '@copilotkit/react-core/v2';
 import { A2UIProvider, A2UIRenderer, useA2UI } from '@copilotkit/a2ui-renderer';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { nudgeCatalog } from '@/components/a2ui-catalog';
@@ -20,22 +21,32 @@ function applyVariant(operations: any[], variant?: 'panel' | 'signal') {
   });
 }
 
+function isA2UISurfaceMessage(
+  message: any,
+): message is { role: 'activity'; activityType: 'a2ui-surface'; content: Record<string, any> } {
+  return (
+    message?.role === 'activity' &&
+    message?.activityType === 'a2ui-surface' &&
+    typeof message?.content === 'object' &&
+    message.content !== null &&
+    !Array.isArray(message.content)
+  );
+}
+
 function NudgeSurface({ variant }: { variant?: 'panel' | 'signal' }) {
-  const { state } = useConversationState();
+  const { agent } = useAgent({ updates: [UseAgentUpdate.OnMessagesChanged] });
   const { processMessages, clearSurfaces } = useA2UI();
 
   useEffect(() => {
-    if (state.a2ui_surface) {
-      try {
-        const parsed = JSON.parse(state.a2ui_surface);
-        processMessages(applyVariant(parsed.a2ui_operations ?? [], variant));
-      } catch {
-        // Ignore malformed surface payloads.
-      }
+    const latest = (agent.messages ?? []).filter(isA2UISurfaceMessage).pop();
+    const content = latest?.content as Record<string, any> | undefined;
+    const operations = content?.a2ui_operations;
+    if (Array.isArray(operations)) {
+      processMessages(applyVariant(operations, variant));
     } else {
       clearSurfaces();
     }
-  }, [state.a2ui_surface, variant, processMessages, clearSurfaces]);
+  }, [agent.messages, variant, processMessages, clearSurfaces]);
 
   return <A2UIRenderer surfaceId="nudge-surface" fallback={null} />;
 }

@@ -40,6 +40,7 @@ const runtime = new CopilotRuntime({
   openGenerativeUI: true,
   a2ui: {
     injectA2UITool: false,
+    defaultCatalogId: "mettle-nudge-catalog",
   },
   mcpApps: {
     servers: [

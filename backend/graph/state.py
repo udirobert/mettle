@@ -125,8 +125,5 @@ class ConversationState(TypedDict):
     # Context ingestion — evidence brief from imported sources (Gmail, Calendar, etc.)
     context_brief: NotRequired[ContextBrief]
 
-    # A2UI surface payload for the latest proactive nudge.
-    a2ui_surface: NotRequired[str | None]
-
     # Optional pre-fill text for the reactive Wingman quick-answer prompt.
     reactive_query_prefill: NotRequired[str | None]

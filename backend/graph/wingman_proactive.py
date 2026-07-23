@@ -9,10 +9,12 @@ Two-stage pipeline:
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 from typing import Literal
 
 from copilotkit import a2ui
+from langchain_core.callbacks import dispatch_custom_event
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from triggers.rules import evaluate_latest_turn
@@ -124,6 +126,24 @@ def build_nudge_surface(nudge: Nudge) -> str:
     )
 
 
+def emit_nudge_surface(nudge: Nudge) -> None:
+    """Emit the latest nudge as an AG-UI A2UI surface message.
+
+    This is a no-op when called outside a LangGraph run (e.g. in unit tests),
+    because dispatch_custom_event requires a parent run id.
+    """
+    try:
+        dispatch_custom_event(
+            "copilotkit_manually_emit_message",
+            {
+                "message_id": str(uuid.uuid4()),
+                "message": build_nudge_surface(nudge),
+            },
+        )
+    except RuntimeError:
+        pass
+
+
 def evaluate_proactive_nudge(state: ConversationState) -> dict:
     """Run the cheap rules pass, then enrich any candidate nudge via LLM."""
     candidate = evaluate_latest_turn(state)
@@ -134,10 +154,8 @@ def evaluate_proactive_nudge(state: ConversationState) -> dict:
     turn_text = transcript[candidate["source_turn_index"]]["text"] if transcript else ""
 
     nudge = _enrich_nudge(candidate, state, turn_text)
-    return {
-        "nudges_sent": [*state.get("nudges_sent", []), nudge],
-        "a2ui_surface": build_nudge_surface(nudge),
-    }
+    emit_nudge_surface(nudge)
+    return {"nudges_sent": [*state.get("nudges_sent", []), nudge]}
 
 
 def ingest_transcript_turn(
@@ -175,5 +193,5 @@ def ingest_transcript_turn(
             candidate, {**candidate_state, "transcript": transcript}, clean_text
         )
         update["nudges_sent"].append(nudge)
-        update["a2ui_surface"] = build_nudge_surface(nudge)
+        emit_nudge_surface(nudge)
     return update
