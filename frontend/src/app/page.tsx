@@ -6,8 +6,8 @@ import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
 import { DebriefView } from '@/components/debrief-view';
+import { A2UINudgeHost } from '@/components/a2ui-nudge-host';
 import { EventList } from '@/components/event-list';
-import { NudgeCard } from '@/components/nudge-card';
 import { OpponentChat } from '@/components/opponent-chat';
 import { WelcomeOverlay } from '@/components/welcome-overlay';
 import { WingmanSidePanel } from '@/components/wingman-side-panel';
@@ -88,7 +88,7 @@ function SignalStack({ phase }: { phase: Phase }) {
       </section>
 
       {latestNudge ? (
-        <NudgeCard nudge={latestNudge} variant="signal" />
+        <A2UINudgeHost variant="signal" />
       ) : (
         <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
           <span className={styles.cardEyebrow}>Watch for</span>

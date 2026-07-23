@@ -5,7 +5,22 @@ import { A2UIProvider, A2UIRenderer, useA2UI } from '@copilotkit/a2ui-renderer';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { nudgeCatalog } from '@/components/a2ui-catalog';
 
-function NudgeSurface() {
+function applyVariant(operations: any[], variant?: 'panel' | 'signal') {
+  if (!variant) return operations;
+  return operations.map((op: any) => {
+    if (op?.updateComponents?.components) {
+      const components = op.updateComponents.components.map((component: any) =>
+        component.id === 'root' && component.component === 'NudgeCard'
+          ? { ...component, variant }
+          : component,
+      );
+      return { ...op, updateComponents: { ...op.updateComponents, components } };
+    }
+    return op;
+  });
+}
+
+function NudgeSurface({ variant }: { variant?: 'panel' | 'signal' }) {
   const { state } = useConversationState();
   const { processMessages, clearSurfaces } = useA2UI();
 
@@ -13,19 +28,23 @@ function NudgeSurface() {
     if (state.a2ui_surface) {
       try {
         const parsed = JSON.parse(state.a2ui_surface);
-        processMessages(parsed.a2ui_operations ?? []);
+        processMessages(applyVariant(parsed.a2ui_operations ?? [], variant));
       } catch {
         // Ignore malformed surface payloads.
       }
     } else {
       clearSurfaces();
     }
-  }, [state.a2ui_surface, processMessages, clearSurfaces]);
+  }, [state.a2ui_surface, variant, processMessages, clearSurfaces]);
 
   return <A2UIRenderer surfaceId="nudge-surface" fallback={null} />;
 }
 
-export function A2UINudgeHost() {
+type A2UINudgeHostProps = {
+  variant?: 'panel' | 'signal';
+};
+
+export function A2UINudgeHost({ variant }: A2UINudgeHostProps) {
   const { startReactiveSession } = useConversationState();
 
   const getReframeQuery = (kind: string, message: string) => {
@@ -52,7 +71,7 @@ export function A2UINudgeHost() {
 
   return (
     <A2UIProvider catalog={nudgeCatalog} onAction={handleAction}>
-      <NudgeSurface />
+      <NudgeSurface variant={variant} />
     </A2UIProvider>
   );
 }

@@ -13,6 +13,7 @@ const definitions = {
       message: z.string(),
       hint: z.string().optional(),
       actionLabel: z.string().optional(),
+      variant: z.enum(['panel', 'signal']).optional(),
     }),
   },
 };
@@ -21,7 +22,7 @@ function NudgeCardRenderer({
   props,
   dispatch,
 }: RendererProps<z.infer<typeof definitions.NudgeCard.props>>) {
-  const { kind, message, hint, actionLabel } = props;
+  const { kind, message, hint, actionLabel, variant } = props;
 
   const nudge: Nudge = {
     id: 'a2ui',
@@ -46,6 +47,7 @@ function NudgeCardRenderer({
   return (
     <NudgeCard
       nudge={nudge}
+      variant={variant}
       actionLabel={actionLabel}
       onAction={actionLabel ? handleAction : undefined}
     />
@@ -69,6 +71,7 @@ export const nudgeCatalogSchema = JSON.stringify(
           message: { type: 'string' },
           hint: { type: 'string' },
           actionLabel: { type: 'string' },
+          variant: { type: 'string' },
         },
       },
     },
