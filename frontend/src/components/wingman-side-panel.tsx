@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
 import { AlertTriangle, ArrowUp, Radio, Send, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { NudgeCard } from '@/components/nudge-card';
 
 /** Live transcript, proactive nudge cards, and native reactive interrupt UI. */
 export function WingmanSidePanel() {
@@ -145,14 +146,7 @@ export function WingmanSidePanel() {
               </p>
             </div>
           ) : (
-            nudges.map((nudge) => (
-              <div className="mettle-card mettle-card--risk" key={nudge.id}>
-                <p className="mettle-kicker">
-                  <AlertTriangle size={13} /> {nudge.kind.replace('_', ' ')}
-                </p>
-                <strong>{nudge.message}</strong>
-              </div>
-            ))
+            nudges.map((nudge) => <NudgeCard key={nudge.id} nudge={nudge} />)
           )}
         </div>
       </section>

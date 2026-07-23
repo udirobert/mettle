@@ -7,6 +7,7 @@ import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 import { CoachPanel } from '@/components/coach-panel';
 import { DebriefView } from '@/components/debrief-view';
 import { EventList } from '@/components/event-list';
+import { NudgeCard } from '@/components/nudge-card';
 import { OpponentChat } from '@/components/opponent-chat';
 import { WelcomeOverlay } from '@/components/welcome-overlay';
 import { WingmanSidePanel } from '@/components/wingman-side-panel';
@@ -86,14 +87,15 @@ function SignalStack({ phase }: { phase: Phase }) {
         </div>
       </section>
 
-      <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
-        <span className={styles.cardEyebrow}>{latestNudge ? 'Latest nudge' : 'Watch for'}</span>
-        <strong>{latestNudge ? latestNudge.kind.replace('_', ' ') : 'The concession trap'}</strong>
-        <p>
-          {latestNudge?.message ||
-            'Do not offer terms before you have established the renewal standard.'}
-        </p>
-      </section>
+      {latestNudge ? (
+        <NudgeCard nudge={latestNudge} variant="signal" />
+      ) : (
+        <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
+          <span className={styles.cardEyebrow}>Watch for</span>
+          <strong>The concession trap</strong>
+          <p>Do not offer terms before you have established the renewal standard.</p>
+        </section>
+      )}
 
       <section className={styles.signalCard}>
         <span className={styles.cardEyebrow}>Your edge</span>

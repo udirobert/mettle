@@ -1,0 +1,95 @@
+.panel {
+  border-left: 5px solid var(--nudge-accent);
+}
+
+.signal {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--nudge-accent);
+  min-height: 126px;
+  padding: 15px;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.signal:hover {
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.concession {
+  --nudge-accent: var(--tomato);
+  background: #fff0eb;
+  border-color: #f5ada0;
+  border-left-color: var(--nudge-accent);
+  border-top-color: var(--nudge-accent);
+}
+
+.longMonologue {
+  --nudge-accent: var(--sun);
+  background: #fff8e6;
+  border-color: #f0d78a;
+  border-left-color: var(--nudge-accent);
+  border-top-color: var(--nudge-accent);
+}
+
+.repetition {
+  --nudge-accent: var(--cobalt);
+  background: #e2e8ff;
+  border-color: #aab8fa;
+  border-left-color: var(--nudge-accent);
+  border-top-color: var(--nudge-accent);
+}
+
+.timing,
+.other {
+  --nudge-accent: var(--ink-soft);
+  background: #f7f4ec;
+  border-color: var(--line);
+  border-left-color: var(--nudge-accent);
+  border-top-color: var(--nudge-accent);
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.label {
+  color: var(--nudge-accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.message {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-top: 10px;
+}
+
+.signal .message {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.05;
+  text-transform: capitalize;
+}
+
+.hint {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 7px 0 0;
+}
+
+.signal .hint {
+  font-size: 11px;
+  line-height: 1.45;
+}
