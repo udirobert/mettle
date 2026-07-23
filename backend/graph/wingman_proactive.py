@@ -12,12 +12,21 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Literal
 
+from copilotkit import a2ui
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from triggers.rules import evaluate_latest_turn
 
 from .llm import get_llm
 from .state import ConversationState, Nudge, TranscriptTurn
+
+NUDGE_HINTS: dict[str, str] = {
+    "concession": "Qualify it before moving on.",
+    "long_monologue": "Pause and invite their reaction.",
+    "repetition": "Ask what evidence would change their view.",
+    "timing": "Check if the moment is right.",
+    "other": "Consider the implication before continuing.",
+}
 
 Speaker = Literal["user", "counterpart", "system"]
 
@@ -91,6 +100,30 @@ def _enrich_nudge(
         return candidate
 
 
+def build_nudge_surface(nudge: Nudge) -> str:
+    """Generate an A2UI v0.9 surface payload for the latest nudge."""
+    surface_id = "nudge-surface"
+    catalog_id = "mettle-nudge-catalog"
+    return a2ui.render(
+        [
+            a2ui.create_surface(surface_id, catalog_id),
+            a2ui.update_components(
+                surface_id,
+                [
+                    {
+                        "id": "root",
+                        "component": "NudgeCard",
+                        "kind": nudge["kind"],
+                        "message": nudge["message"],
+                        "hint": NUDGE_HINTS.get(nudge["kind"], ""),
+                        "actionLabel": "Get a reframe",
+                    }
+                ],
+            ),
+        ]
+    )
+
+
 def evaluate_proactive_nudge(state: ConversationState) -> dict:
     """Run the cheap rules pass, then enrich any candidate nudge via LLM."""
     candidate = evaluate_latest_turn(state)
@@ -101,7 +134,10 @@ def evaluate_proactive_nudge(state: ConversationState) -> dict:
     turn_text = transcript[candidate["source_turn_index"]]["text"] if transcript else ""
 
     nudge = _enrich_nudge(candidate, state, turn_text)
-    return {"nudges_sent": [*state.get("nudges_sent", []), nudge]}
+    return {
+        "nudges_sent": [*state.get("nudges_sent", []), nudge],
+        "a2ui_surface": build_nudge_surface(nudge),
+    }
 
 
 def ingest_transcript_turn(
@@ -139,4 +175,5 @@ def ingest_transcript_turn(
             candidate, {**candidate_state, "transcript": transcript}, clean_text
         )
         update["nudges_sent"].append(nudge)
+        update["a2ui_surface"] = build_nudge_surface(nudge)
     return update

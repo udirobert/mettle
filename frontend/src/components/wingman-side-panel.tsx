@@ -4,6 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
 import { AlertTriangle, ArrowUp, Radio, Send, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { A2UINudgeHost } from '@/components/a2ui-nudge-host';
 import { NudgeCard } from '@/components/nudge-card';
 
 /** Live transcript, proactive nudge cards, and native reactive interrupt UI. */
@@ -129,6 +130,13 @@ export function WingmanSidePanel() {
             <ArrowUp size={16} aria-hidden="true" /> Add
           </button>
         </form>
+      </section>
+
+      <section>
+        <h3 className="mettle-section-title">Latest nudge</h3>
+        <div className="mt-3">
+          <A2UINudgeHost />
+        </div>
       </section>
 
       <section>

@@ -43,6 +43,8 @@ type NudgeCardVariant = 'panel' | 'signal';
 type NudgeCardProps = {
   nudge: Nudge;
   variant?: NudgeCardVariant;
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
 function kindClassName(kind: NudgeKind): string {
@@ -50,7 +52,7 @@ function kindClassName(kind: NudgeKind): string {
   return styles[kind] ?? styles.other;
 }
 
-export function NudgeCard({ nudge, variant = 'panel' }: NudgeCardProps) {
+export function NudgeCard({ nudge, variant = 'panel', actionLabel, onAction }: NudgeCardProps) {
   const meta = KIND_META[nudge.kind] ?? KIND_META.other;
   const Icon = meta.icon;
   const isSignal = variant === 'signal';
@@ -68,6 +70,11 @@ export function NudgeCard({ nudge, variant = 'panel' }: NudgeCardProps) {
       </div>
       <strong className={styles.message}>{nudge.message}</strong>
       {meta.hint && <p className={styles.hint}>{meta.hint}</p>}
+      {actionLabel && onAction && (
+        <button className="mettle-action" type="button" onClick={onAction}>
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }
