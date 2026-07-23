@@ -209,12 +209,30 @@ export function useConversationState() {
     await copilotkit.runAgent({ agent });
   };
 
+  const runCoach = async (scenarioId: string) => {
+    if (agent.isRunning) return;
+
+    setPartial({
+      scenario_id: scenarioId,
+      phase: 'prep',
+      context_brief: undefined,
+    });
+    await copilotkit.waitForPendingFrameworkUpdates();
+    agent.addMessage({
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: 'Prepare this conversation: load the scenario and run the Coach stress-test.',
+    });
+    await copilotkit.runAgent({ agent });
+  };
+
   return {
     state,
     setPartial,
     setPhase,
     setScenarioId,
     appendTranscriptTurn,
+    runCoach,
     runLiveTurn,
     runOpponentTurn,
     runDebrief,

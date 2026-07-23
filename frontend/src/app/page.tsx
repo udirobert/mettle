@@ -116,7 +116,7 @@ function formatScenarioName(id: string | undefined): string {
 }
 
 export default function HomePage() {
-  const { state, setPhase, setScenarioId } = useConversationState();
+  const { state, setPhase, runCoach, isAgentRunning } = useConversationState();
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
   const [showEventList, setShowEventList] = useState(!state.scenario_id);
 
@@ -125,11 +125,11 @@ export default function HomePage() {
     setPhase(phase);
   };
 
-  const handleSelectEvent = (scenarioId: string) => {
-    setScenarioId(scenarioId);
+  const handleSelectEvent = async (scenarioId: string) => {
+    if (isAgentRunning) return;
     setShowEventList(false);
     setLocalPhase('prep');
-    setPhase('prep');
+    await runCoach(scenarioId);
   };
 
   const handleBackToEvents = () => {
