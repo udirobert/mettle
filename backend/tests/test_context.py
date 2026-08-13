@@ -39,17 +39,38 @@ class ExtractContextTests(unittest.TestCase):
         self.assertIn("Do not invent", format_evidence_for_coach(draft))
 
         draft["status"] = "approved"
+        for claim in draft["claims"]:
+            claim["decision"] = "approved"
         rendered = format_evidence_for_coach(draft)
         self.assertIn("Approved evidence", rendered)
         self.assertIn("$40M", rendered)
+
+    def test_rejected_and_pending_claims_are_excluded(self):
+        brief = extract_brief_from_paste(SAMPLE_ELENA_THREAD)
+        brief["status"] = "approved"
+        brief["claims"][0]["decision"] = "approved"
+        for claim in brief["claims"][1:]:
+            claim["decision"] = "rejected"
+        rendered = format_evidence_for_coach(brief)
+        self.assertIn(brief["claims"][0]["claim"], rendered)
+        if len(brief["claims"]) > 1:
+            self.assertNotIn(brief["claims"][1]["claim"], rendered)
+
+    def test_extracted_claims_start_pending(self):
+        brief = extract_brief_from_paste(SAMPLE_ELENA_THREAD)
+        self.assertTrue(brief["claims"])
+        self.assertTrue(all(c.get("decision") == "pending" for c in brief["claims"]))
 
 
 class CoachEvidenceTests(unittest.TestCase):
     def test_approved_paste_grounds_fallback_analysis(self):
         brief = extract_brief_from_paste(SAMPLE_ELENA_THREAD)
         brief["status"] = "approved"
+        for claim in brief["claims"]:
+            claim["decision"] = "approved"
         result = run_coach({"scenario_id": "lp_renewal", "context_brief": brief})
         analysis = result["coach_analysis"]
+        self.assertEqual(result.get("coach_stage"), "ready")
         self.assertTrue(
             any("thread shows" in spot.lower() for spot in analysis["blind_spots"])
         )

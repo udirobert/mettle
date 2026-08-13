@@ -109,3 +109,12 @@ class CoachTests(unittest.TestCase):
         self.assertEqual(len(analysis["perspectives"]), 3)
         self.assertIn("disagreements", analysis)
         self.assertIn("consensus", analysis)
+        self.assertEqual(result.get("coach_stage"), "ready")
+
+    def test_coach_perspectives_stage_lands_before_synthesis(self):
+        from graph.coach import run_coach_perspectives
+
+        mid = run_coach_perspectives({"scenario_id": "lp_renewal"})
+        self.assertEqual(mid["coach_stage"], "perspectives")
+        self.assertEqual(len(mid["coach_analysis"]["perspectives"]), 3)
+        self.assertEqual(mid["coach_analysis"]["opening_strategy"], "")

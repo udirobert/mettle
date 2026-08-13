@@ -253,13 +253,11 @@ def _ground_fallback_in_evidence(
     context_brief: ContextBrief | None,
 ) -> CoachAnalysis:
     """Keep the fallback usable when the user pasted a thread but no LLM ran."""
+    from .context import approved_claims
+
     if not context_brief or context_brief.get("status") != "approved":
         return analysis
-    claims = [
-        claim["claim"]
-        for claim in (context_brief.get("claims") or [])
-        if claim.get("claim")
-    ]
+    claims = [claim["claim"] for claim in approved_claims(context_brief)]
     if not claims:
         return analysis
     grounded = dict(analysis)
@@ -275,65 +273,99 @@ def _ground_fallback_in_evidence(
     return grounded  # type: ignore[return-value]
 
 
-def _run_multi_perspective_stress_test(
-    scenario: dict,
-    weak_points: list[str],
-    context_brief: ContextBrief | None = None,
-) -> CoachAnalysis:
-    """Run the full debate pipeline: 3 perspectives in parallel + synthesis.
-
-    Falls back to deterministic analysis on any error. If perspectives
-    succeed but synthesis fails, constructs a minimal analysis from the
-    raw perspectives.
-    """
-    llm = get_llm()
-    if llm is None:
-        return _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
-
-    profile = scenario["counterpart_profile"]
-    counterpart_name = profile["name"]
-    scenario_context = _build_scenario_context(scenario, weak_points, context_brief)
-
-    # Stage 1: run perspectives in parallel
-    try:
-        perspectives = _run_perspectives(llm, scenario_context, counterpart_name)
-    except Exception:
-        return _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
-
-    if not perspectives:
-        return _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
-
-    # Stage 2: synthesize
-    try:
-        analysis = _synthesize(llm, perspectives)
-        # Ensure perspectives are preserved in the output
-        if not analysis.get("perspectives"):
-            analysis["perspectives"] = perspectives
-        return analysis
-    except Exception:
-        # Synthesis failed — construct minimal analysis from raw perspectives
-        return _ground_fallback_in_evidence(
-            {**FALLBACK_ANALYSIS, "perspectives": perspectives},
-            context_brief,
-        )
+def _empty_partial_analysis(perspectives: list[PerspectiveResult]) -> CoachAnalysis:
+    return {
+        "blind_spots": [],
+        "concrete_moves": [],
+        "likely_objections": [],
+        "opening_strategy": "",
+        "perspectives": perspectives,
+        "disagreements": [],
+        "consensus": [],
+    }
 
 
-def run_coach(state: ConversationState) -> dict:
-    """Initialize prep from the scenario, then run the multi-perspective debate.
+def run_coach_perspectives(state: ConversationState) -> dict:
+    """Stage 1: load scenario and land the three adversarial perspectives.
 
-    The deterministic scenario load happens first so shared state is always
-    populated. The debate pipeline enriches the prep with structured analysis
-    that the proactive Wingman reads later to calibrate nudge sensitivity.
+    Writes a partial coach_analysis so the UI can stage the council before
+    synthesis arrives.
     """
     scenario = load_scenario(state.get("scenario_id", "lp_renewal"))
     weak_points = state.get("user_weak_points") or scenario["user_weak_points"]
     context_brief = state.get("context_brief")
 
-    analysis = _run_multi_perspective_stress_test(scenario, weak_points, context_brief)
+    llm = get_llm()
+    profile = scenario["counterpart_profile"]
+
+    perspectives: list[PerspectiveResult] = []
+    if llm is not None:
+        scenario_context = _build_scenario_context(scenario, weak_points, context_brief)
+        try:
+            perspectives = _run_perspectives(llm, scenario_context, profile["name"])
+        except Exception:
+            perspectives = []
+
+    if not perspectives:
+        perspectives = list(
+            _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)[
+                "perspectives"
+            ]
+        )
 
     return {
         **scenario,
         "phase": "prep",
         "user_weak_points": weak_points,
-        "coach_analysis": analysis,
+        "coach_stage": "perspectives",
+        "coach_analysis": _empty_partial_analysis(perspectives),
+    }
+
+
+def run_coach_synthesize(state: ConversationState) -> dict:
+    """Stage 2: synthesize disagreement into the structured brief."""
+    existing = state.get("coach_analysis") or _empty_partial_analysis([])
+    perspectives = existing.get("perspectives") or []
+    context_brief = state.get("context_brief")
+
+    llm = get_llm()
+    if llm is None or not perspectives:
+        analysis = _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
+        if perspectives:
+            analysis = {**analysis, "perspectives": perspectives}
+        return {
+            "coach_stage": "ready",
+            "coach_analysis": analysis,
+        }
+
+    try:
+        analysis = _synthesize(llm, perspectives)
+        if not analysis.get("perspectives"):
+            analysis["perspectives"] = perspectives
+        return {
+            "coach_stage": "ready",
+            "coach_analysis": analysis,
+        }
+    except Exception:
+        return {
+            "coach_stage": "ready",
+            "coach_analysis": _ground_fallback_in_evidence(
+                {**FALLBACK_ANALYSIS, "perspectives": perspectives},
+                context_brief,
+            ),
+        }
+
+
+def run_coach(state: ConversationState) -> dict:
+    """Initialize prep from the scenario, then run the multi-perspective debate.
+
+    Used by unit tests and as a single-shot convenience. The live graph uses
+    run_coach_perspectives → run_coach_synthesize so the UI can stage the council.
+    """
+    mid = run_coach_perspectives(state)
+    final = run_coach_synthesize({**state, **mid})
+    return {
+        **mid,
+        **final,
+        "coach_stage": "ready",
     }

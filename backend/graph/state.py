@@ -66,6 +66,8 @@ class EvidenceClaim(TypedDict):
         "person",
         "risk",
     ]
+    # Human-in-the-loop gate. Pending claims never reach Coach prompts.
+    decision: NotRequired[Literal["pending", "approved", "rejected"]]
 
 
 class ContextBrief(TypedDict):
@@ -121,6 +123,10 @@ class ConversationState(TypedDict):
 
     # Coach analysis output — set during prep, read by Wingman for sensitivity.
     coach_analysis: NotRequired[CoachAnalysis]
+
+    # Progressive council: perspectives land before synthesis so the UI can stage.
+    # idle → debating → perspectives → ready
+    coach_stage: NotRequired[Literal["idle", "debating", "perspectives", "ready"]]
 
     # Context ingestion — evidence brief from imported sources (Gmail, Calendar, etc.)
     context_brief: NotRequired[ContextBrief]

@@ -146,6 +146,7 @@ def _heuristic_extract(text: str, counterpart_name: str) -> ContextBrief:
                     if relevance in {"number", "commitment"}
                     else "medium",
                     "relevance": relevance,
+                    "decision": "pending",
                 }
             )
             if relevance == "commitment":
@@ -165,6 +166,7 @@ def _heuristic_extract(text: str, counterpart_name: str) -> ContextBrief:
                         "source_ids": [f"paste-{index + 1}"],
                         "confidence": "medium",
                         "relevance": "counterpart",
+                        "decision": "pending",
                     }
                 )
 
@@ -183,26 +185,51 @@ def extract_brief_from_paste(
     return _heuristic_extract(cleaned, counterpart_name)
 
 
+def approved_claims(brief: ContextBrief | None) -> list:
+    """Claims the human explicitly kept. Legacy claims without decision count as approved."""
+    if not brief:
+        return []
+    claims = []
+    for claim in brief.get("claims") or []:
+        decision = claim.get("decision")
+        if decision == "rejected":
+            continue
+        if decision == "pending":
+            continue
+        # approved, or missing (older fixtures / skip-paste path)
+        if decision in (None, "approved") and claim.get("claim"):
+            claims.append(claim)
+    return claims
+
+
 def format_evidence_for_coach(brief: ContextBrief | None) -> str:
-    """Render an approved brief for Coach prompts. Empty if unapproved."""
+    """Render human-approved claims for Coach prompts. Empty if none kept."""
     if not brief or brief.get("status") != "approved":
         return "No approved evidence brief. Do not invent prior correspondence."
 
-    claims = brief.get("claims") or []
+    claims = approved_claims(brief)
     if not claims:
-        return "An evidence brief was approved but contains no claims."
+        return "An evidence brief was approved but contains no kept claims."
 
     lines = ["Approved evidence from the user's thread (treat as ground truth):"]
     for claim in claims:
         relevance = claim.get("relevance", "counterpart")
         lines.append(f"  - [{relevance}] {claim['claim']}")
 
-    history = brief.get("counterpart_history") or []
+    history = [
+        item
+        for item in (brief.get("counterpart_history") or [])
+        if item in {claim["claim"] for claim in claims}
+    ]
     if history:
         lines.append("Counterpart has already said:")
         lines.extend(f"  - {item}" for item in history)
 
-    commitments = brief.get("open_commitments") or []
+    commitments = [
+        item
+        for item in (brief.get("open_commitments") or [])
+        if item in {claim["claim"] for claim in claims}
+    ]
     if commitments:
         lines.append("Open commitments by the user:")
         lines.extend(f"  - {item}" for item in commitments)

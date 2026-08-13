@@ -77,6 +77,20 @@ external research.
 
 ## UX Flow
 
+### Demo path (shipped)
+
+1. User opens the Elena Park LP renewal event.
+2. User pastes (or loads a sample) correspondence with Elena.
+3. Backend/local extract proposes source-backed claims (`decision: pending`).
+4. UI shows each claim with Keep / Reject.
+5. User debates with only kept claims → brief `status: approved` enters shared
+   state and Coach runs (`coach_perspectives` → `coach_synthesize`).
+6. User can re-debate with the same kept brief anytime.
+
+Nothing reaches Coach prompts until claims are kept and the brief is approved.
+
+### Later path (OAuth / research)
+
 1. User chooses the scenario and clicks `Import context`.
 2. User connects Gmail or Calendar through hosted OAuth.
 3. User scopes the import:
@@ -85,7 +99,7 @@ external research.
    - Optional keywords such as `renewal`, `allocation`, `fee`, `board`, or
      `extension`.
 4. Backend fetches matching items and creates an evidence brief.
-5. UI shows the brief with source-backed claims.
+5. UI shows the brief with source-backed claims (same Keep / Reject gate).
 6. User approves, edits, or discards the brief.
 7. Approved brief becomes part of the shared conversation state.
 
@@ -94,29 +108,9 @@ screen is a clean evidence table: claim, source, confidence, and why it matters.
 
 ## State Contract
 
-Add this only after the current Coach/Opponent/Wingman flow is stable.
+Shipped in `backend/graph/state.py` (and mirrored on the frontend).
 
 ```python
-class ContextSource(TypedDict):
-    source_id: str
-    provider: Literal[
-        "gmail",
-        "calendar",
-        "outlook",
-        "slack",
-        "notion",
-        "drive",
-        "exa",
-        "firecrawl",
-        "tinyfish",
-        "manual",
-    ]
-    title: str
-    author: str | None
-    timestamp: str | None
-    url: str | None
-
-
 class EvidenceClaim(TypedDict):
     claim: str
     source_ids: list[str]
@@ -133,6 +127,7 @@ class EvidenceClaim(TypedDict):
         "person",
         "risk",
     ]
+    decision: NotRequired[Literal["pending", "approved", "rejected"]]
 
 
 class ContextBrief(TypedDict):
@@ -145,16 +140,17 @@ class ContextBrief(TypedDict):
     user_approved_at: str | None
 ```
 
-Then extend `ConversationState`:
+Also on `ConversationState`:
 
 ```python
 context_brief: NotRequired[ContextBrief]
+coach_stage: NotRequired[Literal["idle", "debating", "perspectives", "ready"]]
 ```
 
-Coach can read approved claims when stress-testing the user's position.
-Opponent can use approved counterpart history to stay in character. Wingman can
-use approved commitments and numbers to detect risky concessions. Debrief can
-compare what happened on the call against prior commitments.
+Coach reads only kept claims when `status == "approved"`. Opponent can use
+approved counterpart history to stay in character. Wingman can use approved
+commitments and numbers to detect risky concessions. Debrief can compare what
+happened on the call against prior commitments.
 
 ## Backend Shape
 
@@ -203,43 +199,39 @@ separate short-lived store with a TTL.
 
 Do not block the current demo on Composio.
 
-For the near-term client demo, fake this flow with a static imported-context
-fixture tied to `lp_renewal.md`:
+### Near-term demo (shipped)
+
+Paste-path HITL replaces one-click fixtures for the LP renewal wedge:
+
+- User pastes Elena correspondence (or the sample thread).
+- Deterministic extract proposes claims (`decision: pending`).
+- User Keep / Rejects each claim; debate runs only on kept claims.
+- Coach council stages perspectives then synthesis; re-debate reuses the brief.
+
+Legacy static fixtures in `frontend/src/fixtures/evidence-fixtures.ts` may still
+exist for research-shaped claims; do not depend on fixture-click as the primary
+demo path.
+
+### Later: OAuth + public research
+
+When adding providers, keep the same claim-level gate. Example claim shapes:
 
 - Prior email: Elena flagged DPI and fee drag.
 - Prior commitment: user promised a portfolio-construction memo before renewal.
 - Prior number: LP allocation under discussion is `$40M`.
-- Prior risk: second-largest investor, reputational impact if they reduce.
-
-Render it as an "Imported evidence" section in Coach. That shows the product
-vision without adding OAuth and data-retention risk before the core graph is
-stable.
-
-Also fake the public research layer with a static "External research" fixture:
-
 - Public context: LPs are scrutinizing DPI and distributions more heavily.
-- Counterpart context: public pension-style allocators tend to pressure fees
-  when liquidity slows.
-- Market context: private markets renewal conversations are more sensitive to
-  cash-back timing than headline IRR.
-
-Keep these as demo claims with mock source labels until real provider keys and
-source retrieval are in place.
 
 ## Implementation Order
 
-1. Add the static evidence fixture and Coach UI section.
-2. Add the `ContextBrief` state shape behind a feature flag.
-3. Add static external-research fixture and source-backed claims UI.
-4. Add Exa for scoped public search.
-5. Add Firecrawl for known-URL extraction and PDF/source cleanup.
-6. Add server-side Composio auth for Gmail only.
-7. Add bounded import and draft-brief generation.
-8. Add approval flow and state write.
-9. Feed approved claims into Coach synthesis.
-10. Feed approved commitments and numbers into proactive Wingman rules.
-11. Add Calendar.
-12. Consider Tinyfish only for browser workflows that search/scrape cannot
-    handle.
-13. Revisit triggers only for asynchronous prep reminders, not live transcript
+1. **Done** — `ContextBrief` state + paste extract + claim Keep/Reject + Coach grounding.
+2. **Done** — staged Coach council consumes approved claims.
+3. Add Exa for scoped public search (still claim-gated).
+4. Add Firecrawl for known-URL extraction and PDF/source cleanup.
+5. Add server-side Composio auth for Gmail only.
+6. Add bounded import and draft-brief generation (same HITL UI).
+7. Feed approved commitments and numbers into proactive Wingman rules.
+8. Add Calendar.
+9. Consider Tinyfish only for browser workflows that search/scrape cannot
+   handle.
+10. Revisit triggers only for asynchronous prep reminders, not live transcript
     nudges.

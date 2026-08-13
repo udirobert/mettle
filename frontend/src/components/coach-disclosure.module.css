@@ -109,6 +109,133 @@
   }
 }
 
+.council {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--ink);
+  background: #fffdf7;
+  padding: 1rem;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.councilHead strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.perspectiveWaiting {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.perspectiveLive {
+  animation: seatIn 320ms ease-out;
+}
+
+@keyframes seatIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.synthesisPending {
+  border: 1px dashed var(--line);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1rem;
+  text-transform: uppercase;
+}
+
+.claimRow {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .claimRow {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+.claimBody {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+
+.claim_approved {
+  border-color: #83a600;
+  background: #f1fad2;
+}
+
+.claim_rejected {
+  border-color: #f5ada0;
+  background: #fff0eb;
+  opacity: 0.72;
+}
+
+.claim_pending {
+  background: #fffdf7;
+}
+
+.claimActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.claimBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  gap: 4px;
+  letter-spacing: 0.04em;
+  padding: 7px 9px;
+  text-transform: uppercase;
+}
+
+.claimBtn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.claimBtnOn {
+  background: #83a600;
+  border-color: #83a600;
+  color: #fff;
+}
+
+.claimBtnReject:hover {
+  border-color: var(--tomato);
+  color: var(--tomato);
+}
+
+.claimBtnOnReject {
+  background: var(--tomato);
+  border-color: var(--tomato);
+  color: #fff;
+}
+
 .perspectiveCard {
   background: #fffdf7;
   border: 1px solid var(--line);

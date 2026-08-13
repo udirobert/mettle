@@ -5,7 +5,7 @@ from typing import Literal
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
-from .coach import run_coach
+from .coach import run_coach_perspectives, run_coach_synthesize
 from .debrief import run_debrief
 from .opponent import run_opponent
 from .state import ConversationState
@@ -15,7 +15,15 @@ from .wingman_reactive import answer_reactive_query, wait_for_reactive_query
 
 def route_phase(
     state: ConversationState,
-) -> Command[Literal["coach", "opponent", "proactive", "reactive_wait", "debrief"]]:
+) -> Command[
+    Literal[
+        "coach_perspectives",
+        "opponent",
+        "proactive",
+        "reactive_wait",
+        "debrief",
+    ]
+]:
     """Select one phase without duplicating state or graph entrypoints."""
     if state["phase"] == "live":
         destination = (
@@ -23,7 +31,7 @@ def route_phase(
         )
     else:
         destination = {
-            "prep": "coach",
+            "prep": "coach_perspectives",
             "rehearsal": "opponent",
             "debrief": "debrief",
         }[state["phase"]]
@@ -32,14 +40,16 @@ def route_phase(
 
 builder = StateGraph(ConversationState)
 builder.add_node("phase_router", route_phase)
-builder.add_node("coach", run_coach)
+builder.add_node("coach_perspectives", run_coach_perspectives)
+builder.add_node("coach_synthesize", run_coach_synthesize)
 builder.add_node("opponent", run_opponent)
 builder.add_node("proactive", evaluate_proactive_nudge)
 builder.add_node("reactive_wait", wait_for_reactive_query)
 builder.add_node("reactive_answer", answer_reactive_query)
 builder.add_node("debrief", run_debrief)
 builder.add_edge(START, "phase_router")
-builder.add_edge("coach", END)
+builder.add_edge("coach_perspectives", "coach_synthesize")
+builder.add_edge("coach_synthesize", END)
 builder.add_edge("opponent", END)
 builder.add_edge("proactive", END)
 builder.add_edge("reactive_wait", "reactive_answer")

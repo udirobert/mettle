@@ -64,6 +64,7 @@ export type EvidenceClaim = {
     | 'company'
     | 'person'
     | 'risk';
+  decision?: 'pending' | 'approved' | 'rejected';
 };
 
 export type ContextBrief = {
@@ -99,6 +100,7 @@ export type ConversationState = {
   reactive_reply?: string | null;
   debrief_notes?: string[];
   coach_analysis?: CoachAnalysis;
+  coach_stage?: 'idle' | 'debating' | 'perspectives' | 'ready';
   context_brief?: ContextBrief;
   reactive_query_prefill?: string | null;
 };
@@ -221,6 +223,7 @@ export function useConversationState() {
         counterpart_profile: LP_EVENT.counterpartProfile,
         user_weak_points: LP_EVENT.userWeakPoints,
         coach_analysis: undefined,
+        coach_stage: 'idle',
         context_brief: undefined,
         transcript: [],
         nudges_sent: [],
@@ -234,22 +237,30 @@ export function useConversationState() {
       scenario_id: scenarioId,
       phase: 'prep',
       coach_analysis: undefined,
+      coach_stage: 'idle',
       context_brief: undefined,
     });
   };
 
-  const runCoach = async (scenarioId: string) => {
+  const runCoach = async (
+    scenarioId: string,
+    options?: { contextBrief?: ContextBrief },
+  ) => {
     if (agent.isRunning) return;
 
     setPartial({
       scenario_id: scenarioId,
       phase: 'prep',
+      coach_analysis: undefined,
+      coach_stage: 'debating',
+      ...(options?.contextBrief ? { context_brief: options.contextBrief } : {}),
     });
     await copilotkit.waitForPendingFrameworkUpdates();
     agent.addMessage({
       id: crypto.randomUUID(),
       role: 'user',
-      content: 'Prepare this conversation: load the scenario and run the Coach stress-test.',
+      content:
+        'Prepare this conversation: load the scenario and run the Coach council debate.',
     });
     await copilotkit.runAgent({ agent });
   };

@@ -54,8 +54,9 @@ mode or one integration boundary.
 5. The latest nudge renders as an A2UI surface in the Wingman panel and the
    SignalDesk, with a "Get a reframe" action that pre-fills the reactive prompt. ✅
 6. Debrief reads the accumulated transcript and nudges. ✅
-7. Context import uses static fixtures to preview and approve an evidence brief
-   before it enters shared state. ✅
+7. Context import uses paste → claim-level keep/reject → approved brief before
+   it enters shared state; Coach debates only with kept claims. ✅
+8. Coach council stages perspectives then synthesis (agreed / split / move). ✅
 
 ## Avoid These Conflicts
 

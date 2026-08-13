@@ -95,6 +95,7 @@ export function extractBriefFromPaste(
         source_ids: [sourceId],
         confidence: relevance === 'number' || relevance === 'commitment' ? 'high' : 'medium',
         relevance,
+        decision: 'pending',
       });
       if (relevance === 'commitment') brief.open_commitments.push(claim);
       if (author.toLowerCase() !== 'you' && ['objection', 'risk', 'number'].includes(relevance)) {
@@ -111,6 +112,7 @@ export function extractBriefFromPaste(
           source_ids: [`paste-${index + 1}`],
           confidence: 'medium',
           relevance: 'counterpart',
+          decision: 'pending',
         });
       }
     });

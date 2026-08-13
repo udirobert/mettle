@@ -3,31 +3,36 @@
 An agent for high-stakes conversations in four phases: Coach, Opponent,
 Wingman, and Debrief.
 
+The demo wedge is one consequential event — Elena Park, $40M LP renewal —
+with progressive disclosure: Coach and Rehearse first; Live and Debrief as
+later rooms. Evidence is paste → claim-level keep/reject → debate.
+
 ## Repository map
 
 - `backend/graph/state.py` is the shared LangGraph state contract. Both owners
   must add fields there, never in mode-local schemas.
 - `backend/graph/opponent.py` and `backend/graph/wingman_reactive.py` belong to
   Person A.
-- `backend/graph/coach.py`, `backend/graph/wingman_proactive.py`,
-  `backend/graph/debrief.py`, `backend/triggers/rules.py`, and `backend/voice/`
-  belong to Person B.
-- `scenarios/lp_renewal.md` is the first vertical-slice scenario.
+- `backend/graph/coach.py`, `backend/graph/context.py`,
+  `backend/graph/wingman_proactive.py`, `backend/graph/debrief.py`,
+  `backend/triggers/rules.py`, and `backend/voice/` belong to Person B.
+- `scenarios/lp_renewal.md` is the first vertical-slice scenario (default demo).
 - `frontend/` is the CopilotKit Next.js surface. The workspace in
   `frontend/src/app/page.tsx` composes `CoachPanel`, `OpponentChat`,
   `WingmanSidePanel`, and `DebriefView` around a phase rail and signal desk.
   `frontend/src/hooks/use-conversation-state.ts` is the typed wrapper around
   CopilotKit's shared agent state and mirrors `state.py`.
+- `frontend/src/components/coach-panel.tsx` — claim-level HITL + staged council
+  (perspectives land, then agreed / split / move).
+- `frontend/src/fixtures/lp-event.ts` — Elena Park default event.
+- `frontend/src/lib/extract-evidence.ts` + `api/extract-context/` — paste-path
+  claim extraction (agent `/extract-context` with local fallback).
 - `frontend/src/components/nudge-card.tsx`, `a2ui-catalog.tsx`, and
-  `a2ui-nudge-host.tsx` render the proactive nudge surface in both the Wingman
-  side panel and the SignalDesk.
-- `frontend/src/fixtures/evidence-fixtures.ts` feeds the static context-import
-  demo flow.
+  `a2ui-nudge-host.tsx` render the proactive nudge surface.
 - `docs/NORTH_STAR.md` defines the product vision: a stakes-aware calendar and
   live counsel layer, not a generic meeting assistant.
-- `docs/CONTEXT_INGESTION.md` defines the planned Composio/email import path:
-  private import and public research -> evidence brief -> user approval ->
-  shared state.
+- `docs/CONTEXT_INGESTION.md` defines paste-path HITL now and planned
+  Composio/Exa ingestion later.
 
 ## Run
 
@@ -62,41 +67,36 @@ npm run build
 
 - **Done** — graph wiring, reactive interrupt, deterministic proactive triggers,
   LP renewal scenario loading, frontend phase-panel shells.
-- **Done (Person B)** — Coach LLM stress-test (structured output: blind spots,
-  concrete moves, likely objections, opening strategy) + proactive nudge
-  enrichment (rules pass -> LLM, context-aware). Both with graceful fallback.
+- **Done (Person B)** — multi-perspective Coach debate (Skeptic + Counterpart +
+  Voss Negotiator → synthesis), staged across `coach_perspectives` →
+  `coach_synthesize` so the UI can show the council forming. Proactive nudge
+  enrichment (rules → LLM) with graceful fallback.
 - **Done (Person A)** — reactive Wingman interrupt/answer + opponent roleplay +
   debrief.
-- **Done (shared)** — kind-aware nudge cards (`concession`, `long_monologue`,
-  `repetition`, `timing`, `other`), A2UI generative nudge surface rendered in the
-  Wingman panel and SignalDesk, and reactive prompt pre-fill from the
-  "Get a reframe" action.
-- **Done (Person B)** — static context-import and approval flow with evidence
-  fixtures.
-- **Next (Person B)** — multi-perspective Coach debate (Skeptic + Counterpart +
-  Voss Negotiator -> synthesis) + real context ingestion. See CLAUDE.md for
-  design.
+- **Done (shared)** — kind-aware nudge cards, progressive disclosure across
+  Coach / Rehearse / Live / Debrief (judgment first, inventory folded).
+- **Done (Person B)** — paste-path evidence: extract claims, keep/reject per
+  claim, debate only with kept claims; re-debate anytime.
+- **Next (Person B)** — real context ingestion (Gmail/Calendar OAuth + public
+  research). Paste HITL remains the unscalable path that teaches the contract.
 - **Stretch** — LiveKit voice adapter. Additive — the demo is complete without it.
-- **Later** — real Gmail/Calendar OAuth plus public research via
-  Exa/Firecrawl/Tinyfish-style providers. Static fixtures handle the demo until
-  the core graph is stable.
 - **Product north star** — calendar-native high-stakes conversation flow. See
   `docs/NORTH_STAR.md` before making major frontend changes.
 
 ## Build order
 
 1. **Done** — graph skeleton + state contract + scenario + frontend shells.
-2. **Done (Person B)** — Coach LLM stress-test + proactive nudge enrichment.
+2. **Done (Person B)** — Coach stress-test + proactive nudge enrichment.
 3. **Done (Person A)** — reactive Wingman + opponent roleplay + debrief.
-4. **Done (shared)** — A2UI nudge surface + SignalDesk integration + reactive
-   pre-fill.
-5. **Done (Person B)** — static context-import + approval flow.
-6. **Next (Person B)** — multi-perspective Coach debate + real context ingestion.
+4. **Done (shared)** — nudge surface + SignalDesk + reactive pre-fill.
+5. **Done (Person B)** — multi-perspective Coach + paste claim-level HITL +
+   progressive disclosure demo wedge.
+6. **Next (Person B)** — real context ingestion (Composio / Exa / Firecrawl).
 7. **Stretch (Person B)** — LiveKit voice adapter.
 
 ## Known gaps
 
-- **Context ingestion** — the import/approval UI uses static fixtures. Real
+- **Context ingestion** — paste + deterministic extract is the demo path. Real
   OAuth/Composio/Exa/Firecrawl retrieval is future work.
 - **A2UI action forwarding** — the "Get a reframe" action is handled locally in
   the UI. It is not yet forwarded to the agent as an `a2uiAction`.
