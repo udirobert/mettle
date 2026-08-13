@@ -1,6 +1,7 @@
 'use client';
 
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
+import { LP_EVENT } from '@/fixtures/lp-event';
 
 /**
  * Shared conversation state contract — mirrors backend/graph/state.py.
@@ -211,13 +212,38 @@ export function useConversationState() {
     await copilotkit.runAgent({ agent });
   };
 
+  const openEvent = (scenarioId: string) => {
+    if (scenarioId === LP_EVENT.id) {
+      setPartial({
+        scenario_id: LP_EVENT.id,
+        phase: 'prep',
+        stakes: LP_EVENT.stakes,
+        counterpart_profile: LP_EVENT.counterpartProfile,
+        user_weak_points: LP_EVENT.userWeakPoints,
+        coach_analysis: undefined,
+        context_brief: undefined,
+        transcript: [],
+        nudges_sent: [],
+        reactive_reply: null,
+        debrief_notes: [],
+      });
+      return;
+    }
+
+    setPartial({
+      scenario_id: scenarioId,
+      phase: 'prep',
+      coach_analysis: undefined,
+      context_brief: undefined,
+    });
+  };
+
   const runCoach = async (scenarioId: string) => {
     if (agent.isRunning) return;
 
     setPartial({
       scenario_id: scenarioId,
       phase: 'prep',
-      context_brief: undefined,
     });
     await copilotkit.waitForPendingFrameworkUpdates();
     agent.addMessage({
@@ -235,6 +261,7 @@ export function useConversationState() {
     setScenarioId,
     appendTranscriptTurn,
     runCoach,
+    openEvent,
     runLiveTurn,
     runOpponentTurn,
     runDebrief,

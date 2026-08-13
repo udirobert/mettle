@@ -14,9 +14,10 @@ from __future__ import annotations
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from .context import format_evidence_for_coach
 from .llm import get_llm
 from .scenarios import load_scenario
-from .state import CoachAnalysis, ConversationState, PerspectiveResult
+from .state import CoachAnalysis, ContextBrief, ConversationState, PerspectiveResult
 
 # --- Shared scenario context template ---
 
@@ -31,7 +32,9 @@ Known concerns:
 {counterpart_concerns}
 
 User's self-identified weak points:
-{user_weak_points}"""
+{user_weak_points}
+
+{evidence}"""
 
 # --- Perspective prompts (genuinely adversarial, not vague "different views") ---
 
@@ -185,7 +188,11 @@ def _format_weak_points(weak_points: list[str]) -> str:
     return "\n".join(f"  - {w}" for w in weak_points)
 
 
-def _build_scenario_context(scenario: dict, weak_points: list[str]) -> str:
+def _build_scenario_context(
+    scenario: dict,
+    weak_points: list[str],
+    context_brief: ContextBrief | None = None,
+) -> str:
     profile = scenario["counterpart_profile"]
     return SCENARIO_CONTEXT_TEMPLATE.format(
         scenario_id=scenario["scenario_id"],
@@ -196,6 +203,7 @@ def _build_scenario_context(scenario: dict, weak_points: list[str]) -> str:
         counterpart_leverage=profile["leverage"],
         counterpart_concerns=_format_concerns(profile["concerns"]),
         user_weak_points=_format_weak_points(weak_points),
+        evidence=format_evidence_for_coach(context_brief),
     )
 
 
@@ -240,9 +248,37 @@ def _synthesize(llm, perspectives: list[PerspectiveResult]) -> CoachAnalysis:
     return result  # type: ignore[return-value]
 
 
+def _ground_fallback_in_evidence(
+    analysis: CoachAnalysis,
+    context_brief: ContextBrief | None,
+) -> CoachAnalysis:
+    """Keep the fallback usable when the user pasted a thread but no LLM ran."""
+    if not context_brief or context_brief.get("status") != "approved":
+        return analysis
+    claims = [
+        claim["claim"]
+        for claim in (context_brief.get("claims") or [])
+        if claim.get("claim")
+    ]
+    if not claims:
+        return analysis
+    grounded = dict(analysis)
+    grounded["blind_spots"] = [
+        f"The thread shows: {claims[0]}",
+        *list(analysis["blind_spots"]),
+    ]
+    if len(claims) > 1:
+        grounded["likely_objections"] = [
+            claims[1],
+            *list(analysis["likely_objections"]),
+        ]
+    return grounded  # type: ignore[return-value]
+
+
 def _run_multi_perspective_stress_test(
     scenario: dict,
     weak_points: list[str],
+    context_brief: ContextBrief | None = None,
 ) -> CoachAnalysis:
     """Run the full debate pipeline: 3 perspectives in parallel + synthesis.
 
@@ -252,20 +288,20 @@ def _run_multi_perspective_stress_test(
     """
     llm = get_llm()
     if llm is None:
-        return FALLBACK_ANALYSIS
+        return _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
 
     profile = scenario["counterpart_profile"]
     counterpart_name = profile["name"]
-    scenario_context = _build_scenario_context(scenario, weak_points)
+    scenario_context = _build_scenario_context(scenario, weak_points, context_brief)
 
     # Stage 1: run perspectives in parallel
     try:
         perspectives = _run_perspectives(llm, scenario_context, counterpart_name)
     except Exception:
-        return FALLBACK_ANALYSIS
+        return _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
 
     if not perspectives:
-        return FALLBACK_ANALYSIS
+        return _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
 
     # Stage 2: synthesize
     try:
@@ -276,10 +312,10 @@ def _run_multi_perspective_stress_test(
         return analysis
     except Exception:
         # Synthesis failed — construct minimal analysis from raw perspectives
-        return {
-            **FALLBACK_ANALYSIS,
-            "perspectives": perspectives,
-        }
+        return _ground_fallback_in_evidence(
+            {**FALLBACK_ANALYSIS, "perspectives": perspectives},
+            context_brief,
+        )
 
 
 def run_coach(state: ConversationState) -> dict:
@@ -291,8 +327,9 @@ def run_coach(state: ConversationState) -> dict:
     """
     scenario = load_scenario(state.get("scenario_id", "lp_renewal"))
     weak_points = state.get("user_weak_points") or scenario["user_weak_points"]
+    context_brief = state.get("context_brief")
 
-    analysis = _run_multi_perspective_stress_test(scenario, weak_points)
+    analysis = _run_multi_perspective_stress_test(scenario, weak_points, context_brief)
 
     return {
         **scenario,

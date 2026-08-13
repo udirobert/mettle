@@ -61,3 +61,166 @@
   padding: 1.25rem;
   background: #fffdf7;
 }
+
+.hero {
+  display: grid;
+  gap: 1px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+}
+
+.heroBlock {
+  padding: 1.15rem 1.25rem;
+}
+
+.heroBlock strong {
+  display: block;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.heroAgree {
+  background: #f1fad2;
+}
+
+.heroSplit {
+  background: #fff0eb;
+}
+
+.heroMove {
+  background: #e2e8ff;
+}
+
+.heroMove p {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin: 0.45rem 0 0;
+}
+
+.perspectiveGrid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .perspectiveGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.perspectiveCard {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  padding: 1rem;
+}
+
+.perspectiveHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.perspectiveHead strong {
+  font-size: 0.9rem;
+}
+
+.perspectiveRole {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0.35rem 0 0.7rem;
+  text-transform: uppercase;
+}
+
+.perspectiveBody {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.moreBtn {
+  background: none;
+  border: none;
+  color: var(--cobalt);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 0.65rem;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.pasteCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.pasteActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 12px;
+}
+
+.pasteError {
+  color: var(--tomato);
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.claimList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.claimList li {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 12px;
+}
+
+.claimRelevance {
+  color: var(--cobalt);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.skipHint {
+  color: var(--ink-soft);
+  font-size: 11px;
+  margin: 12px 0 0;
+}
+
+.skipBtn {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 10px 0;
+  text-transform: uppercase;
+}
+
+.skipBtn:hover {
+  color: var(--ink);
+}

@@ -156,10 +156,55 @@
     transform 150ms ease;
 }
 
-.phaseLabel {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0;
+.phaseButtonPrimary {
+  min-height: 52px;
+}
+
+.phaseButtonPrimary .phaseLabel {
+  font-size: 15px;
+}
+
+.phaseButtonNext {
+  border-color: color-mix(in srgb, var(--lime) 55%, transparent);
+}
+
+.nextChip {
+  margin-left: auto;
+  background: var(--lime);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 6px;
+  text-transform: uppercase;
+}
+
+.laterLabel {
+  color: #8fa0ff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin-top: auto;
+  padding: 18px 10px 8px;
+  text-transform: uppercase;
+}
+
+.laterList {
+  display: grid;
+  gap: 2px;
+  opacity: 0.72;
+}
+
+.phaseButtonLater {
+  min-height: 36px;
+  padding: 6px 12px;
+}
+
+.phaseButtonLater .phaseLabel {
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .phaseButton:hover {
@@ -337,6 +382,12 @@
   line-height: 1.05;
   text-transform: capitalize;
 }
+
+.signalStakes {
+  font-size: 15px !important;
+  line-height: 1.25 !important;
+  text-transform: none !important;
+}
 .signalCard p {
   color: var(--ink-soft);
   font-size: 11px;
@@ -430,7 +481,17 @@
   .phaseList {
     display: grid;
     gap: 4px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .laterLabel {
+    display: none;
+  }
+  .laterList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 4px;
+    opacity: 0.65;
   }
   .phaseButton {
     display: flex;

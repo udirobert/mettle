@@ -1,87 +1,145 @@
 'use client';
 
-import { CheckCircle2, ClipboardList, Flag, MessagesSquare } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ChevronDown, ClipboardList, Flag } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 
-/** Post-conversation readout shared by the two implementation tracks. */
+function classifyNote(note: string): 'commitment' | 'assumption' | 'next' {
+  const lower = note.toLowerCase();
+  if (
+    lower.includes('next') ||
+    lower.includes('follow-up') ||
+    lower.includes('follow up') ||
+    lower.includes('send') ||
+    lower.includes('prepare') ||
+    lower.includes('within 24')
+  ) {
+    return 'next';
+  }
+  if (
+    lower.includes('commit') ||
+    lower.includes('agreed') ||
+    lower.includes('promised') ||
+    lower.includes('will deliver')
+  ) {
+    return 'commitment';
+  }
+  return 'assumption';
+}
+
+/** Debrief: what changed and what to do. The record stays folded. */
 export function DebriefView() {
   const { state, runDebrief, isAgentRunning } = useConversationState();
+  const [showRecord, setShowRecord] = useState(false);
   const notes = state.debrief_notes ?? [];
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
   const counterpartName =
     String(state.counterpart_profile?.name ?? '').split(' ')[0] || 'Counterpart';
 
+  const nextNotes = notes.filter((note) => classifyNote(note) === 'next');
+  const commitmentNotes = notes.filter((note) => classifyNote(note) === 'commitment');
+  const assumptionNotes = notes.filter((note) => classifyNote(note) === 'assumption');
+  const lead = nextNotes[0] ?? commitmentNotes[0] ?? notes[0];
+
   return (
     <div className="mettle-phase">
       <header>
         <p className="mettle-kicker">After the room</p>
-        <h2 className="mettle-headline">Turn the conversation into leverage.</h2>
-        <p className="mettle-copy">
-          Capture commitments, expose what stayed unresolved, and decide what must happen before the
-          next touchpoint.
-        </p>
+        <h2 className="mettle-headline">Leave with the next move, not a transcript.</h2>
       </header>
 
-      <div className="mettle-grid">
-        <section className="mettle-card mettle-card--signal">
+      {notes.length === 0 ? (
+        <section className="mettle-card mettle-card--accent">
           <p className="mettle-kicker">
-            <MessagesSquare size={13} /> Conversation
+            <ClipboardList size={13} /> Close the record
           </p>
-          <strong>{transcript.length} turns captured</strong>
-          <p>The record is available for a clean post-meeting read.</p>
+          <strong>
+            {transcript.length} turns · {nudges.length} signal{nudges.length === 1 ? '' : 's'}
+          </strong>
+          <p>Pull commitments, what stayed open, and one concrete follow-up.</p>
+          <button
+            className="mettle-action"
+            disabled={isAgentRunning || transcript.length === 0}
+            onClick={() => void runDebrief()}
+            type="button"
+            style={{ marginTop: 12 }}
+          >
+            <ClipboardList size={14} aria-hidden="true" />
+            {isAgentRunning ? 'Synthesizing…' : 'Generate debrief'}
+          </button>
         </section>
-        <section className="mettle-card mettle-card--risk">
-          <p className="mettle-kicker">
-            <Flag size={13} /> Intervention
-          </p>
-          <strong>{nudges.length} signals surfaced</strong>
-          <p>Review the moments where the conversation started to drift.</p>
-        </section>
-      </div>
-
-      <section>
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="mettle-section-title flex-1">Commitments and follow-ups</h3>
-          {notes.length === 0 && (
-            <button
-              className="mettle-action"
-              disabled={isAgentRunning}
-              onClick={() => void runDebrief()}
-              type="button"
-            >
-              <ClipboardList size={14} aria-hidden="true" />
-              Generate debrief
-            </button>
-          )}
-        </div>
-        <div className="grid gap-2 mt-3">
-          {notes.length === 0 ? (
-            <div className="mettle-card mettle-card--accent">
+      ) : (
+        <>
+          {lead && (
+            <section className="mettle-card mettle-card--signal" aria-label="Next move">
               <p className="mettle-kicker">
-                <ClipboardList size={13} /> Ready for synthesis
+                <Flag size={13} /> Next move
               </p>
-              <strong>Close the meeting before you close the record.</strong>
-              <p>
-                The debrief node will pull out commitments, open objections, and named next actions.
-              </p>
-            </div>
-          ) : (
-            notes.map((note, index) => (
-              <div className="mettle-card" key={`${note}-${index}`}>
-                <p className="mettle-kicker">
-                  <CheckCircle2 size={13} /> Action {index + 1}
-                </p>
-                <strong>{note}</strong>
-              </div>
-            ))
+              <strong>{lead}</strong>
+            </section>
           )}
-        </div>
-      </section>
 
-      <section>
-        <h3 className="mettle-section-title">The record</h3>
-        <div className="mettle-list mt-3">
+          {commitmentNotes.length > 0 && (
+            <section>
+              <p className="mettle-kicker">Commitments</p>
+              <div className="grid gap-2 mt-2">
+                {commitmentNotes.map((note, index) => (
+                  <div className="mettle-card" key={`commit-${index}`}>
+                    <p className="mettle-kicker">
+                      <CheckCircle2 size={13} /> Locked in
+                    </p>
+                    <strong>{note}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {assumptionNotes.length > 0 && (
+            <section>
+              <p className="mettle-kicker">Still open</p>
+              <div className="grid gap-2 mt-2">
+                {assumptionNotes.map((note, index) => (
+                  <div className="mettle-card mettle-card--risk" key={`open-${index}`}>
+                    <strong>{note}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {nextNotes.length > 1 && (
+            <section>
+              <p className="mettle-kicker">Also do</p>
+              <ul className="mettle-list mt-2">
+                {nextNotes.slice(1).map((note, index) => (
+                  <li key={`next-${index}`}>{note}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+
+      <button
+        className="mettle-fold"
+        onClick={() => setShowRecord((value) => !value)}
+        type="button"
+        aria-expanded={showRecord}
+      >
+        <span>
+          The record · {transcript.length} turns
+          {nudges.length > 0 ? ` · ${nudges.length} signals` : ''}
+        </span>
+        <ChevronDown
+          size={16}
+          className={showRecord ? 'rotate-180 transition-transform' : 'transition-transform'}
+          aria-hidden="true"
+        />
+      </button>
+      {showRecord && (
+        <section className="mettle-list">
           {transcript.length === 0 ? (
             <li>No conversation turns captured yet.</li>
           ) : (
@@ -91,8 +149,8 @@ export function DebriefView() {
               </li>
             ))
           )}
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

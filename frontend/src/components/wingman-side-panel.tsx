@@ -2,17 +2,22 @@
 
 import { FormEvent, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
-import { AlertTriangle, ArrowUp, Radio, Send, Zap } from 'lucide-react';
+import { ArrowUp, ChevronDown, Radio, Send, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
-import { A2UINudgeHost } from '@/components/a2ui-nudge-host';
 import { NudgeCard } from '@/components/nudge-card';
 
-/** Live transcript, proactive nudge cards, and native reactive interrupt UI. */
+/** Live: one intervention, then the transcript. Restraint over inventory. */
 export function WingmanSidePanel() {
   const { state, runLiveTurn, startReactiveSession, isAgentRunning } = useConversationState();
   const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const nudges = state.nudges_sent ?? [];
+  const latestNudge = nudges.at(-1);
   const reactiveReply = state.reactive_reply ?? null;
+  const counterpartFirst =
+    String(state.counterpart_profile?.name ?? '').split(' ')[0] || 'Counterpart';
+  const transcript = state.transcript ?? [];
 
   const reactiveInterrupt = useInterrupt({
     agentId: 'default',
@@ -56,110 +61,177 @@ export function WingmanSidePanel() {
 
   return (
     <div className="mettle-phase">
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex items-center justify-between gap-3">
         <div>
-          <p className="mettle-kicker">Live conversation support</p>
-          <h2 className="mettle-headline">Stay in the room. We will watch the pattern.</h2>
+          <p className="mettle-kicker">Live · one interruption at a time</p>
+          <h2 className="mettle-headline">Stay in the room.</h2>
         </div>
-        <div
-          className="mettle-card mettle-card--signal shrink-0"
-          style={{ minWidth: 133, padding: 11 }}
-        >
-          <p className="mettle-kicker">
-            <Radio size={13} /> Wingman
-          </p>
-          <strong>{isAgentRunning ? 'Thinking' : 'Listening'}</strong>
-        </div>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--ink-soft)]">
+          <Radio size={12} className="mr-1 inline" aria-hidden="true" />
+          {isAgentRunning ? 'Thinking' : 'Listening'}
+        </span>
       </header>
 
-      <section className="mettle-card mettle-card--accent">
-        <p className="mettle-kicker">
-          <Zap size={13} /> Say this next
-        </p>
-        <strong>
-          {reactiveReply || 'Get the question, then answer the concern underneath it.'}
-        </strong>
-        <p>
-          {reactiveReply
-            ? 'A targeted response from the live context.'
-            : 'Use Quick Answer when you need a short, specific line in the moment.'}
-        </p>
-        {reactiveInterrupt ?? (
-          <button
-            className="mettle-action"
-            disabled={isAgentRunning}
-            onClick={() => void startReactiveSession()}
-            type="button"
-            style={{ marginTop: 12 }}
-          >
-            <Zap size={14} aria-hidden="true" /> Quick answer
-          </button>
-        )}
-      </section>
-
-      <section>
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="mettle-section-title flex-1">Live transcript</h3>
-          <div
-            className="flex border border-[var(--line)] bg-[#fffdf7] p-1"
-            role="group"
-            aria-label="Transcript speaker"
-          >
+      {reactiveReply ? (
+        <section className="mettle-card mettle-card--accent" aria-label="Current intervention">
+          <p className="mettle-kicker">
+            <Zap size={13} /> Say this next
+          </p>
+          <strong>{reactiveReply}</strong>
+          <p>Two sentences. Then stop and listen.</p>
+          {reactiveInterrupt ?? (
             <button
-              className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'user' ? 'bg-[var(--cobalt)] text-white' : 'text-[var(--ink-soft)]'}`}
-              onClick={() => setSpeaker('user')}
+              className="mettle-action"
+              disabled={isAgentRunning}
+              onClick={() => void startReactiveSession()}
               type="button"
+              style={{ marginTop: 12 }}
             >
-              Me
+              <Zap size={14} aria-hidden="true" /> Quick answer
             </button>
-            <button
-              className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'counterpart' ? 'bg-[var(--tomato)] text-white' : 'text-[var(--ink-soft)]'}`}
-              onClick={() => setSpeaker('counterpart')}
-              type="button"
-            >
-              {String(state.counterpart_profile?.name ?? '').split(' ')[0] || 'Counterpart'}
-            </button>
-          </div>
-        </div>
-        <form className="flex gap-2 mt-3" onSubmit={submitTranscript}>
-          <input
-            className="mettle-input flex-1"
-            disabled={isAgentRunning}
-            name="transcript"
-            placeholder="Add the latest finalized turn"
-          />
-          <button className="mettle-action" disabled={isAgentRunning} type="submit">
-            <ArrowUp size={16} aria-hidden="true" /> Add
-          </button>
-        </form>
-      </section>
-
-      <section>
-        <h3 className="mettle-section-title">Latest nudge</h3>
-        <div className="mt-3">
-          <A2UINudgeHost />
-        </div>
-      </section>
-
-      <section>
-        <h3 className="mettle-section-title">Signals worth interrupting for</h3>
-        <div className="grid gap-2 mt-3">
-          {nudges.length === 0 ? (
-            <div className="mettle-card">
-              <p className="mettle-kicker">
-                <AlertTriangle size={13} /> Standing by
-              </p>
-              <strong>No pattern has crossed the threshold.</strong>
-              <p>
-                Wingman only interrupts for repetition, a long answer, a concession, or a material
-                timing signal.
-              </p>
-            </div>
-          ) : (
-            nudges.map((nudge) => <NudgeCard key={nudge.id} nudge={nudge} />)
           )}
+        </section>
+      ) : latestNudge ? (
+        <section aria-label="Current intervention">
+          <NudgeCard
+            nudge={latestNudge}
+            actionLabel="Get a reframe"
+            onAction={() =>
+              void startReactiveSession(
+                `The wingman flagged: "${latestNudge.message}". What should I say next?`,
+              )
+            }
+          />
+          {reactiveInterrupt ?? (
+            <button
+              className="mettle-action"
+              disabled={isAgentRunning}
+              onClick={() => void startReactiveSession()}
+              type="button"
+              style={{ marginTop: 12 }}
+            >
+              <Zap size={14} aria-hidden="true" /> Quick answer
+            </button>
+          )}
+        </section>
+      ) : (
+        <section className="mettle-card mettle-card--accent" aria-label="Current intervention">
+          <p className="mettle-kicker">
+            <Zap size={13} /> Standing by
+          </p>
+          <strong>No pattern has crossed the threshold.</strong>
+          <p>
+            Wingman only interrupts for a concession, long monologue, repetition, or timing signal.
+            Ask when you need a line.
+          </p>
+          {reactiveInterrupt ?? (
+            <button
+              className="mettle-action"
+              disabled={isAgentRunning}
+              onClick={() => void startReactiveSession()}
+              type="button"
+              style={{ marginTop: 12 }}
+            >
+              <Zap size={14} aria-hidden="true" /> Quick answer
+            </button>
+          )}
+        </section>
+      )}
+
+      <form className="flex gap-2" onSubmit={submitTranscript}>
+        <div
+          className="flex shrink-0 border border-[var(--line)] bg-[#fffdf7] p-1"
+          role="group"
+          aria-label="Transcript speaker"
+        >
+          <button
+            className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'user' ? 'bg-[var(--cobalt)] text-white' : 'text-[var(--ink-soft)]'}`}
+            onClick={() => setSpeaker('user')}
+            type="button"
+          >
+            Me
+          </button>
+          <button
+            className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'counterpart' ? 'bg-[var(--tomato)] text-white' : 'text-[var(--ink-soft)]'}`}
+            onClick={() => setSpeaker('counterpart')}
+            type="button"
+          >
+            {counterpartFirst}
+          </button>
         </div>
-      </section>
+        <input
+          className="mettle-input flex-1"
+          disabled={isAgentRunning}
+          name="transcript"
+          placeholder="Add the latest turn"
+        />
+        <button className="mettle-action" disabled={isAgentRunning} type="submit">
+          <ArrowUp size={16} aria-hidden="true" /> Add
+        </button>
+      </form>
+
+      <button
+        className="mettle-fold"
+        onClick={() => setShowTranscript((value) => !value)}
+        type="button"
+        aria-expanded={showTranscript}
+      >
+        <span>
+          Transcript · {transcript.length} turn{transcript.length === 1 ? '' : 's'}
+        </span>
+        <ChevronDown
+          size={16}
+          className={showTranscript ? 'rotate-180 transition-transform' : 'transition-transform'}
+          aria-hidden="true"
+        />
+      </button>
+      {showTranscript && (
+        <section className="mettle-transcript" aria-label="Live transcript">
+          {transcript.length === 0 ? (
+            <p className="text-sm text-[var(--ink-soft)]">No turns yet. Add what was just said.</p>
+          ) : (
+            transcript.map((turn, index) => (
+              <div
+                key={`${turn.timestamp}-${index}`}
+                className={`mettle-turn ${turn.speaker === 'user' ? 'mettle-turn--user' : 'mettle-turn--counterpart'}`}
+              >
+                <span className="mettle-turn-label">
+                  {turn.speaker === 'user' ? 'You' : counterpartFirst}
+                </span>
+                {turn.text}
+              </div>
+            ))
+          )}
+        </section>
+      )}
+
+      {nudges.length > 1 && (
+        <>
+          <button
+            className="mettle-fold"
+            onClick={() => setShowHistory((value) => !value)}
+            type="button"
+            aria-expanded={showHistory}
+          >
+            <span>Earlier signals · {nudges.length - 1}</span>
+            <ChevronDown
+              size={16}
+              className={showHistory ? 'rotate-180 transition-transform' : 'transition-transform'}
+              aria-hidden="true"
+            />
+          </button>
+          {showHistory && (
+            <div className="grid gap-2">
+              {nudges
+                .slice(0, -1)
+                .reverse()
+                .map((nudge) => (
+                  <NudgeCard key={nudge.id} nudge={nudge} />
+                ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -241,6 +241,49 @@ input:focus-visible {
   color: #8991a0;
 }
 
+.mettle-fold {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  justify-content: space-between;
+  letter-spacing: 0.06em;
+  margin: 4px 0 0;
+  padding: 12px 0;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.mettle-fold:hover {
+  color: var(--ink);
+}
+
+.mettle-textarea {
+  background: #fffdf7;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  margin-top: 12px;
+  min-height: 180px;
+  padding: 12px;
+  resize: vertical;
+  width: 100%;
+}
+
+.mettle-textarea::placeholder {
+  color: #8991a0;
+}
+
+textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 2px;
+}
+
 .mettle-transcript {
   display: grid;
   gap: 9px;

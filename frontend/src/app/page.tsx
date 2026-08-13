@@ -1,15 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowLeft, ArrowUpRight, BadgeCheck, Radio, ScrollText, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, BadgeCheck, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
 import { DebriefView } from '@/components/debrief-view';
-import { A2UINudgeHost } from '@/components/a2ui-nudge-host';
 import { EventList } from '@/components/event-list';
+import { NudgeCard } from '@/components/nudge-card';
 import { OpponentChat } from '@/components/opponent-chat';
-import { WelcomeOverlay } from '@/components/welcome-overlay';
 import { WingmanSidePanel } from '@/components/wingman-side-panel';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 
@@ -63,12 +62,13 @@ function PhaseCanvas({ phase }: { phase: Phase }) {
 }
 
 function SignalStack({ phase }: { phase: Phase }) {
-  const { state } = useConversationState();
+  const { state, startReactiveSession } = useConversationState();
   const latestNudge = state.nudges_sent?.at(-1);
+  const reactiveReply = state.reactive_reply;
   const counterpart =
     typeof state.counterpart_profile?.name === 'string'
       ? state.counterpart_profile.name
-      : 'Elena Markova';
+      : 'Elena Park';
 
   return (
     <aside className={styles.signalStack} aria-label="Conversation signals">
@@ -78,36 +78,39 @@ function SignalStack({ phase }: { phase: Phase }) {
       </div>
 
       <section className={`${styles.signalCard} ${styles.signalCardPrimary}`}>
-        <span className={styles.cardEyebrow}>The room</span>
-        <strong>{counterpart}</strong>
-        <p>{state.stakes || '$40M LP renewal, second-largest investor'}</p>
+        <span className={styles.cardEyebrow}>{counterpart}</span>
+        <strong className={styles.signalStakes}>
+          {(state.stakes || '$40M LP renewal').replace(/\.$/, '')}
+        </strong>
         <div className={styles.cardFooter}>
           <span className={styles.pulse} />
-          {phase === 'live' ? 'Listening live' : 'Briefing loaded'}
+          {phase === 'live' ? 'Listening' : 'Idle'}
         </div>
       </section>
 
-      {latestNudge ? (
-        <A2UINudgeHost variant="signal" />
+      {reactiveReply ? (
+        <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
+          <span className={styles.cardEyebrow}>Say this</span>
+          <strong>{reactiveReply}</strong>
+        </section>
+      ) : latestNudge ? (
+        <NudgeCard
+          nudge={latestNudge}
+          variant="signal"
+          actionLabel="Reframe"
+          onAction={() =>
+            void startReactiveSession(
+              `The wingman flagged: "${latestNudge.message}". What should I say next?`,
+            )
+          }
+        />
       ) : (
         <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
           <span className={styles.cardEyebrow}>Watch for</span>
           <strong>The concession trap</strong>
-          <p>Do not offer terms before you have established the renewal standard.</p>
+          <p>Do not offer terms before the renewal standard is clear.</p>
         </section>
       )}
-
-      <section className={styles.signalCard}>
-        <span className={styles.cardEyebrow}>Your edge</span>
-        <strong>{state.user_weak_points?.length ?? 0} points surfaced</strong>
-        <p>Make the next move specific, short, and tied to evidence.</p>
-      </section>
-
-      <button className={styles.briefButton} type="button" title="Open the executive brief">
-        <Sparkles size={16} aria-hidden="true" />
-        Executive brief
-        <ArrowUpRight size={15} aria-hidden="true" />
-      </button>
     </aside>
   );
 }
@@ -118,20 +121,26 @@ function formatScenarioName(id: string | undefined): string {
 }
 
 export default function HomePage() {
-  const { state, setPhase, runCoach, isAgentRunning } = useConversationState();
+  const { state, setPhase, openEvent, isAgentRunning } = useConversationState();
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
   const [showEventList, setShowEventList] = useState(!state.scenario_id);
+
+  useEffect(() => {
+    if (state.phase && state.phase !== localPhase) {
+      setLocalPhase(state.phase);
+    }
+  }, [state.phase, localPhase]);
 
   const selectPhase = (phase: Phase) => {
     setLocalPhase(phase);
     setPhase(phase);
   };
 
-  const handleSelectEvent = async (scenarioId: string) => {
+  const handleSelectEvent = (scenarioId: string) => {
     if (isAgentRunning) return;
+    openEvent(scenarioId);
     setShowEventList(false);
     setLocalPhase('prep');
-    await runCoach(scenarioId);
   };
 
   const handleBackToEvents = () => {
@@ -153,7 +162,6 @@ export default function HomePage() {
               <span>Mettle</span>
             </div>
           </header>
-          <WelcomeOverlay />
           <EventList onSelectEvent={handleSelectEvent} />
         </main>
       </CopilotChatConfigurationProvider>
@@ -185,36 +193,61 @@ export default function HomePage() {
         </header>
 
         <div className={`${styles.workspace} ${localPhase === 'live' ? styles.withSignal : ''}`}>
-          <nav className={styles.phaseRail} aria-label="Preparation sequence">
+          <nav className={styles.phaseRail} aria-label="This conversation">
             <button
               className={styles.backButton}
               onClick={handleBackToEvents}
-              aria-label="Back to events"
+              aria-label="Back to Elena Park"
             >
               <ArrowLeft size={16} />
-              <span>All events</span>
+              <span>Back</span>
             </button>
-            <div className={styles.railLabel}>Prep sequence</div>
+            <div className={styles.railLabel}>Now</div>
             <div className={styles.phaseList}>
-              {PHASES.map(({ id, label }) => {
-                const active = localPhase === id;
-                const unlocked = isPhaseUnlocked(id, state);
-                const muted = !active && !unlocked;
-                return (
-                  <button
-                    key={id}
-                    className={`${styles.phaseButton} ${active ? styles.phaseButtonActive : ''} ${muted ? styles.phaseButtonMuted : ''}`}
-                    onClick={() => selectPhase(id)}
-                    aria-current={active ? 'step' : undefined}
-                    title={active ? `${label} — current phase` : getPhaseHint(id, state)}
-                  >
-                    <span className={styles.phaseLabel}>{label}</span>
-                    {id === 'live' && active && (
-                      <span className={styles.liveDot} aria-label="Live" />
-                    )}
-                  </button>
-                );
-              })}
+              {PHASES.filter((phase) => phase.id === 'prep' || phase.id === 'rehearsal').map(
+                ({ id, label }) => {
+                  const active = localPhase === id;
+                  const unlocked = isPhaseUnlocked(id, state);
+                  const muted = !active && !unlocked;
+                  const isNext = id === 'rehearsal' && unlocked && localPhase === 'prep';
+                  return (
+                    <button
+                      key={id}
+                      className={`${styles.phaseButton} ${id === 'prep' ? styles.phaseButtonPrimary : ''} ${active ? styles.phaseButtonActive : ''} ${muted ? styles.phaseButtonMuted : ''} ${isNext ? styles.phaseButtonNext : ''}`}
+                      onClick={() => selectPhase(id)}
+                      aria-current={active ? 'step' : undefined}
+                      title={active ? `${label} — current` : getPhaseHint(id, state)}
+                    >
+                      <span className={styles.phaseLabel}>{label}</span>
+                      {isNext && <span className={styles.nextChip}>Next</span>}
+                    </button>
+                  );
+                },
+              )}
+            </div>
+            <div className={styles.laterLabel}>Later rooms</div>
+            <div className={styles.laterList}>
+              {PHASES.filter((phase) => phase.id === 'live' || phase.id === 'debrief').map(
+                ({ id, label }) => {
+                  const active = localPhase === id;
+                  const unlocked = isPhaseUnlocked(id, state);
+                  const muted = !active && !unlocked;
+                  return (
+                    <button
+                      key={id}
+                      className={`${styles.phaseButton} ${styles.phaseButtonLater} ${active ? styles.phaseButtonActive : ''} ${muted ? styles.phaseButtonMuted : ''}`}
+                      onClick={() => selectPhase(id)}
+                      aria-current={active ? 'step' : undefined}
+                      title={active ? `${label} — current` : getPhaseHint(id, state)}
+                    >
+                      <span className={styles.phaseLabel}>{label}</span>
+                      {id === 'live' && active && (
+                        <span className={styles.liveDot} aria-label="Live" />
+                      )}
+                    </button>
+                  );
+                },
+              )}
             </div>
           </nav>
 

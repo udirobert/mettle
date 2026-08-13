@@ -10,7 +10,10 @@ from copilotkit import LangGraphAGUIAgent
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pydantic import BaseModel, Field
+
 from graph.checkpoint import create_checkpointer
+from graph.context import extract_brief_from_paste
 from graph.graph import build_graph
 from server_config import allowed_origins
 
@@ -38,6 +41,20 @@ app.add_middleware(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+class ExtractContextRequest(BaseModel):
+    text: str
+    counterpart_name: str = Field(default="Elena Park")
+
+
+@app.post("/extract-context")
+async def extract_context(body: ExtractContextRequest) -> dict:
+    """Deterministic paste → draft evidence brief. Approval happens in the UI."""
+    return extract_brief_from_paste(
+        body.text,
+        counterpart_name=body.counterpart_name,
+    )
 
 
 add_langgraph_fastapi_endpoint(

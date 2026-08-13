@@ -19,7 +19,9 @@ from fastapi.middleware.cors import CORSMiddleware
 # Standalone deployments own their durable checkpointer. The LangGraph Platform
 # graph export intentionally leaves persistence to the platform itself.
 from graph.checkpoint import create_checkpointer
+from graph.context import extract_brief_from_paste
 from graph.graph import build_graph
+from pydantic import BaseModel, Field
 
 checkpointer, close_checkpointer = create_checkpointer()
 graph = build_graph(checkpointer=checkpointer)
@@ -44,6 +46,19 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+class ExtractContextRequest(BaseModel):
+    text: str
+    counterpart_name: str = Field(default="Elena Park")
+
+
+@app.post("/extract-context")
+async def extract_context(body: ExtractContextRequest):
+    return extract_brief_from_paste(
+        body.text,
+        counterpart_name=body.counterpart_name,
+    )
 
 
 add_langgraph_fastapi_endpoint(

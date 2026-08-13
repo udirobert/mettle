@@ -2,234 +2,362 @@
 
 import { useState, type ReactNode } from 'react';
 import {
+  ArrowRight,
   ChevronDown,
   CircleAlert,
   Eye,
   FileText,
-  Globe,
   Inbox,
   MessageCircle,
-  Plus,
   Scale,
   ShieldCheck,
   Swords,
-  Target,
 } from 'lucide-react';
 
+import { SAMPLE_ELENA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type {
   CoachAnalysis,
   ContextBrief,
-  ConversationState,
   PerspectiveResult,
 } from '@/hooks/use-conversation-state';
-import {
-  getPrivateClaims,
-  getPrivateSources,
-  getPublicClaims,
-  getPublicSources,
-  getScenarioContextBrief,
-  hasPrivateEvidence,
-  hasPublicResearch,
-} from '@/fixtures/evidence-fixtures';
 import styles from './coach-disclosure.module.css';
 
-function calculateReadiness(state: ConversationState, analysis: CoachAnalysis | undefined): number {
-  const hasAnalysis =
-    !!analysis &&
-    (analysis.blind_spots?.length ?? 0) > 0 &&
-    (analysis.concrete_moves?.length ?? 0) > 0;
-  const hasWeakPoints = (state.user_weak_points?.length ?? 0) > 0;
-
-  const contextBrief = state.context_brief;
-  const contextApproved = contextBrief?.status === 'approved';
-  const hasEvidence = contextApproved && hasPrivateEvidence(contextBrief);
-  const hasResearch = contextApproved && hasPublicResearch(contextBrief);
-
-  const completed = [hasAnalysis, hasWeakPoints, hasEvidence, hasResearch].filter(Boolean).length;
-  return Math.round((completed / 4) * 100);
-}
-
-type CollapsibleSectionProps = {
-  title: string;
-  summary?: string;
-  icon?: React.ComponentType<{ size?: number; className?: string }>;
-  defaultOpen?: boolean;
-  className?: string;
-  headerClassName?: string;
-  contentClassName?: string;
-  children: ReactNode;
-};
-
-function CollapsibleSection({
-  title,
-  summary,
-  icon: Icon,
-  defaultOpen = false,
-  className = '',
-  headerClassName = '',
-  contentClassName = '',
-  children,
-}: CollapsibleSectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <div className={`${styles.collapsible} ${className}`}>
-      <button
-        type="button"
-        className={`${styles.collapsibleHeader} ${headerClassName}`}
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <div className={styles.collapsibleLeft}>
-          {Icon && <Icon size={16} className={styles.collapsibleIcon} aria-hidden="true" />}
-          <div>
-            <h3 className={styles.collapsibleTitle}>{title}</h3>
-            {summary && <p className={styles.collapsibleSummary}>{summary}</p>}
-          </div>
-        </div>
-        <ChevronDown
-          size={18}
-          aria-hidden="true"
-          className={`${styles.collapsibleChevron} ${open ? styles.collapsibleChevronOpen : ''}`}
-        />
-      </button>
-      {open && <div className={`${styles.collapsibleContent} ${contentClassName}`}>{children}</div>}
-    </div>
-  );
+function counterpartName(state: { counterpart_profile?: Record<string, unknown> }): string {
+  return typeof state.counterpart_profile?.name === 'string'
+    ? state.counterpart_profile.name
+    : 'Elena Park';
 }
 
 /** Pre-conversation briefing surface, owned by the proactive track. */
 export function CoachPanel() {
-  const { state, setPartial } = useConversationState();
-  const weakPoints = state.user_weak_points ?? [];
+  const { state, setPhase } = useConversationState();
   const analysis = state.coach_analysis;
-
-  const addWeakPoint = () => {
-    setPartial({ user_weak_points: [...weakPoints, 'New weak point - edit me'] });
-  };
-
-  const readiness = calculateReadiness(state, analysis);
+  const brief = state.context_brief;
+  const name = counterpartName(state);
+  const needsPaste = !brief || brief.status === 'empty' || brief.status === 'rejected';
+  const needsApproval = brief?.status === 'draft';
+  const approved = brief?.status === 'approved';
 
   return (
     <div className="mettle-phase">
       <header>
-        <p className="mettle-kicker">Position before performance</p>
+        <p className="mettle-kicker">2 days · prep incomplete until the council speaks</p>
         <h2 className="mettle-headline">Walk in with a point of view.</h2>
         <p className="mettle-copy">
-          Mettle has loaded the pressure points. Build the case before the room starts setting the
-          terms.
+          Paste the thread with {name}. Approve what is true. Then let three adversaries attack the
+          position — and keep the disagreement.
         </p>
       </header>
 
-      {/* Prep snapshot - always visible */}
-      <div className="mettle-grid">
-        <section className="mettle-card mettle-card--risk">
-          <p className="mettle-kicker">
-            <CircleAlert size={13} /> Stakes
-          </p>
-          <strong>{state.stakes || 'High-stakes conversation'}</strong>
-          <p>This is an expectation-setting meeting, not a status call.</p>
-        </section>
-        <section className="mettle-card mettle-card--signal">
-          <p className="mettle-kicker">
-            <Target size={13} /> Win condition
-          </p>
-          <strong>Protect your position</strong>
-          <p>Leave with a credible path forward, not a premature concession.</p>
-        </section>
-      </div>
+      {needsPaste && !analysis && <PasteEvidencePanel />}
+      {needsApproval && <ContextApprovalPanel brief={brief} />}
 
-      <section className="mettle-card mettle-card--accent">
-        <p className="mettle-kicker">
-          <Swords size={13} /> Opening move
-        </p>
-        <strong>
-          {analysis?.opening_strategy ||
-            'Lead with the evidence, then ask what would make this decision simple.'}
-        </strong>
-        <p>Put the facts on the table before they can frame the discussion around a number.</p>
-      </section>
-
-      <section className="mettle-card">
-        <p className="mettle-kicker">Prep readiness</p>
-        <div className="flex items-center gap-4 mt-2">
-          <div className="flex-1">
-            <div className="h-2 bg-[var(--line)] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[var(--lime)] transition-all duration-300"
-                style={{ width: `${readiness}%` }}
-              />
-            </div>
-          </div>
-          <span className="text-sm font-semibold text-[var(--ink)]">{readiness}%</span>
-        </div>
-        <p className="text-xs text-[var(--ink-soft)] mt-2">
-          {readiness === 100
-            ? 'Ready to rehearse. Your position is stress-tested.'
-            : readiness >= 50
-              ? 'Good foundation. Expand the pressure test to find gaps.'
-              : 'Start building your edge. Add weak points and evidence.'}
-        </p>
-      </section>
-
-      {/* Collapsible pressure test */}
       {analysis && (
-        <CollapsibleSection
-          title="Pressure test"
-          summary={`${analysis.blind_spots?.length || 0} blind spots, ${analysis.concrete_moves?.length || 0} moves, ${analysis.likely_objections?.length || 0} objections`}
-          icon={Swords}
-        >
-          <div className="mettle-grid" style={{ marginTop: 12 }}>
-            <AnalysisCard title="Blind spots" items={analysis.blind_spots} tone="risk" />
-            <AnalysisCard title="Concrete moves" items={analysis.concrete_moves} tone="signal" />
-            <AnalysisCard
-              title="Likely objections"
-              items={analysis.likely_objections}
-              tone="accent"
-            />
-          </div>
-
-          <div className="mettle-card" style={{ marginTop: 12 }}>
-            <p className="mettle-kicker">
-              <ShieldCheck size={13} /> Your weak points
-            </p>
-            <ul className="mettle-list" style={{ marginTop: 11 }}>
-              {weakPoints.length === 0 ? (
-                <li>No weak points surfaced yet.</li>
-              ) : (
-                weakPoints.map((point, index) => <li key={`${point}-${index}`}>{point}</li>)
-              )}
-            </ul>
-            <button
-              className="mettle-action"
-              onClick={addWeakPoint}
-              type="button"
-              style={{ marginTop: 12 }}
-            >
-              <Plus size={14} aria-hidden="true" /> Add weak point
-            </button>
-          </div>
-        </CollapsibleSection>
-      )}
-
-      {/* Context import / approval / evidence sections */}
-      {state.scenario_id && getScenarioContextBrief(state.scenario_id) && !state.context_brief && (
-        <ContextImportPanel scenarioId={state.scenario_id} />
-      )}
-      {state.context_brief?.status === 'draft' && (
-        <ContextApprovalPanel brief={state.context_brief} />
-      )}
-      {state.context_brief?.status === 'approved' && (
         <>
-          <EvidenceBrief brief={state.context_brief} />
-          <ResearchBrief brief={state.context_brief} />
+          <DisagreementHero analysis={analysis} counterpart={name} />
+          <PerspectiveStrip perspectives={analysis.perspectives ?? []} />
+          <button className="mettle-action" onClick={() => setPhase('rehearsal')} type="button">
+            Rehearse this with {name}
+            <ArrowRight size={14} aria-hidden="true" />
+          </button>
+          <PressureTest analysis={analysis} />
         </>
       )}
 
-      {/* Collapsible council brief */}
-      {analysis && <CouncilBrief analysis={analysis} />}
+      {approved && !analysis && <RunCoachCard />}
+      {approved && <EvidenceRecap brief={brief} />}
+      {needsPaste && analysis && <PasteEvidencePanel />}
     </div>
+  );
+}
+
+function PasteEvidencePanel() {
+  const { state, setPartial, runCoach, isAgentRunning } = useConversationState();
+  const [text, setText] = useState('');
+  const [extracting, setExtracting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const name = counterpartName(state);
+
+  const extract = async (source: string) => {
+    const cleaned = source.trim();
+    if (!cleaned || extracting) return;
+    setExtracting(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/extract-context', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleaned, counterpart_name: name }),
+      });
+      const brief = response.ok
+        ? ((await response.json()) as ContextBrief)
+        : extractBriefFromPaste(cleaned, name);
+      if (!brief.claims?.length) {
+        setError(
+          'Nothing extractable yet. Paste the actual thread — numbers, objections, promises.',
+        );
+        setExtracting(false);
+        return;
+      }
+      setPartial({ context_brief: { ...brief, status: 'draft', user_approved_at: null } });
+    } catch {
+      const brief = extractBriefFromPaste(cleaned, name);
+      if (!brief.claims.length) {
+        setError('Could not extract claims from that paste.');
+        setExtracting(false);
+        return;
+      }
+      setPartial({ context_brief: { ...brief, status: 'draft', user_approved_at: null } });
+    }
+    setExtracting(false);
+  };
+
+  return (
+    <section className={`mettle-card mettle-card--accent ${styles.pasteCard}`}>
+      <p className="mettle-kicker">
+        <Inbox size={13} /> Evidence
+      </p>
+      <strong>Forward or paste the thread with {name}.</strong>
+      <p className="mt-2">
+        We will pull claims from what you paste. Nothing reaches Coach until you approve it.
+      </p>
+      <textarea
+        className="mettle-textarea"
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        placeholder={`From: ${name}\nSubject: Re: Q3…\n\nPaste the emails here.`}
+        rows={10}
+        aria-label={`Paste correspondence with ${name}`}
+      />
+      {error && <p className={styles.pasteError}>{error}</p>}
+      <div className={styles.pasteActions}>
+        <button
+          className="mettle-action"
+          disabled={extracting || !text.trim()}
+          onClick={() => void extract(text)}
+          type="button"
+        >
+          {extracting ? 'Extracting…' : 'Extract claims'}
+        </button>
+        <button
+          className="mettle-icon-action"
+          disabled={extracting}
+          onClick={() => setText(SAMPLE_ELENA_THREAD)}
+          type="button"
+        >
+          Use sample thread
+        </button>
+        <button
+          className={styles.skipBtn}
+          disabled={isAgentRunning}
+          onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
+          type="button"
+        >
+          Skip paste — use the scenario file
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ContextApprovalPanel({ brief }: { brief: ContextBrief }) {
+  const { state, setPartial, runCoach, isAgentRunning } = useConversationState();
+  const name = counterpartName(state);
+
+  const approve = async () => {
+    const approved: ContextBrief = {
+      ...brief,
+      status: 'approved',
+      user_approved_at: new Date().toISOString(),
+    };
+    setPartial({ context_brief: approved });
+    await runCoach(state.scenario_id || 'lp_renewal');
+  };
+
+  const reject = () => {
+    setPartial({ context_brief: undefined });
+  };
+
+  return (
+    <section className="mettle-card">
+      <p className="mettle-kicker">
+        <ShieldCheck size={13} /> Approve before Coach sees this
+      </p>
+      <strong>
+        {brief.claims.length} claim{brief.claims.length === 1 ? '' : 's'} from{' '}
+        {brief.sources.length} source{brief.sources.length === 1 ? '' : 's'}
+      </strong>
+      <p className="mt-2">
+        These stay out of the debate until you say they are true. Reject and paste again if anything
+        is wrong.
+      </p>
+      <ul className={styles.claimList}>
+        {brief.claims.map((claim, index) => (
+          <li key={`${claim.claim}-${index}`}>
+            <span className={styles.claimRelevance}>{claim.relevance}</span>
+            <span>{claim.claim}</span>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.pasteActions}>
+        <button
+          className="mettle-action"
+          disabled={isAgentRunning}
+          onClick={() => void approve()}
+          type="button"
+        >
+          <ShieldCheck size={14} aria-hidden="true" /> Approve and run Coach
+        </button>
+        <button className="mettle-icon-action" onClick={reject} type="button">
+          Discard
+        </button>
+      </div>
+      <p className={styles.skipHint}>Coach will attack the position using {name}&apos;s thread.</p>
+    </section>
+  );
+}
+
+function RunCoachCard() {
+  const { state, runCoach, isAgentRunning } = useConversationState();
+  return (
+    <section className="mettle-card mettle-card--signal">
+      <p className="mettle-kicker">
+        <Swords size={13} /> Ready
+      </p>
+      <strong>Evidence is approved. Run the council.</strong>
+      <p>Three adversaries, then a synthesis that keeps the split.</p>
+      <button
+        className="mettle-action"
+        disabled={isAgentRunning}
+        onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
+        type="button"
+        style={{ marginTop: 12 }}
+      >
+        {isAgentRunning ? 'Running Coach…' : 'Run Coach'}
+      </button>
+    </section>
+  );
+}
+
+function DisagreementHero({
+  analysis,
+  counterpart,
+}: {
+  analysis: CoachAnalysis;
+  counterpart: string;
+}) {
+  const agreed = analysis.consensus?.[0];
+  const split = analysis.disagreements?.[0];
+  const move = analysis.opening_strategy || analysis.concrete_moves?.[0];
+
+  return (
+    <section className={styles.hero} aria-label="Council disagreement">
+      <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
+        <p className="mettle-kicker">They agreed</p>
+        <strong>{agreed || 'The council has not named a shared point yet.'}</strong>
+      </div>
+      <div className={`${styles.heroBlock} ${styles.heroSplit}`}>
+        <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
+          They split
+        </p>
+        <strong>{split || 'No material conflict in the three lenses.'}</strong>
+      </div>
+      <div className={`${styles.heroBlock} ${styles.heroMove}`}>
+        <p className="mettle-kicker">The move</p>
+        <strong>{move || `Ask ${counterpart} what would make renewal simple.`}</strong>
+        <p>Two sentences you can actually say. Then stop.</p>
+      </div>
+    </section>
+  );
+}
+
+const PERSPECTIVE_META: Record<string, { label: string; icon: typeof Eye; role: string }> = {
+  skeptic: { label: 'The Skeptic', icon: Eye, role: 'Finds the hole' },
+  counterpart: { label: 'The Counterpart', icon: MessageCircle, role: "Speaks from Elena's seat" },
+  negotiator: { label: 'The Negotiator', icon: Scale, role: 'Tests whether she feels cornered' },
+};
+
+function PerspectiveStrip({ perspectives }: { perspectives: PerspectiveResult[] }) {
+  if (perspectives.length === 0) return null;
+
+  return (
+    <div className={styles.perspectiveGrid}>
+      {perspectives.map((perspective) => (
+        <PerspectiveCard key={perspective.name} perspective={perspective} />
+      ))}
+    </div>
+  );
+}
+
+function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
+  const [open, setOpen] = useState(false);
+  const meta = PERSPECTIVE_META[perspective.name] ?? {
+    label: perspective.name,
+    icon: Eye,
+    role: 'Adversarial review',
+  };
+  const Icon = meta.icon;
+  const truncated =
+    perspective.analysis.length > 280 && !open
+      ? `${perspective.analysis.slice(0, 280).trim()}…`
+      : perspective.analysis;
+
+  return (
+    <article className={styles.perspectiveCard}>
+      <div className={styles.perspectiveHead}>
+        <Icon size={15} aria-hidden="true" />
+        <strong>{meta.label}</strong>
+      </div>
+      <p className={styles.perspectiveRole}>{meta.role}</p>
+      <p className={styles.perspectiveBody}>{truncated}</p>
+      {perspective.analysis.length > 280 && (
+        <button className={styles.moreBtn} onClick={() => setOpen((value) => !value)} type="button">
+          {open ? 'Show less' : 'Read the rest'}
+        </button>
+      )}
+    </article>
+  );
+}
+
+function PressureTest({ analysis }: { analysis: CoachAnalysis }) {
+  const { state, setPartial } = useConversationState();
+  const weakPoints = state.user_weak_points ?? [];
+
+  return (
+    <CollapsibleSection
+      title="Pressure test detail"
+      summary={`${analysis.blind_spots?.length || 0} blind spots · ${analysis.concrete_moves?.length || 0} moves · ${analysis.likely_objections?.length || 0} objections`}
+      icon={Swords}
+    >
+      <div className="mettle-grid" style={{ marginTop: 12 }}>
+        <AnalysisCard title="Blind spots" items={analysis.blind_spots} tone="risk" />
+        <AnalysisCard title="Concrete moves" items={analysis.concrete_moves} tone="signal" />
+        <AnalysisCard title="Likely objections" items={analysis.likely_objections} tone="accent" />
+      </div>
+      <div className="mettle-card" style={{ marginTop: 12 }}>
+        <p className="mettle-kicker">
+          <CircleAlert size={13} /> Your weak points
+        </p>
+        <ul className="mettle-list" style={{ marginTop: 11 }}>
+          {weakPoints.length === 0 ? (
+            <li>No weak points surfaced yet.</li>
+          ) : (
+            weakPoints.map((point, index) => <li key={`${point}-${index}`}>{point}</li>)
+          )}
+        </ul>
+        <button
+          className="mettle-icon-action"
+          onClick={() =>
+            setPartial({ user_weak_points: [...weakPoints, 'New weak point - edit me'] })
+          }
+          type="button"
+          style={{ marginTop: 12 }}
+        >
+          Add weak point
+        </button>
+      </div>
+    </CollapsibleSection>
   );
 }
 
@@ -262,222 +390,29 @@ function AnalysisCard({
   );
 }
 
-const PERSPECTIVE_META: Record<string, { label: string; icon: typeof Eye; role: string }> = {
-  skeptic: { label: 'The Skeptic', icon: Eye, role: 'Finds the argument against you' },
-  counterpart: { label: 'The Counterpart', icon: MessageCircle, role: "Speaks from Elena's seat" },
-  negotiator: { label: 'The Negotiator', icon: Scale, role: 'Tests tactical empathy' },
-};
-
-function CouncilBrief({ analysis }: { analysis: CoachAnalysis }) {
-  const [showPerspectives, setShowPerspectives] = useState(false);
-  const leadMove = analysis.concrete_moves?.[0] || analysis.opening_strategy;
-  const tension = analysis.disagreements?.[0];
-  const consensus = analysis.consensus?.slice(0, 2) ?? [];
-  const perspectives = analysis.perspectives ?? [];
-  const hasPerspectives = perspectives.length > 0;
+function EvidenceRecap({ brief }: { brief: ContextBrief }) {
+  if (!brief.claims.length) return null;
 
   return (
     <CollapsibleSection
-      title="Council brief"
-      summary={hasPerspectives ? `${perspectives.length} lenses` : 'Advisors not loaded'}
-      icon={ShieldCheck}
-      className="border-[var(--ink)] shadow-[5px_5px_0_var(--ink)]"
-      contentClassName="p-0"
-    >
-      <div className="grid gap-px bg-[var(--ink)] md:grid-cols-[1.2fr_0.8fr]">
-        <div className="bg-[#e2e8ff] p-5">
-          <p className="mettle-kicker">Recommendation</p>
-          <strong className="block text-base font-extrabold leading-snug">{leadMove}</strong>
-          <p className="mt-2 text-xs leading-relaxed text-[var(--ink-soft)]">
-            The first move should make the decision criteria visible before a number becomes the
-            conversation.
-          </p>
-        </div>
-        <div className="bg-[#fff0eb] p-5">
-          <p className="mettle-kicker text-[var(--tomato)]">Point of tension</p>
-          <strong className="block text-sm font-extrabold leading-snug">
-            {tension || 'The council found no material conflict in the position.'}
-          </strong>
-        </div>
-      </div>
-
-      <div className="p-5">
-        <p className="mettle-kicker">High-confidence signal</p>
-        {consensus.length > 0 ? (
-          <ul className="mt-3 grid gap-2">
-            {consensus.map((item, index) => (
-              <li
-                className="border-l-4 border-[#83a600] bg-[#f1fad2] px-3 py-2 text-xs font-semibold leading-relaxed"
-                key={`${item}-${index}`}
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-[var(--ink-soft)]">The council has not converged yet.</p>
-        )}
-
-        {hasPerspectives && (
-          <>
-            <button
-              aria-expanded={showPerspectives}
-              className="mettle-icon-action mt-5"
-              onClick={() => setShowPerspectives((value) => !value)}
-              type="button"
-            >
-              <ChevronDown
-                className={`transition-transform duration-200 ${showPerspectives ? 'rotate-180' : ''}`}
-                size={16}
-                aria-hidden="true"
-              />
-              {showPerspectives ? 'Hide the three lenses' : 'Inspect the three lenses'}
-            </button>
-            {showPerspectives && (
-              <div className="mt-3 grid gap-2 border-t border-[var(--line)] pt-3">
-                {perspectives.map((perspective) => (
-                  <PerspectiveCard key={perspective.name} perspective={perspective} />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </CollapsibleSection>
-  );
-}
-
-function PerspectiveCard({ perspective }: { perspective: PerspectiveResult }) {
-  const meta = PERSPECTIVE_META[perspective.name] ?? {
-    label: perspective.name,
-    icon: Eye,
-    role: 'Adversarial review',
-  };
-  const Icon = meta.icon;
-
-  return (
-    <div className="border border-[var(--line)] bg-[#fffdf7] p-4">
-      <div className="flex items-center gap-2">
-        <Icon size={15} aria-hidden="true" />
-        <strong className="text-sm">{meta.label}</strong>
-        <span className="ml-auto font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--ink-soft)]">
-          {meta.role}
-        </span>
-      </div>
-      <p className="mt-3 whitespace-pre-wrap text-xs leading-relaxed text-[var(--ink-soft)]">
-        {perspective.analysis}
-      </p>
-    </div>
-  );
-}
-
-function ContextImportPanel({ scenarioId }: { scenarioId: string }) {
-  const { setPartial } = useConversationState();
-
-  const importContext = () => {
-    const brief = getScenarioContextBrief(scenarioId);
-    if (!brief) return;
-    setPartial({ context_brief: brief });
-  };
-
-  return (
-    <section className="mettle-card mettle-card--accent">
-      <p className="mettle-kicker">
-        <Inbox size={13} /> Context
-      </p>
-      <strong>Ground the brief in prior emails and public research.</strong>
-      <p className="mt-2">
-        Importing adds source-backed claims about Elena, prior commitments, and market context. You
-        will review and approve each claim before it affects the prep.
-      </p>
-      <button
-        className="mettle-action"
-        onClick={importContext}
-        type="button"
-        style={{ marginTop: 12 }}
-      >
-        <Plus size={14} aria-hidden="true" /> Import context
-      </button>
-    </section>
-  );
-}
-
-function ContextApprovalPanel({ brief }: { brief: ContextBrief }) {
-  const { setPartial } = useConversationState();
-  const privateSources = getPrivateSources(brief);
-  const publicSources = getPublicSources(brief);
-
-  const approve = () => {
-    setPartial({
-      context_brief: {
-        ...brief,
-        status: 'approved',
-        user_approved_at: new Date().toISOString(),
-      },
-    });
-  };
-
-  const reject = () => {
-    setPartial({ context_brief: undefined });
-  };
-
-  return (
-    <section className="mettle-card">
-      <p className="mettle-kicker">
-        <ShieldCheck size={13} /> Review imported context
-      </p>
-      <strong>
-        {brief.claims.length} claims from {brief.sources.length} sources
-      </strong>
-      <p className="mt-2">
-        {privateSources.length} private source{privateSources.length === 1 ? '' : 's'} and{' '}
-        {publicSources.length} public source{publicSources.length === 1 ? '' : 's'} were found.
-        Approve to include them in the Coach and Wingman brief.
-      </p>
-      <div className="flex gap-3 mt-3">
-        <button className="mettle-action" onClick={approve} type="button">
-          <ShieldCheck size={14} aria-hidden="true" /> Approve for prep
-        </button>
-        <button className="mettle-icon-action" onClick={reject} type="button">
-          Reject
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function EvidenceBrief({ brief }: { brief: ContextBrief }) {
-  const claims = getPrivateClaims(brief);
-  const sources = getPrivateSources(brief);
-
-  if (sources.length === 0 || claims.length === 0) {
-    return null;
-  }
-
-  return (
-    <CollapsibleSection
-      title="Private context"
-      summary={`${claims.length} claims from ${sources.length} sources`}
+      title="Approved evidence"
+      summary={`${brief.claims.length} claims from the pasted thread`}
       icon={Inbox}
       className="border-[var(--lime)]"
-      contentClassName="bg-[#f1fad2]"
     >
       <ul className="space-y-3">
-        {claims.map((claim, index) => (
+        {brief.claims.map((claim, index) => (
           <li
             key={index}
             className="border-l-2 border-[var(--lime)] bg-white px-3 py-2 text-xs leading-relaxed"
           >
             <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
-              <span className="font-mono uppercase">{claim.confidence} confidence</span>
-              <span>•</span>
-              <span className="font-mono uppercase">{claim.relevance}</span>
+            <div className="mt-1 font-mono text-[10px] uppercase text-[var(--ink-soft)]">
+              {claim.relevance} · {claim.confidence} confidence
             </div>
           </li>
         ))}
       </ul>
-
       {brief.open_commitments.length > 0 && (
         <div className="mt-4 border-t border-[var(--line)] pt-3">
           <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--tomato)]">
@@ -493,49 +428,49 @@ function EvidenceBrief({ brief }: { brief: ContextBrief }) {
           </ul>
         </div>
       )}
-
-      <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
-        Imported from {sources.map((s) => s.provider).join(', ')}
-      </p>
     </CollapsibleSection>
   );
 }
 
-function ResearchBrief({ brief }: { brief: ContextBrief }) {
-  const claims = getPublicClaims(brief);
-  const sources = getPublicSources(brief);
+type CollapsibleSectionProps = {
+  title: string;
+  summary?: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  className?: string;
+  children: ReactNode;
+};
 
-  if (sources.length === 0 || claims.length === 0) {
-    return null;
-  }
+function CollapsibleSection({
+  title,
+  summary,
+  icon: Icon,
+  className = '',
+  children,
+}: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(false);
 
   return (
-    <CollapsibleSection
-      title="External research"
-      summary={`${claims.length} claims from ${sources.length} public sources`}
-      icon={Globe}
-      className="border-[#aab8fa]"
-      contentClassName="bg-[#e2e8ff]"
-    >
-      <ul className="space-y-3">
-        {claims.map((claim, index) => (
-          <li
-            key={index}
-            className="border-l-2 border-[var(--cobalt)] bg-white px-3 py-2 text-xs leading-relaxed"
-          >
-            <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--ink-soft)]">
-              <span className="font-mono uppercase">{claim.confidence} confidence</span>
-              <span>•</span>
-              <span className="font-mono uppercase">{claim.relevance}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <p className="mt-4 text-[10px] text-[var(--ink-soft)]">
-        Research from {sources.map((s) => s.provider).join(', ')}
-      </p>
-    </CollapsibleSection>
+    <div className={`${styles.collapsible} ${className}`}>
+      <button
+        type="button"
+        className={styles.collapsibleHeader}
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <div className={styles.collapsibleLeft}>
+          {Icon && <Icon size={16} className={styles.collapsibleIcon} aria-hidden="true" />}
+          <div>
+            <h3 className={styles.collapsibleTitle}>{title}</h3>
+            {summary && <p className={styles.collapsibleSummary}>{summary}</p>}
+          </div>
+        </div>
+        <ChevronDown
+          size={18}
+          aria-hidden="true"
+          className={`${styles.collapsibleChevron} ${open ? styles.collapsibleChevronOpen : ''}`}
+        />
+      </button>
+      {open && <div className={styles.collapsibleContent}>{children}</div>}
+    </div>
   );
 }

@@ -1,246 +1,99 @@
 'use client';
 
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock, Shield, User } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Clock, Shield, User } from 'lucide-react';
+
+import { CONTRAST_EVENTS, LP_EVENT } from '@/fixtures/lp-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
-import type { ConversationState } from '@/hooks/use-conversation-state';
 
 import styles from './event-list.module.css';
 
-type Scenario = {
-  id: string;
-  name: string;
-  counterpart: string;
-  stakes: string;
-  risk: 'High' | 'Medium-High' | 'Medium';
-  timeUntil: string;
-};
-
-const SCENARIOS: Scenario[] = [
-  {
-    id: 'lp_renewal',
-    name: 'LP Renewal',
-    counterpart: 'Elena Park',
-    stakes: "$40M LP renewal from fund's second-largest investor",
-    risk: 'High',
-    timeUntil: '2 days',
-  },
-  {
-    id: 'performance_review',
-    name: 'Performance Review',
-    counterpart: 'Marcus Chen',
-    stakes: 'Terminating a senior employee with 8 years tenure',
-    risk: 'High',
-    timeUntil: '1 week',
-  },
-  {
-    id: 'board_update',
-    name: 'Board Update',
-    counterpart: 'Victoria Sterling',
-    stakes: 'Q3 miss and revised annual guidance',
-    risk: 'Medium-High',
-    timeUntil: '3 days',
-  },
-  {
-    id: 'salary_negotiation',
-    name: 'Salary Negotiation',
-    counterpart: 'Sarah Martinez',
-    stakes: 'VP promotion compensation package',
-    risk: 'Medium',
-    timeUntil: '5 days',
-  },
-];
-
-type PrepProgress = {
-  brief: boolean;
-  rehearsal: boolean;
-  evidence: boolean;
-  live: boolean;
-};
-
-function getPrepProgress(state: ConversationState, scenarioId: string): PrepProgress {
-  if (state.scenario_id !== scenarioId) {
-    return {
-      brief: false,
-      rehearsal: false,
-      evidence: false,
-      live: false,
-    };
-  }
-
-  const hasBrief = !!state.coach_analysis;
-  const hasRehearsal =
-    state.transcript?.some((t) => t.speaker === 'user' || t.speaker === 'counterpart') ?? false;
-  const hasLiveSupport = !!state.reactive_reply;
-  const hasEvidence =
-    state.context_brief?.status === 'approved' && (state.context_brief.claims?.length ?? 0) > 0;
-
-  return {
-    brief: hasBrief,
-    rehearsal: hasRehearsal,
-    evidence: hasEvidence,
-    live: hasLiveSupport,
-  };
-}
-
-function getPrepStatus(state: ConversationState, scenarioId: string): string {
-  const progress = getPrepProgress(state, scenarioId);
-  const completed = [progress.brief, progress.rehearsal, progress.live].filter(Boolean).length;
-
-  if (completed === 0) return 'Not started';
-  if (completed === 3) return 'Fully prepared';
-  return `${completed} of 3 phases complete`;
-}
-
-function getRiskColor(risk: string): string {
-  if (risk === 'High') return 'var(--tomato)';
-  if (risk === 'Medium-High') return 'var(--amber)';
-  return 'var(--lime)';
-}
-
-function getRecommendedNextMove(state: ConversationState, scenarioId: string): string {
-  if (state.scenario_id !== scenarioId) {
-    return 'Open this conversation to begin preparation.';
-  }
-
-  const progress = getPrepProgress(state, scenarioId);
-  if (!progress.brief) return 'Start with Coach to stress-test your position.';
-  if (!progress.evidence) return 'Import or review context to ground the brief.';
-  if (!progress.rehearsal) return 'Rehearse with the opponent before the real room.';
-  if (!progress.live) return 'Go live when the conversation starts.';
-  return 'Review the debrief and lock in follow-ups.';
-}
-
 export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: string) => void }) {
   const { state } = useConversationState();
+  const [showContrast, setShowContrast] = useState(false);
 
-  const anyProgress = SCENARIOS.some((s) => {
-    const p = getPrepProgress(state, s.id);
-    return p.brief || p.rehearsal || p.live;
-  });
+  const isElena = state.scenario_id === LP_EVENT.id;
+  const hasBrief = isElena && !!state.coach_analysis;
+  const hasEvidence =
+    isElena &&
+    state.context_brief?.status === 'approved' &&
+    (state.context_brief.claims?.length ?? 0) > 0;
+  const prepIncomplete = !hasBrief;
 
-  const briefingDone = SCENARIOS.some((s) => {
-    const p = getPrepProgress(state, s.id);
-    return p.brief && !p.rehearsal;
-  });
-
-  const hint = anyProgress
-    ? briefingDone
-      ? "You're briefed on at least one conversation. Time to rehearse."
-      : 'Good progress. Keep preparing to build your edge.'
-    : "Start with your most urgent conversation. We'll walk you through each phase.";
+  const nextMove = !hasEvidence
+    ? 'Paste the thread with Elena, then run Coach.'
+    : !hasBrief
+      ? 'Evidence is approved. Run Coach.'
+      : 'Open Coach — then rehearse with Elena.';
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Your consequential conversations</h1>
+        <p className={styles.kicker}>Your consequential conversation</p>
+        <h1 className={styles.title}>The one you cannot afford to wing.</h1>
         <p className={styles.subtitle}>
-          High-stakes conversations deserve preparation, rehearsal, and live support.
+          Not every meeting. This one. {LP_EVENT.stakes.replace(/\.$/, '')}, two days out.
         </p>
       </header>
 
-      <div className={styles.hintBanner}>
-        <span className={styles.hintText}>{hint}</span>
-      </div>
+      <button
+        className={styles.hero}
+        onClick={() => onSelectEvent(LP_EVENT.id)}
+        aria-label={`Open ${LP_EVENT.name} with ${LP_EVENT.counterpart}`}
+        type="button"
+      >
+        <div className={styles.heroTop}>
+          <span className={styles.heroTime}>
+            <Clock size={14} aria-hidden="true" />
+            {LP_EVENT.timeUntil}
+          </span>
+          <span className={styles.heroRisk}>
+            <Shield size={13} aria-hidden="true" />
+            {LP_EVENT.risk} risk
+          </span>
+        </div>
 
-      <div className={styles.grid}>
-        {SCENARIOS.map((scenario) => (
-          <button
-            key={scenario.id}
-            className={styles.card}
-            onClick={() => onSelectEvent(scenario.id)}
-            aria-label={`Open ${scenario.name}`}
-          >
-            <div className={styles.cardHeader}>
-              <h3 className={styles.cardTitle}>{scenario.name}</h3>
-              <div className={styles.cardMeta}>
-                <span className={styles.timeUntil}>
-                  <Clock size={12} />
-                  {scenario.timeUntil}
+        <p className={styles.heroStakes}>{LP_EVENT.stakes.replace(/\.$/, '')}</p>
+        <h2 className={styles.heroName}>{LP_EVENT.counterpart}</h2>
+        <p className={styles.heroRole}>{LP_EVENT.counterpartRole}</p>
+
+        <div className={styles.heroMeta}>
+          <span className={styles.heroCounterpart}>
+            <User size={14} aria-hidden="true" />
+            {LP_EVENT.name}
+          </span>
+          <span className={prepIncomplete ? styles.prepIncomplete : styles.prepReady}>
+            {prepIncomplete ? 'Prep incomplete' : 'Brief ready'}
+          </span>
+        </div>
+
+        <div className={styles.heroNext}>
+          <ArrowRight size={16} aria-hidden="true" />
+          <span>{nextMove}</span>
+        </div>
+      </button>
+
+      <div className={styles.contrast}>
+        <button
+          className={styles.contrastToggle}
+          onClick={() => setShowContrast((value) => !value)}
+          type="button"
+          aria-expanded={showContrast}
+        >
+          {showContrast ? 'Hide' : 'Show'} other calendar noise
+        </button>
+        {showContrast && (
+          <ul className={styles.contrastList}>
+            {CONTRAST_EVENTS.map((event) => (
+              <li key={event.id} className={styles.contrastItem}>
+                <span className={styles.contrastName}>{event.name}</span>
+                <span className={styles.contrastDetail}>
+                  {event.counterpart} · {event.stakes}
                 </span>
-              </div>
-            </div>
-
-            <div className={styles.cardBody}>
-              <div className={styles.counterpart}>
-                <User size={14} />
-                <span>{scenario.counterpart}</span>
-              </div>
-
-              <div className={styles.stakes}>
-                <AlertTriangle size={14} />
-                <span>{scenario.stakes}</span>
-              </div>
-
-              <div className={styles.statusRow}>
-                <div className={styles.statusItem}>
-                  <span
-                    className={styles.riskBadge}
-                    style={{ borderColor: getRiskColor(scenario.risk) }}
-                  >
-                    <Shield size={12} />
-                    <span style={{ color: getRiskColor(scenario.risk) }}>{scenario.risk} risk</span>
-                  </span>
-                </div>
-
-                <div className={styles.statusItem}>
-                  <span className={styles.prepStatus}>{getPrepStatus(state, scenario.id)}</span>
-                </div>
-              </div>
-
-              <div className={styles.progressRow}>
-                <div className={styles.progressItem}>
-                  <CheckCircle2
-                    size={16}
-                    className={
-                      getPrepProgress(state, scenario.id).brief
-                        ? styles.progressComplete
-                        : styles.progressPending
-                    }
-                  />
-                  <span className={styles.progressLabel}>Brief</span>
-                </div>
-                <div className={styles.progressItem}>
-                  <CheckCircle2
-                    size={16}
-                    className={
-                      getPrepProgress(state, scenario.id).rehearsal
-                        ? styles.progressComplete
-                        : styles.progressPending
-                    }
-                  />
-                  <span className={styles.progressLabel}>Rehearsal</span>
-                </div>
-                <div className={styles.progressItem}>
-                  <CheckCircle2
-                    size={16}
-                    className={
-                      getPrepProgress(state, scenario.id).evidence
-                        ? styles.progressComplete
-                        : styles.progressPending
-                    }
-                  />
-                  <span className={styles.progressLabel}>Evidence</span>
-                </div>
-                <div className={styles.progressItem}>
-                  <CheckCircle2
-                    size={16}
-                    className={
-                      getPrepProgress(state, scenario.id).live
-                        ? styles.progressComplete
-                        : styles.progressPending
-                    }
-                  />
-                  <span className={styles.progressLabel}>Live</span>
-                </div>
-              </div>
-
-              <div className={styles.nextMove}>
-                <ArrowRight size={14} aria-hidden="true" />
-                <span>{getRecommendedNextMove(state, scenario.id)}</span>
-              </div>
-            </div>
-          </button>
-        ))}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
