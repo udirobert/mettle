@@ -69,6 +69,46 @@
   border: 1px solid var(--ink);
 }
 
+.heroWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.shareBar {
+  border: 1px solid var(--line);
+  background: #fffdf7;
+  padding: 0.85rem 1rem;
+}
+
+.shareHint {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 6px;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.65rem;
+  text-transform: uppercase;
+}
+
+.shareActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.shareStatus {
+  color: #5a7500;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0.65rem 0 0;
+  text-transform: uppercase;
+}
+
 .heroBlock {
   padding: 1.15rem 1.25rem;
 }

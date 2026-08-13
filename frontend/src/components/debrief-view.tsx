@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, ChevronDown, ClipboardList, Flag } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ClipboardList, Copy, Flag, Mail } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { buildFollowUpMemo, buildMailtoHref, copyText } from '@/lib/share-artifacts';
 
 function classifyNote(note: string): 'commitment' | 'assumption' | 'next' {
   const lower = note.toLowerCase();
@@ -31,16 +32,40 @@ function classifyNote(note: string): 'commitment' | 'assumption' | 'next' {
 export function DebriefView() {
   const { state, runDebrief, isAgentRunning } = useConversationState();
   const [showRecord, setShowRecord] = useState(false);
+  const [memoStatus, setMemoStatus] = useState<string | null>(null);
   const notes = state.debrief_notes ?? [];
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
-  const counterpartName =
-    String(state.counterpart_profile?.name ?? '').split(' ')[0] || 'Counterpart';
+  const counterpartFull =
+    typeof state.counterpart_profile?.name === 'string'
+      ? state.counterpart_profile.name
+      : 'Counterpart';
+  const counterpartName = counterpartFull.split(' ')[0] || 'Counterpart';
 
   const nextNotes = notes.filter((note) => classifyNote(note) === 'next');
   const commitmentNotes = notes.filter((note) => classifyNote(note) === 'commitment');
   const assumptionNotes = notes.filter((note) => classifyNote(note) === 'assumption');
   const lead = nextNotes[0] ?? commitmentNotes[0] ?? notes[0];
+
+  const memo = buildFollowUpMemo({
+    counterpart: counterpartFull,
+    stakes: state.stakes,
+    nextMove: lead,
+    commitments: commitmentNotes,
+    stillOpen: assumptionNotes,
+    alsoDo: nextNotes.slice(1),
+  });
+
+  const sendMemo = () => {
+    window.location.href = buildMailtoHref(memo.subject, memo.body);
+  };
+
+  const copyMemo = async () => {
+    const text = `${memo.subject}\n\n${memo.body}`;
+    const ok = await copyText(text);
+    setMemoStatus(ok ? 'Follow-up memo copied' : 'Copy failed');
+    window.setTimeout(() => setMemoStatus(null), 2200);
+  };
 
   return (
     <div className="mettle-phase">
@@ -79,6 +104,33 @@ export function DebriefView() {
               <strong>{lead}</strong>
             </section>
           )}
+
+          <section className="mettle-card" aria-label="Follow-up memo">
+            <p className="mettle-kicker">
+              <Mail size={13} /> Send the follow-up
+            </p>
+            <strong>One memo for the firm — not the transcript.</strong>
+            <p className="mt-2">
+              Opens your email with commitments, open items, and the next move. No live record
+              attached.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <button className="mettle-action" onClick={sendMemo} type="button">
+                <Mail size={14} aria-hidden="true" /> Send follow-up memo
+              </button>
+              <button className="mettle-icon-action" onClick={() => void copyMemo()} type="button">
+                <Copy size={14} aria-hidden="true" /> Copy memo
+              </button>
+            </div>
+            {memoStatus && (
+              <p
+                className="mt-2 text-xs font-mono font-bold uppercase tracking-wide text-[var(--ink-soft)]"
+                role="status"
+              >
+                {memoStatus}
+              </p>
+            )}
+          </section>
 
           {commitmentNotes.length > 0 && (
             <section>

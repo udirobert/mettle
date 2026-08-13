@@ -79,6 +79,7 @@ live with the React UI.
       evidence-fixtures.ts     # legacy static research fixtures
     /lib
       extract-evidence.ts      # local paste extract fallback
+      share-artifacts.ts       # council split + follow-up memo (no transcript)
     /hooks
       use-conversation-state.ts  # typed wrapper around CopilotKit shared state
       use-theme.tsx
@@ -226,7 +227,8 @@ Set provider credentials in `.env` before adding LLM-backed node logic.
 4. **Done (shared)** — kind-aware nudge cards, A2UI generative nudge surface,
    reactive prompt pre-fill from "Get a reframe".
 5. **Done (Person B)** — multi-perspective Coach debate (staged graph + UI) +
-   paste claim-level HITL + progressive disclosure across phases.
+   paste claim-level HITL + progressive disclosure across phases + shareable
+   council split and debrief follow-up memo.
 6. **Next (Person B)** — real context ingestion (see below).
 7. **Stretch (Person B)** — LiveKit voice adapter. Additive — the demo is
    complete without it.

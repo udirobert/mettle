@@ -6,18 +6,21 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
+  Copy,
   Eye,
   FileText,
   Inbox,
   MessageCircle,
   RefreshCw,
   Scale,
+  Share2,
   ShieldCheck,
   Swords,
   X,
 } from 'lucide-react';
 
 import { SAMPLE_ELENA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
+import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type {
   CoachAnalysis,
@@ -67,7 +70,13 @@ export function CoachPanel() {
       {needsApproval && <ClaimApprovalPanel brief={brief} />}
 
       {showCouncil && (
-        <CouncilChamber analysis={analysis} counterpart={name} debating={debating} ready={ready} />
+        <CouncilChamber
+          analysis={analysis}
+          counterpart={name}
+          stakes={state.stakes}
+          debating={debating}
+          ready={ready}
+        />
       )}
 
       {ready && analysis && (
@@ -317,11 +326,13 @@ const PERSPECTIVE_META: Record<string, { label: string; icon: typeof Eye; role: 
 function CouncilChamber({
   analysis,
   counterpart,
+  stakes,
   debating,
   ready,
 }: {
   analysis: CoachAnalysis | undefined;
   counterpart: string;
+  stakes?: string;
   debating: boolean;
   ready: boolean;
 }) {
@@ -358,7 +369,7 @@ function CouncilChamber({
       </div>
 
       {ready && analysis ? (
-        <DisagreementHero analysis={analysis} counterpart={counterpart} />
+        <DisagreementHero analysis={analysis} counterpart={counterpart} stakes={stakes} />
       ) : (
         <div className={styles.synthesisPending} aria-live="polite">
           {perspectives.length === 0
@@ -419,30 +430,63 @@ function PerspectiveSeat({
 function DisagreementHero({
   analysis,
   counterpart,
+  stakes,
 }: {
   analysis: CoachAnalysis;
   counterpart: string;
+  stakes?: string;
 }) {
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
   const agreed = analysis.consensus?.[0];
   const split = analysis.disagreements?.[0];
   const move = analysis.opening_strategy || analysis.concrete_moves?.[0];
 
+  const share = async (anonymize: boolean) => {
+    const text = buildCouncilSplitText({ analysis, counterpart, stakes, anonymize });
+    const ok = await copyText(text);
+    setShareStatus(
+      ok ? (anonymize ? 'Anonymized split copied' : 'Council split copied') : 'Copy failed',
+    );
+    window.setTimeout(() => setShareStatus(null), 2200);
+  };
+
   return (
-    <div className={styles.hero} aria-label="Council disagreement">
-      <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
-        <p className="mettle-kicker">They agreed</p>
-        <strong>{agreed || 'The council has not named a shared point yet.'}</strong>
+    <div className={styles.heroWrap}>
+      <div className={styles.hero} aria-label="Council disagreement">
+        <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
+          <p className="mettle-kicker">They agreed</p>
+          <strong>{agreed || 'The council has not named a shared point yet.'}</strong>
+        </div>
+        <div className={`${styles.heroBlock} ${styles.heroSplit}`}>
+          <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
+            They split
+          </p>
+          <strong>{split || 'No material conflict in the three lenses.'}</strong>
+        </div>
+        <div className={`${styles.heroBlock} ${styles.heroMove}`}>
+          <p className="mettle-kicker">The move</p>
+          <strong>{move || `Ask ${counterpart} what would make renewal simple.`}</strong>
+          <p>Two sentences you can actually say. Then stop.</p>
+        </div>
       </div>
-      <div className={`${styles.heroBlock} ${styles.heroSplit}`}>
-        <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
-          They split
+
+      <div className={styles.shareBar}>
+        <p className={styles.shareHint}>
+          <Share2 size={12} aria-hidden="true" /> Share the split — no thread, no evidence
         </p>
-        <strong>{split || 'No material conflict in the three lenses.'}</strong>
-      </div>
-      <div className={`${styles.heroBlock} ${styles.heroMove}`}>
-        <p className="mettle-kicker">The move</p>
-        <strong>{move || `Ask ${counterpart} what would make renewal simple.`}</strong>
-        <p>Two sentences you can actually say. Then stop.</p>
+        <div className={styles.shareActions}>
+          <button className="mettle-action" onClick={() => void share(false)} type="button">
+            <Copy size={14} aria-hidden="true" /> Copy split
+          </button>
+          <button className="mettle-icon-action" onClick={() => void share(true)} type="button">
+            Copy anonymized
+          </button>
+        </div>
+        {shareStatus && (
+          <p className={styles.shareStatus} role="status">
+            {shareStatus}
+          </p>
+        )}
       </div>
     </div>
   );

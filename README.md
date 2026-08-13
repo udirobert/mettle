@@ -77,6 +77,8 @@ npm run build
   Coach / Rehearse / Live / Debrief (judgment first, inventory folded).
 - **Done (Person B)** — paste-path evidence: extract claims, keep/reject per
   claim, debate only with kept claims; re-debate anytime.
+- **Done (shared)** — follow-up memo from Debrief (`mailto` + copy) and
+  shareable council split from Coach (copy / anonymized; no transcript).
 - **Next (Person B)** — real context ingestion (Gmail/Calendar OAuth + public
   research). Paste HITL remains the unscalable path that teaches the contract.
 - **Stretch** — LiveKit voice adapter. Additive — the demo is complete without it.
