@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     counterpart_name?: string;
   };
   const text = body.text ?? '';
-  const counterpartName = body.counterpart_name ?? 'Elena Park';
+  const counterpartName = body.counterpart_name ?? 'Counterpart';
 
   const agentUrl = (
     process.env.AGENT_URL ||
