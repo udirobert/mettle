@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output is for Docker self-hosting; Vercel's adapter does not
+  // emit the files Next.js 16.3 expects when standalone is enabled, causing an
+  // ENOENT for next-server.js.nft.json. See vercel/next.js#96646.
+  output: process.env.VERCEL ? undefined : "standalone",
   serverExternalPackages: ["@copilotkit/runtime"],
   env: {
     // The public Threads UI flag is DERIVED from the server-side license token.
@@ -36,8 +39,9 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   typescript: {
-    // Docker route override uses HttpAgent which has a type mismatch with CopilotRuntime
-    ignoreBuildErrors: true,
+    // Full type checking enforced at build; previously disabled for an
+    // HttpAgent/CopilotRuntime mismatch that is now resolved.
+    ignoreBuildErrors: false,
   },
 };
 

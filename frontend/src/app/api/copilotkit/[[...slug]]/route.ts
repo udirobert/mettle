@@ -30,9 +30,18 @@ const runtime = new CopilotRuntime({
           wsUrl:
             process.env.INTELLIGENCE_GATEWAY_WS_URL ?? "ws://localhost:4401",
         }),
-        // Demo stub — replace with your real auth-derived user identity before any
-        // multi-user deployment, or all users share one thread history.
-        identifyUser: () => ({ id: "demo-user", name: "Demo User" }),
+        // Anonymous per-visitor identity (issued by src/middleware.ts) so
+        // thread history is scoped per browser. Replace with real auth before
+        // any multi-user deployment handling sensitive data.
+        identifyUser: (request) => {
+          const cookie = request.headers
+            .get("cookie")
+            ?.split(";")
+            .map((c) => c.trim())
+            .find((c) => c.startsWith("mettle_sid="));
+          const id = cookie?.slice("mettle_sid=".length) || "anonymous";
+          return { id, name: "Mettle User" };
+        },
         licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN,
       }
     : { runner: new InMemoryAgentRunner() }),
