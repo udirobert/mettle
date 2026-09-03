@@ -7,10 +7,17 @@ type ModelContext = {
   getTools: () => Promise<unknown[]>;
 };
 
+type ToolAnnotations = {
+  readOnlyHint?: boolean;
+  title?: string;
+  openWorld?: boolean;
+};
+
 type ToolDefinition = {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  annotations?: ToolAnnotations;
   execute: (input: Record<string, unknown>) => Promise<unknown>;
 };
 
@@ -44,39 +51,46 @@ const BASE_TOOLS: ToolDefinition[] = [
   {
     name: 'mettle_get_event',
     description:
-      'Load the current high-stakes conversation event. Returns stakes, the counterpart profile (name, role, concerns, leverage), and the user\'s known weak points.',
+      'Call at the start of a conversation-prep workflow. Returns the stakes, the counterpart profile (name, role, concerns, leverage), and the user\'s known weak points for the chosen scenario.',
     inputSchema: {
       type: 'object',
+      title: 'Get conversation event',
       properties: {
         scenario_id: {
           type: 'string',
-          description: 'Scenario identifier, e.g. "lp_renewal"',
+          title: 'Scenario identifier',
+          description: 'Which scenario to load, e.g. "lp_renewal".',
           default: 'lp_renewal',
         },
       },
     },
+    annotations: { readOnlyHint: true },
     execute: async ({ scenario_id }: Record<string, unknown>) =>
       getEvent(typeof scenario_id === 'string' ? scenario_id : 'lp_renewal'),
   },
   {
     name: 'mettle_extract_context',
     description:
-      'Extract claims, commitments, open objections, and numbers from pasted email or thread text. Returns a draft evidence brief with pending claims for the user to approve or reject.',
+      'Call when the user has pasted an email or thread. Extracts claims, commitments, open objections, and numbers into a draft evidence brief. The brief stays pending until the user approves each claim.',
     inputSchema: {
       type: 'object',
+      title: 'Extract evidence from pasted context',
       properties: {
         text: {
           type: 'string',
+          title: 'Pasted text',
           description: 'Pasted email, thread, or research text to extract evidence from.',
         },
         counterpart_name: {
           type: 'string',
+          title: 'Counterpart name',
           description: 'Name of the counterpart the user is meeting with.',
           default: 'Elena Park',
         },
       },
       required: ['text'],
     },
+    annotations: { readOnlyHint: true },
     execute: async ({ text, counterpart_name }: Record<string, unknown>) =>
       post('extract', {
         text: typeof text === 'string' ? text : '',
@@ -86,37 +100,54 @@ const BASE_TOOLS: ToolDefinition[] = [
   {
     name: 'mettle_run_coach',
     description:
-      'Run the multi-perspective Coach council (Skeptic, Counterpart as Elena, and Voss-style Negotiator) and return a synthesis with blind spots, concrete moves, likely objections, opening strategy, disagreements, and consensus.',
+      'Call after the scenario and evidence are known. Runs a multi-perspective Coach council — Skeptic, Counterpart as Elena, and Voss-style Negotiator — and returns a synthesis with blind spots, concrete moves, likely objections, opening strategy, disagreements, and consensus.',
     inputSchema: {
       type: 'object',
+      title: 'Run Coach prep council',
       properties: {
-        scenario_id: { type: 'string', default: 'lp_renewal' },
+        scenario_id: {
+          type: 'string',
+          title: 'Scenario identifier',
+          description: 'Which scenario to prepare for.',
+          default: 'lp_renewal',
+        },
         user_weak_points: {
           type: 'array',
+          title: 'User weak points',
           items: { type: 'string' },
           description: 'Optional list of self-identified weak points to seed the debate.',
         },
         context_brief: {
           type: 'object',
+          title: 'Approved evidence brief',
           description:
             'Optional approved evidence brief from mettle_extract_context, with approved claims.',
         },
       },
     },
+    annotations: { readOnlyHint: true },
     execute: async (input: Record<string, unknown>) => post('coach', input),
   },
   {
     name: 'mettle_rehearse_opponent',
     description:
-      'Generate an in-character skeptical response from the counterpart for the most recent user turn in the rehearsal transcript.',
+      'Call during rehearsal when the user has just said something and needs the counterpart\'s skeptical, in-character reply. The opponent presses on the concern the user least addressed.',
     inputSchema: {
       type: 'object',
+      title: 'Rehearse with the counterpart',
       properties: {
-        scenario_id: { type: 'string', default: 'lp_renewal' },
+        scenario_id: {
+          type: 'string',
+          title: 'Scenario identifier',
+          description: 'Which scenario to rehearse.',
+          default: 'lp_renewal',
+        },
         transcript: {
           type: 'array',
+          title: 'Rehearsal transcript',
           items: {
             type: 'object',
+            title: 'Turn',
             properties: {
               speaker: { type: 'string', enum: ['user', 'counterpart', 'system'] },
               text: { type: 'string' },
@@ -127,58 +158,79 @@ const BASE_TOOLS: ToolDefinition[] = [
         },
       },
     },
+    annotations: { readOnlyHint: true },
     execute: async (input: Record<string, unknown>) => post('opponent', input),
   },
   {
     name: 'mettle_ask_wingman',
     description:
-      'Get a short, tactical reply to a quick question during a live high-stakes conversation.',
+      'Call during a live conversation when the user needs a short, tactical reply to a specific question right now, grounded in the coach prep and recent transcript.',
     inputSchema: {
       type: 'object',
+      title: 'Ask Wingman for a live reply',
       properties: {
-        scenario_id: { type: 'string', default: 'lp_renewal' },
+        scenario_id: {
+          type: 'string',
+          title: 'Scenario identifier',
+          description: 'Which scenario the live conversation belongs to.',
+          default: 'lp_renewal',
+        },
         open_reactive_query: {
           type: 'string',
-          description: 'The question the user needs answered right now, in the moment.',
+          title: 'Question',
+          description: 'The specific question the user needs answered in the moment.',
         },
         transcript: {
           type: 'array',
+          title: 'Recent transcript',
           items: { type: 'object' },
           description: 'Optional recent transcript turns for context.',
         },
         coach_analysis: {
           type: 'object',
+          title: 'Coach analysis',
           description: 'Optional Coach analysis to ground the reply.',
         },
       },
       required: ['open_reactive_query'],
     },
+    annotations: { readOnlyHint: true },
     execute: async (input: Record<string, unknown>) => post('wingman', input),
   },
   {
     name: 'mettle_run_debrief',
     description:
-      'Summarize commitments, unresolved objections, and next actions from a completed conversation transcript and any nudges sent.',
+      'Call after a conversation ends. Summarizes commitments, unresolved objections, and concrete next actions from the transcript and any proactive nudges sent during the meeting.',
     inputSchema: {
       type: 'object',
+      title: 'Run conversation debrief',
       properties: {
-        scenario_id: { type: 'string', default: 'lp_renewal' },
+        scenario_id: {
+          type: 'string',
+          title: 'Scenario identifier',
+          description: 'Which scenario the conversation belongs to.',
+          default: 'lp_renewal',
+        },
         transcript: {
           type: 'array',
+          title: 'Full transcript',
           items: { type: 'object' },
           description: 'Full conversation transcript.',
         },
         nudges_sent: {
           type: 'array',
+          title: 'Proactive nudges',
           items: { type: 'object' },
           description: 'Proactive nudges surfaced during the conversation.',
         },
         coach_analysis: {
           type: 'object',
+          title: 'Coach analysis',
           description: 'Coach analysis used to calibrate the debrief.',
         },
       },
     },
+    annotations: { readOnlyHint: true },
     execute: async (input: Record<string, unknown>) => post('debrief', input),
   },
 ];
