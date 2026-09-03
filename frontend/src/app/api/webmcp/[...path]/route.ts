@@ -43,6 +43,11 @@ function guard(request: NextRequest, path: string[]): NextResponse | null {
   return null;
 }
 
+// Spec §6.4.1: cap request bodies at the trust boundary. 128KB comfortably
+// covers the 20k-char client text clamp (4 bytes/char worst-case UTF-8) plus
+// JSON overhead and short transcripts for coach/debrief.
+const MAX_BODY_BYTES = 128 * 1024;
+
 async function proxy(request: NextRequest, path: string[]) {
   const endpoint = path.join('/');
   const url = new URL(`${AGENT_URL}/webmcp/${endpoint}`);
@@ -61,7 +66,14 @@ async function proxy(request: NextRequest, path: string[]) {
 
   let body: BodyInit | undefined;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    body = await request.text();
+    const raw = await request.text();
+    if (raw.length > MAX_BODY_BYTES) {
+      return NextResponse.json(
+        { error: `Request body exceeds ${MAX_BODY_BYTES} byte limit` },
+        { status: 413 },
+      );
+    }
+    body = raw;
     if (!headers['content-type']) {
       headers['content-type'] = 'application/json';
     }

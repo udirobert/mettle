@@ -5,10 +5,23 @@ import { useEffect, useRef, useState } from 'react';
 type ModelContext = {
   registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => Promise<void>;
   getTools: () => Promise<unknown[]>;
+  addEventListener?: (
+    type: 'toolchange',
+    listener: () => void,
+    options?: AddEventListenerOptions,
+  ) => void;
+  removeEventListener?: (
+    type: 'toolchange',
+    listener: () => void,
+    options?: EventListenerOptions,
+  ) => void;
 };
 
 type ToolAnnotations = {
   readOnlyHint?: boolean;
+  /** Spec §6.4.3: output embeds content the author does not control —
+   * clients should sanitize/spotlight it before trusting the model with it. */
+  untrustedContentHint?: boolean;
   title?: string;
   openWorld?: boolean;
 };
@@ -18,7 +31,12 @@ type ToolDefinition = {
   description: string;
   inputSchema: Record<string, unknown>;
   annotations?: ToolAnnotations;
-  execute: (input: Record<string, unknown>) => Promise<unknown>;
+  /** Spec §4.2.2: receives ToolExecuteCallbackOptions — carries an AbortSignal
+   * the agent uses to cancel long-running executions. */
+  execute: (
+    input: Record<string, unknown>,
+    options?: { signal?: AbortSignal },
+  ) => Promise<unknown>;
 };
 
 type ToolCallLog = {
@@ -31,20 +49,39 @@ type ToolCallLog = {
 
 const PROXY = '/api/webmcp';
 
-async function post<T = unknown>(path: string, body: unknown): Promise<T> {
+// Spec §6.4.1 mitigation: cap third-party text an agent can push through us.
+const MAX_TEXT_LENGTH = 20_000;
+
+async function post<T = unknown>(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const res = await fetch(`${PROXY}/${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+    signal,
   });
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return (await res.json()) as T;
 }
 
-async function getEvent(scenarioId = 'lp_renewal'): Promise<unknown> {
-  const res = await fetch(`${PROXY}/event?scenario_id=${encodeURIComponent(scenarioId)}`);
+async function getEvent(
+  scenarioId = 'lp_renewal',
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const res = await fetch(`${PROXY}/event?scenario_id=${encodeURIComponent(scenarioId)}`, {
+    signal,
+  });
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.json();
+}
+
+/** Guardrail applied on the client so oversized/untrusted input never leaves the page. */
+function clampText(value: unknown): string {
+  const text = typeof value === 'string' ? value : '';
+  return text.length > MAX_TEXT_LENGTH ? text.slice(0, MAX_TEXT_LENGTH) : text;
 }
 
 const BASE_TOOLS: ToolDefinition[] = [
@@ -65,8 +102,11 @@ const BASE_TOOLS: ToolDefinition[] = [
       },
     },
     annotations: { readOnlyHint: true },
-    execute: async ({ scenario_id }: Record<string, unknown>) =>
-      getEvent(typeof scenario_id === 'string' ? scenario_id : 'lp_renewal'),
+    execute: async ({ scenario_id }, options) =>
+      getEvent(
+        typeof scenario_id === 'string' ? scenario_id : 'lp_renewal',
+        options?.signal,
+      ),
   },
   {
     name: 'mettle_extract_context',
@@ -80,6 +120,7 @@ const BASE_TOOLS: ToolDefinition[] = [
           type: 'string',
           title: 'Pasted text',
           description: 'Pasted email, thread, or research text to extract evidence from.',
+          maxLength: 20000,
         },
         counterpart_name: {
           type: 'string',
@@ -90,12 +131,16 @@ const BASE_TOOLS: ToolDefinition[] = [
       },
       required: ['text'],
     },
-    annotations: { readOnlyHint: true },
-    execute: async ({ text, counterpart_name }: Record<string, unknown>) =>
-      post('extract', {
-        text: typeof text === 'string' ? text : '',
-        counterpart_name: typeof counterpart_name === 'string' ? counterpart_name : 'Elena Park',
-      }),
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    execute: async ({ text, counterpart_name }, options) =>
+      post(
+        'extract',
+        {
+          text: clampText(text),
+          counterpart_name: typeof counterpart_name === 'string' ? counterpart_name : 'Elena Park',
+        },
+        options?.signal,
+      ),
   },
   {
     name: 'mettle_run_coach',
@@ -125,8 +170,8 @@ const BASE_TOOLS: ToolDefinition[] = [
         },
       },
     },
-    annotations: { readOnlyHint: true },
-    execute: async (input: Record<string, unknown>) => post('coach', input),
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    execute: async (input, options) => post('coach', input, options?.signal),
   },
   {
     name: 'mettle_rehearse_opponent',
@@ -158,8 +203,8 @@ const BASE_TOOLS: ToolDefinition[] = [
         },
       },
     },
-    annotations: { readOnlyHint: true },
-    execute: async (input: Record<string, unknown>) => post('opponent', input),
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    execute: async (input, options) => post('opponent', input, options?.signal),
   },
   {
     name: 'mettle_ask_wingman',
@@ -194,8 +239,8 @@ const BASE_TOOLS: ToolDefinition[] = [
       },
       required: ['open_reactive_query'],
     },
-    annotations: { readOnlyHint: true },
-    execute: async (input: Record<string, unknown>) => post('wingman', input),
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    execute: async (input, options) => post('wingman', input, options?.signal),
   },
   {
     name: 'mettle_run_debrief',
@@ -230,8 +275,8 @@ const BASE_TOOLS: ToolDefinition[] = [
         },
       },
     },
-    annotations: { readOnlyHint: true },
-    execute: async (input: Record<string, unknown>) => post('debrief', input),
+    annotations: { readOnlyHint: true, untrustedContentHint: true },
+    execute: async (input, options) => post('debrief', input, options?.signal),
   },
 ];
 
@@ -256,6 +301,15 @@ export function useWebMCP() {
 
     if (!mc) return;
 
+    // Spec §4.4: toolchange fires when the context's tool set changes.
+    // Keep our registration status honest if tools get unregistered externally.
+    const onToolChange = () => {
+      void mc.getTools().then((tools) => {
+        setRegistered(tools.some((t) => (t as { name?: string }).name?.startsWith('mettle_')));
+      });
+    };
+    mc.addEventListener?.('toolchange', onToolChange);
+
     const controllers = new Map<string, AbortController>();
 
     Promise.all(
@@ -265,9 +319,14 @@ export function useWebMCP() {
 
         const wrapped = {
           ...tool,
-          execute: async (input: Record<string, unknown>, _agent?: unknown) => {
+          execute: async (
+            input: Record<string, unknown>,
+            execOptions?: { signal?: AbortSignal },
+          ) => {
             const start = Date.now();
-            const output = await tool.execute(input);
+            // ToolExecuteCallbackOptions.signal (spec §4.2.2) flows through so
+            // agents can cancel long-running coach/debrief calls.
+            const output = await tool.execute(input, execOptions);
             const durationMs = Date.now() - start;
             const entry: ToolCallLog = {
               name: tool.name,
@@ -278,7 +337,8 @@ export function useWebMCP() {
             };
             log.current = [...log.current, entry];
             setCalls(log.current);
-            return JSON.stringify(output);
+            // Spec examples return structured values, not pre-stringified JSON.
+            return output;
           },
         };
 
@@ -287,6 +347,7 @@ export function useWebMCP() {
     ).then(() => setRegistered(true));
 
     return () => {
+      mc.removeEventListener?.('toolchange', onToolChange);
       controllers.forEach((c) => c.abort());
     };
   }, []);
