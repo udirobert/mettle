@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mettle-agent
+    runtime: docker
+    region: oregon
+    plan: starter
+    branch: main
+    rootDir: .
+    dockerfilePath: Dockerfile.render
+    envVars:
+      - key: METTLE_ENV
+        value: development
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+    healthCheckPath: /health

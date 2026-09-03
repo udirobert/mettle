@@ -34,6 +34,47 @@ later rooms. Evidence is paste → claim-level keep/reject → debate.
 - `docs/CONTEXT_INGESTION.md` defines paste-path HITL now and planned
   Composio/Exa ingestion later.
 
+## WebMCP
+
+The `/webmcp` page exposes Mettle's four conversation phases as browser-native
+agent tools. The page registers six tools with `document.modelContext`:
+
+- `mettle_get_event` — load stakes and counterpart profile
+- `mettle_extract_context` — extract claims from pasted email/thread
+- `mettle_run_coach` — multi-perspective Coach debate (Skeptic + Elena +
+  Negotiator)
+- `mettle_rehearse_opponent` — in-character skeptical response
+- `mettle_ask_wingman` — quick tactical reply for a live moment
+- `mettle_run_debrief` — commitments, open objections, and next actions
+
+The tool `execute` handlers call `/api/webmcp/*`, which proxies to the same
+LangGraph functions used by the CopilotKit UI. This lets the in-browser agent
+prepare, rehearse, support, and debrief a conversation without leaving the tab.
+
+To test locally with Chrome, enable `chrome://flags/#enable-webmcp-testing` and
+open `http://localhost:3000/webmcp`. ChatGPT's in-app browser supports WebMCP
+out of the box.
+
+## Deploy
+
+Backend (Render):
+
+```bash
+render blueprint apply render.yaml
+```
+
+Set `OPENAI_API_KEY` and `CORS_ALLOWED_ORIGINS` in the Render dashboard. If no
+OpenAI key is set, every endpoint falls back to deterministic output.
+
+Frontend (Vercel):
+
+```bash
+cd frontend
+vercel --prod
+```
+
+Set `AGENT_URL` to the deployed backend URL in the Vercel dashboard.
+
 ## Run
 
 ```bash
