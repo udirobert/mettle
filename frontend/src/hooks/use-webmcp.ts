@@ -239,5 +239,63 @@ export function useWebMCP() {
     };
   }, []);
 
-  return { supported, registered, calls, tools: BASE_TOOLS };
+  async function runDemo() {
+    const demoThread = `From: Elena Park
+Date: 15 Oct 2024
+Subject: Re: Q3 Performance Review
+
+Before we discuss a new commitment, I need a clearer picture of the liquidity timeline. DPI has lagged what we were led to expect at the last renewal. The fee step-up is hard to defend while cash-back is slow.
+
+From: You
+Date: 16 Oct 2024
+Subject: Portfolio Construction Memo — Follow-up
+
+Understood. I will send the portfolio-construction memo before we meet. The $40M renewal is the ask. Two concentrated positions still dominate unrealized value; the memo will address how we de-risk that.`;
+
+    const event = await getEvent();
+    const extracted = await post('extract', { text: demoThread, counterpart_name: 'Elena Park' });
+    const coach = (await post('coach', { scenario_id: 'lp_renewal' })) as { coach_analysis?: unknown };
+    const opponent = await post('opponent', {
+      scenario_id: 'lp_renewal',
+      transcript: [{ speaker: 'user', text: 'I want to discuss the $40M renewal. We have made operational changes that will improve liquidity.' }],
+    });
+    const wingman = await post('wingman', {
+      scenario_id: 'lp_renewal',
+      open_reactive_query: 'Elena just pushed back on our liquidity timeline. What should I say?',
+      coach_analysis: coach.coach_analysis,
+    });
+    const debrief = await post('debrief', {
+      scenario_id: 'lp_renewal',
+      transcript: [
+        { speaker: 'user', text: 'I want to renew at $40M.' },
+        { speaker: 'counterpart', text: 'Why should I believe the liquidity timeline this time?' },
+        { speaker: 'user', text: 'We have committed to a distribution by Q2 2026.' },
+        { speaker: 'counterpart', text: "That helps. Send me the memo by Friday." },
+      ],
+      nudges_sent: [{ kind: 'concession', message: 'Specific liquidity milestone' }],
+      coach_analysis: coach.coach_analysis,
+    });
+
+    const output = {
+      mettle_get_event: event,
+      mettle_extract_context: extracted,
+      mettle_run_coach: coach,
+      mettle_rehearse_opponent: opponent,
+      mettle_ask_wingman: wingman,
+      mettle_run_debrief: debrief,
+    };
+
+    const entry: ToolCallLog = {
+      name: 'demo_agent_run',
+      input: { sample_thread: demoThread },
+      output,
+      time: new Date().toISOString(),
+      durationMs: 0,
+    };
+    log.current = [...log.current, entry];
+    setCalls(log.current);
+    return output;
+  }
+
+  return { supported, registered, calls, tools: BASE_TOOLS, runDemo };
 }

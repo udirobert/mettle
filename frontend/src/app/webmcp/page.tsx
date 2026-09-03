@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
+
 import { useWebMCP } from '@/hooks/use-webmcp';
 import styles from './page.module.css';
 
 export default function WebMCPPage() {
-  const { supported, registered, calls, tools } = useWebMCP();
+  const { supported, registered, calls, tools, runDemo } = useWebMCP();
+  const [demoLoading, setDemoLoading] = useState(false);
 
   return (
     <main className={styles.page}>
@@ -104,6 +107,29 @@ export default function WebMCPPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className={styles.section}>
+        <h2>Run a demo</h2>
+        <p>
+          No WebMCP browser yet? Click below to simulate the agent calling every tool in the Elena
+          Park / $40M LP renewal flow. The same endpoints power the registered WebMCP tools.
+        </p>
+        <button
+          type="button"
+          className={styles.demoButton}
+          disabled={demoLoading}
+          onClick={async () => {
+            setDemoLoading(true);
+            try {
+              await runDemo();
+            } finally {
+              setDemoLoading(false);
+            }
+          }}
+        >
+          {demoLoading ? 'Running...' : 'Run full agent demo'}
+        </button>
       </section>
 
       <section className={styles.section}>
