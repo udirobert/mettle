@@ -9,8 +9,7 @@
     "dev:agent": "./scripts/run-agent.sh || scripts\\run-agent.bat",
     "build": "next build",
     "start": "next start",
-    "install:agent": "./scripts/setup-agent.sh || scripts\\setup-agent.bat",
-    "postinstall": "npm run install:agent"
+    "install:agent": "./scripts/setup-agent.sh || scripts\\setup-agent.bat"
   },
   "dependencies": {
     "@copilotkit/a2ui-renderer": "1.62.3",

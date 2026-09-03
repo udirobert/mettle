@@ -200,8 +200,9 @@ Both work against the same `state.py` contract and `scenarios/lp_renewal.md`.
 
 ```bash
 cd frontend
-npm install        # also runs setup-agent (uv sync in backend/)
-npm run dev        # Next.js (3000) + AG-UI endpoint via serve.py (8123)
+npm install
+npm run install:agent   # explicit: uv sync in backend/
+npm run dev             # Next.js (3000) + AG-UI endpoint via serve.py (8123)
 ```
 
 `npm run dev:agent` now runs `backend/serve.py` (uvicorn + FastAPI + LangGraphAGUIAgent)

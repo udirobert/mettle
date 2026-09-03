@@ -96,6 +96,7 @@ dashboard, set `AGENT_URL` to the deployed backend URL (for example
 ```bash
 cd frontend
 npm install
+npm run install:agent   # explicit: uv sync in backend/
 npm run dev
 ```
 
