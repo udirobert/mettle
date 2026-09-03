@@ -111,6 +111,8 @@ export type ConversationState = {
   reactive_query_prefill?: string | null;
   nudge_acknowledgements?: NudgeAcknowledgement[];
   privacy_mode?: 'private' | 'shared';
+  /** How the conversation being debriefed actually happened: last-writer-wins. */
+  conversation_source?: 'rehearsal' | 'live';
 };
 
 export type ConversationStateUpdate = Partial<ConversationState>;
@@ -155,6 +157,7 @@ export function useConversationState() {
       phase: 'live',
       transcript,
       awaiting_reactive_query: false,
+      conversation_source: 'live',
     });
     await copilotkit.waitForPendingFrameworkUpdates();
     agent.addMessage({
@@ -199,6 +202,7 @@ export function useConversationState() {
     setPartial({
       phase: 'rehearsal',
       transcript,
+      conversation_source: 'rehearsal',
     });
     await copilotkit.waitForPendingFrameworkUpdates();
     agent.addMessage({
@@ -214,10 +218,11 @@ export function useConversationState() {
 
     setPartial({ phase: 'debrief' });
     await copilotkit.waitForPendingFrameworkUpdates();
+    const source = state.conversation_source === 'rehearsal' ? 'rehearsal' : 'live';
     agent.addMessage({
       id: crypto.randomUUID(),
       role: 'user',
-      content: 'Produce a post-conversation debrief from the transcript.',
+      content: `Produce a post-conversation debrief from the transcript. This conversation was a ${source === 'rehearsal' ? 'REHEARSAL against the simulated counterpart' : 'LIVE conversation transcribed in real time'} — calibrate commitment language accordingly.`,
     });
     await copilotkit.runAgent({ agent });
   };
@@ -240,6 +245,7 @@ export function useConversationState() {
       nudge_acknowledgements: [],
       reactive_reply: null,
       debrief_notes: [],
+      conversation_source: undefined,
     });
   };
 

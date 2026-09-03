@@ -231,6 +231,7 @@ export default function HomePage() {
       nudge_acknowledgements: [],
       reactive_reply: null,
       debrief_notes: [],
+      conversation_source: undefined,
     });
     setShowEventList(false);
     setLocalPhase('rehearsal');

@@ -16,6 +16,7 @@ export type SharedDebrief = {
   commitments: string[];
   stillOpen: string[];
   alsoDo: string[];
+  source?: 'rehearsal' | 'live';
 };
 
 function toBase64Url(bytes: Uint8Array): string {

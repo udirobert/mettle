@@ -64,6 +64,11 @@ export default function SharePage() {
           {memo.savedAt && (
             <p className="mettle-share-date">Debriefed {formatDate(memo.savedAt)}</p>
           )}
+          {memo.source === 'rehearsal' && (
+            <p className="mettle-share-date">
+              From a rehearsal run — commitments are intended lines, not promises made.
+            </p>
+          )}
 
           {memo.commitments.length > 0 && (
             <>

@@ -155,6 +155,7 @@ export function DebriefView() {
       commitments: commitmentNotes,
       stillOpen: assumptionNotes,
       alsoDo: nextNotes.slice(1),
+      source: state.conversation_source === 'rehearsal' ? 'rehearsal' : 'live',
     });
     const ok = await copyText(link);
     setMemoStatus(ok ? 'Share link copied — read-only, actions only' : 'Copy failed');
@@ -167,6 +168,26 @@ export function DebriefView() {
         <p className="mettle-kicker">After the room</p>
         <h2 className="mettle-headline">Leave with the next move, not a transcript.</h2>
       </header>
+
+      {(() => {
+        const source = state.conversation_source === 'rehearsal' ? 'rehearsal' : 'live';
+        return (
+          <p className="mettle-premise">
+            {source === 'rehearsal' ? (
+              <>
+                This debrief reads a <strong>rehearsal</strong> — so treat commitments here as{' '}
+                <em>intended lines</em>, not promises made. What you actually said in the room is
+                the record that counts.
+              </>
+            ) : (
+              <>
+                This debrief reads a <strong>live conversation</strong> — commitments below were
+                said out loud, to {counterpartName}. They are real and owed.
+              </>
+            )}
+          </p>
+        );
+      })()}
 
       {notes.length === 0 ? (
         <section className="mettle-card mettle-card--accent">
