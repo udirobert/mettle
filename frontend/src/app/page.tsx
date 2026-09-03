@@ -194,11 +194,23 @@ export default function HomePage() {
 
   const privacy = state.privacy_mode ?? 'private';
 
+  // Entry-point instrumentation: distinguishes "felt the hook first" users
+  // (rehearsal) from standard prep-first entries, so conversion into full prep
+  // is measurable once analytics are attached.
+  const markEntry = (entry: 'prep' | 'rehearsal') => {
+    try {
+      localStorage.setItem('mettle.entry', entry);
+    } catch {
+      /* storage unavailable — skip instrumentation */
+    }
+  };
+
   const handleSelectEvent = (scenarioId: string) => {
     if (isAgentRunning) return;
     openEvent(scenarioId);
     setShowEventList(false);
     setLocalPhase('prep');
+    markEntry('prep');
   };
 
   // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
@@ -233,6 +245,7 @@ export default function HomePage() {
     });
     setShowEventList(false);
     setLocalPhase('rehearsal');
+    markEntry('rehearsal');
     localStorage.setItem('mettle.walkthrough.seen', 'true');
   };
 
