@@ -1,19 +1,40 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, BadgeCheck, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
-import { DebriefView } from '@/components/debrief-view';
 import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
-import { OpponentChat } from '@/components/opponent-chat';
-import { WingmanSidePanel } from '@/components/wingman-side-panel';
 import { replayWalkthrough } from '@/components/welcome-overlay';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 
 import styles from './page.module.css';
+
+function PhaseLoading() {
+  return (
+    <div
+      className={styles.phaseCanvas}
+      style={{ alignItems: 'center', display: 'flex', justifyContent: 'center' }}
+    >
+      <span>Loading…</span>
+    </div>
+  );
+}
+
+const OpponentChat = dynamic(
+  () => import('@/components/opponent-chat').then((m) => m.OpponentChat),
+  { loading: PhaseLoading },
+);
+const WingmanSidePanel = dynamic(
+  () => import('@/components/wingman-side-panel').then((m) => m.WingmanSidePanel),
+  { loading: PhaseLoading },
+);
+const DebriefView = dynamic(() => import('@/components/debrief-view').then((m) => m.DebriefView), {
+  loading: PhaseLoading,
+});
 
 type Phase = 'prep' | 'rehearsal' | 'live' | 'debrief';
 
