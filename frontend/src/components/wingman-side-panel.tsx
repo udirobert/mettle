@@ -2,14 +2,31 @@
 
 import { FormEvent, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
-import { ArrowUp, Check, ChevronDown, Play, Radio, Send, ThumbsDown, Zap } from 'lucide-react';
+import {
+  ArrowUp,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Play,
+  Radio,
+  Send,
+  ThumbsDown,
+  Zap,
+} from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { NudgeCard } from '@/components/nudge-card';
 
 /** Live: one intervention, then the transcript. Restraint over inventory. */
 export function WingmanSidePanel() {
-  const { state, runLiveTurn, startReactiveSession, setPartial, acknowledgeNudge, isAgentRunning } =
-    useConversationState();
+  const {
+    state,
+    runLiveTurn,
+    startReactiveSession,
+    setPartial,
+    acknowledgeNudge,
+    setPhase,
+    isAgentRunning,
+  } = useConversationState();
   const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
   const [showTranscript, setShowTranscript] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -90,6 +107,11 @@ export function WingmanSidePanel() {
           {isAgentRunning ? 'Thinking' : 'Listening'}
         </span>
       </header>
+
+      <p className="mettle-premise">
+        Keep this beside you during the call — log each turn as it happens, and the wingman
+        interrupts only when it matters.
+      </p>
 
       {reactiveReply ? (
         <section className="mettle-card mettle-card--accent" aria-label="Current intervention">
@@ -289,6 +311,23 @@ export function WingmanSidePanel() {
           )}
         </>
       )}
+
+      {/* Exit path: once the conversation is real, offer the handoff to Debrief. */}
+      {(() => {
+        const counterpartTurns = transcript.filter((turn) => turn.speaker === 'counterpart').length;
+        const debriefable = (state.nudges_sent?.length ?? 0) > 0 || counterpartTurns >= 2;
+        if (!debriefable) return null;
+        return (
+          <button
+            className="mettle-action"
+            onClick={() => setPhase('debrief')}
+            type="button"
+            style={{ marginTop: 4 }}
+          >
+            <ArrowRight size={14} aria-hidden="true" /> Conversation done — go to Debrief
+          </button>
+        );
+      })()}
     </div>
   );
 }

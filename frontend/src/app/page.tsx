@@ -9,6 +9,12 @@ import { CoachPanel } from '@/components/coach-panel';
 import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
 import { replayWalkthrough } from '@/components/welcome-overlay';
+import {
+  isPhaseUnlocked,
+  JourneyTracker,
+  UnlockedToast,
+  type Phase,
+} from '@/components/journey-tracker';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 import { findEvent } from '@/fixtures/lp-event';
 
@@ -37,29 +43,12 @@ const DebriefView = dynamic(() => import('@/components/debrief-view').then((m) =
   loading: PhaseLoading,
 });
 
-type Phase = 'prep' | 'rehearsal' | 'live' | 'debrief';
-
 const PHASES: Array<{ id: Phase; label: string }> = [
   { id: 'prep', label: 'Coach' },
   { id: 'rehearsal', label: 'Rehearse' },
   { id: 'live', label: 'Live' },
   { id: 'debrief', label: 'Debrief' },
 ];
-
-function isPhaseUnlocked(phase: Phase, state: ConversationState): boolean {
-  switch (phase) {
-    case 'prep':
-      return true;
-    case 'rehearsal':
-      return !!state.coach_analysis;
-    case 'live':
-      return (state.transcript?.length ?? 0) > 0;
-    case 'debrief':
-      return (state.nudges_sent?.length ?? 0) > 0;
-    default:
-      return true;
-  }
-}
 
 function getPhaseHint(phase: Phase, state: ConversationState): string {
   if (isPhaseUnlocked(phase, state)) {
@@ -71,7 +60,7 @@ function getPhaseHint(phase: Phase, state: ConversationState): string {
     case 'live':
       return 'Run a rehearsal before going live';
     case 'debrief':
-      return 'Complete a live conversation before debriefing';
+      return 'Hold a real conversation — live or rehearsed — before debriefing';
     default:
       return '';
   }
@@ -386,6 +375,7 @@ export default function HomePage() {
           <section className={styles.canvas}>
             <div className={styles.canvasBar}>
               <h1>{PHASES.find((item) => item.id === localPhase)?.label}</h1>
+              <JourneyTracker current={localPhase} />
               {state.stakes && (
                 <div className={styles.canvasStakes}>
                   <span className={styles.stakesDot} />
@@ -400,6 +390,8 @@ export default function HomePage() {
 
           {localPhase === 'live' && <SignalStack phase={localPhase} />}
         </div>
+
+        <UnlockedToast />
 
         {showShortcuts && (
           <div

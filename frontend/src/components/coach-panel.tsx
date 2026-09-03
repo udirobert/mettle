@@ -57,15 +57,42 @@ export function CoachPanel() {
   const debating = isAgentRunning || stage === 'debating' || (stage === 'perspectives' && !ready);
   const showCouncil = debating || !!analysis;
 
+  // Coach stepper: the three sub-moves made explicit, so the paste→keep→council
+  // sequence reads as one path rather than three stacked panels.
+  const steps = [
+    { label: 'Paste', done: !!brief && brief.status !== 'empty' && brief.status !== 'rejected' },
+    { label: 'Keep', done: approved },
+    { label: 'Council', done: ready && !!analysis },
+  ];
+  const activeStep = steps.findIndex((step) => !step.done);
+
   return (
     <div className="mettle-phase">
       <header>
-        <p className="mettle-kicker">2 days · the council only sees what you keep</p>
+        <p className="mettle-kicker">2 days out · you decide what Mettle sees</p>
         <h2 className="mettle-headline">Walk in with a point of view.</h2>
         <p className="mettle-copy">
-          Approve claims from the thread with {name}. Then watch three adversaries attack — and keep
-          the split.
+          Paste the email thread, keep the claims you trust, and watch three adversaries attack your
+          position — so {name} can&apos;t surprise you with anything they haven&apos;t already
+          tried.
         </p>
+        <div className="mettle-coach-steps" aria-label="Coach progress">
+          {steps.map((step, index) => (
+            <div
+              key={step.label}
+              className={`mettle-coach-step ${
+                step.done
+                  ? 'mettle-coach-step--done'
+                  : index === activeStep
+                    ? 'mettle-coach-step--active'
+                    : ''
+              }`}
+            >
+              <span className="mettle-coach-step-num">{step.done ? '✓' : index + 1}</span>
+              {step.label}
+            </div>
+          ))}
+        </div>
       </header>
 
       {needsPaste && !showCouncil && <PasteEvidencePanel />}
