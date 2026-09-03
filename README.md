@@ -61,6 +61,19 @@ The production frontend is at `https://mettle-xi.vercel.app` and is linked to
 this GitHub repository. Pushing to `main` autodeploys. The WebMCP demo page is at
 `https://mettle-xi.vercel.app/webmcp`.
 
+### Backend
+
+Current backend is deployed on Modal at `https://ungethe--mettle-agent.modal.run`.
+
+Backend (Modal):
+
+```bash
+modal deploy modal_app.py
+```
+
+Set `OPENAI_API_KEY` as a Modal secret if you want LLM-backed output; otherwise
+the endpoints fall back to deterministic output.
+
 Backend (Render):
 
 ```bash
@@ -70,11 +83,12 @@ render blueprint apply render.yaml
 Set `OPENAI_API_KEY` and `CORS_ALLOWED_ORIGINS` in the Render dashboard. If no
 OpenAI key is set, every endpoint falls back to deterministic output.
 
-Frontend (Vercel):
+### Frontend (Vercel)
 
 Pushing to `main` autodeploys to `mettle-xi.vercel.app`. In the Vercel project
-dashboard, set `AGENT_URL` to the deployed backend URL. For local development,
-copy `frontend/.env.example` to `frontend/.env` and leave `AGENT_URL` as
+dashboard, set `AGENT_URL` to the deployed backend URL (for example
+`https://ungethe--mettle-agent.modal.run`). For local development, copy
+`frontend/.env.example` to `frontend/.env` and leave `AGENT_URL` as
 `http://localhost:8123`.
 
 ## Run
