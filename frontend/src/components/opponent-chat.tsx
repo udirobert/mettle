@@ -3,17 +3,18 @@
 import { ArrowUp, Flame } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 
-const ELENA_OPENING =
-  'Before we discuss a new commitment, explain why we should treat the liquidity timeline as credible this time.';
+const OPENING =
+  'Before we discuss a new commitment, explain why I should treat your timeline as credible this time.';
 
-/** Rehearsal: her pushback and your reply. No soft-ball essay up front. */
+/** Rehearsal: their pushback and your reply. No soft-ball essay up front. */
 export function OpponentChat() {
   const { state, runOpponentTurn, isAgentRunning } = useConversationState();
   const transcript = state.transcript ?? [];
   const counterpart =
     typeof state.counterpart_profile?.name === 'string'
       ? state.counterpart_profile.name
-      : 'Elena Park';
+      : 'Counterpart';
+  const firstName = counterpart.split(' ')[0];
   const openingMove = state.coach_analysis?.opening_strategy;
   const userTurns = transcript.filter((turn) => turn.speaker === 'user').length;
   const watchFor = state.user_weak_points?.[0];
@@ -24,13 +25,15 @@ export function OpponentChat() {
         <p className="mettle-kicker">
           <Flame size={13} className="inline" aria-hidden="true" /> Rehearse · {counterpart}
         </p>
-        <h2 className="mettle-headline">Answer her. Do not pitch around her.</h2>
+        <h2 className="mettle-headline">
+          Answer {firstName}. Do not pitch around {firstName}.
+        </h2>
       </header>
 
       {transcript.length === 0 ? (
         <section className="mettle-card mettle-card--risk" aria-label={`${counterpart}'s opening`}>
           <p className="mettle-kicker">{counterpart}</p>
-          <strong>&ldquo;{ELENA_OPENING}&rdquo;</strong>
+          <strong>&ldquo;{OPENING}&rdquo;</strong>
           {openingMove && (
             <p className="mt-2">
               Coach&apos;s first move was: {openingMove} Try it — or find a better one.
@@ -76,7 +79,7 @@ export function OpponentChat() {
           className="mettle-input flex-1"
           disabled={isAgentRunning}
           name="turn"
-          placeholder={transcript.length === 0 ? 'Answer Elena' : 'Your next line'}
+          placeholder={transcript.length === 0 ? `Answer ${firstName}` : 'Your next line'}
           autoFocus
         />
         <button

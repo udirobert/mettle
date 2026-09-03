@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, Radio } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CircleHelp, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
@@ -10,6 +10,7 @@ import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
 import { OpponentChat } from '@/components/opponent-chat';
 import { WingmanSidePanel } from '@/components/wingman-side-panel';
+import { replayWalkthrough } from '@/components/welcome-overlay';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 
 import styles from './page.module.css';
@@ -68,7 +69,7 @@ function SignalStack({ phase }: { phase: Phase }) {
   const counterpart =
     typeof state.counterpart_profile?.name === 'string'
       ? state.counterpart_profile.name
-      : 'Elena Park';
+      : 'Counterpart';
 
   return (
     <aside className={styles.signalStack} aria-label="Conversation signals">
@@ -80,7 +81,7 @@ function SignalStack({ phase }: { phase: Phase }) {
       <section className={`${styles.signalCard} ${styles.signalCardPrimary}`}>
         <span className={styles.cardEyebrow}>{counterpart}</span>
         <strong className={styles.signalStakes}>
-          {(state.stakes || '$40M LP renewal').replace(/\.$/, '')}
+          {(state.stakes || 'High-stakes conversation').replace(/\.$/, '')}
         </strong>
         <div className={styles.cardFooter}>
           <span className={styles.pulse} />
@@ -187,6 +188,15 @@ export default function HomePage() {
             )}
           </div>
           <div className={styles.confidential}>
+            <button
+              className={styles.replayBtn}
+              onClick={replayWalkthrough}
+              title="Replay the walkthrough"
+              type="button"
+            >
+              <CircleHelp size={14} aria-hidden="true" />
+              <span>Replay tour</span>
+            </button>
             <BadgeCheck size={16} aria-hidden="true" />
             {formatScenarioName(state.scenario_id)}
           </div>
@@ -197,7 +207,7 @@ export default function HomePage() {
             <button
               className={styles.backButton}
               onClick={handleBackToEvents}
-              aria-label="Back to Elena Park"
+              aria-label="Back to event list"
             >
               <ArrowLeft size={16} />
               <span>Back</span>

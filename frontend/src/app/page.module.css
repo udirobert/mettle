@@ -93,6 +93,31 @@
   gap: 7px;
   justify-self: end;
 }
+
+.replayBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  margin-right: 10px;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+.replayBtn:hover {
+  background: var(--lime);
+  border-color: var(--ink);
+  color: var(--ink);
+}
 .statusDot {
   background: var(--lime);
   border: 2px solid var(--ink);
@@ -450,7 +475,30 @@
   .workspace.withSignal {
     grid-template-columns: 180px minmax(0, 1fr);
   }
+  /* Keep the signal desk visible on narrow screens: drop it below the canvas
+     as a horizontal strip instead of hiding the live surface entirely. */
   .signalStack {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: row;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 10px;
+    padding: 12px 16px 16px;
+  }
+  .signalHeading {
+    display: none;
+  }
+  .signalStack .signalCard {
+    flex: 1;
+    min-height: 0;
+    padding: 11px 12px;
+  }
+  .signalStack .cardEyebrow {
+    margin-bottom: 7px;
+  }
+  .signalStack .cardFooter {
     display: none;
   }
 }

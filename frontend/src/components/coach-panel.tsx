@@ -33,7 +33,7 @@ import styles from './coach-disclosure.module.css';
 function counterpartName(state: { counterpart_profile?: Record<string, unknown> }): string {
   return typeof state.counterpart_profile?.name === 'string'
     ? state.counterpart_profile.name
-    : 'Elena Park';
+    : 'your counterpart';
 }
 
 function isCouncilReady(analysis: CoachAnalysis | undefined, stage?: string): boolean {
@@ -77,6 +77,26 @@ export function CoachPanel() {
           debating={debating}
           ready={ready}
         />
+      )}
+
+      {debating && !isAgentRunning && !ready && (
+        <section className="mettle-card mettle-card--risk" role="alert">
+          <p className="mettle-kicker">
+            <CircleAlert size={13} /> Council stalled
+          </p>
+          <strong>The debate ended before synthesis.</strong>
+          <p className="mt-2">
+            The agent run stopped early. Restart it — your kept claims are still intact.
+          </p>
+          <button
+            className="mettle-action"
+            onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
+            type="button"
+            style={{ marginTop: 12 }}
+          >
+            <RefreshCw size={14} aria-hidden="true" /> Restart the debate
+          </button>
+        </section>
       )}
 
       {ready && analysis && (
@@ -142,7 +162,9 @@ function PasteEvidencePanel() {
     } catch {
       const brief = extractBriefFromPaste(cleaned, name);
       if (!brief.claims.length) {
-        setError('Could not extract claims from that paste.');
+        setError(
+          'Extraction failed and nothing could be pulled locally. Check the paste includes the actual thread, then retry.',
+        );
         setExtracting(false);
         return;
       }
@@ -151,6 +173,7 @@ function PasteEvidencePanel() {
         coach_analysis: undefined,
         coach_stage: 'idle',
       });
+      setError(null);
     }
     setExtracting(false);
   };
@@ -319,7 +342,7 @@ const PERSPECTIVE_ORDER = ['skeptic', 'counterpart', 'negotiator'] as const;
 
 const PERSPECTIVE_META: Record<string, { label: string; icon: typeof Eye; role: string }> = {
   skeptic: { label: 'The Skeptic', icon: Eye, role: 'Finds the hole' },
-  counterpart: { label: 'The Counterpart', icon: MessageCircle, role: "Speaks from Elena's seat" },
+  counterpart: { label: 'The Counterpart', icon: MessageCircle, role: 'Speaks from their seat' },
   negotiator: { label: 'The Negotiator', icon: Scale, role: 'Tests whether she feels cornered' },
 };
 
@@ -396,13 +419,20 @@ function PerspectiveSeat({
 
   if (waiting) {
     return (
-      <article className={`${styles.perspectiveCard} ${styles.perspectiveWaiting}`}>
+      <article
+        className={`${styles.perspectiveCard} ${styles.perspectiveWaiting}`}
+        aria-label={`${meta.label} is thinking`}
+      >
         <div className={styles.perspectiveHead}>
           <Icon size={15} aria-hidden="true" />
           <strong>{meta.label}</strong>
         </div>
         <p className={styles.perspectiveRole}>{meta.role}</p>
-        <p className={styles.perspectiveBody}>Listening…</p>
+        <div className={styles.skeleton} aria-hidden="true">
+          <span className={styles.skeletonLine} style={{ width: '88%' }} />
+          <span className={styles.skeletonLine} style={{ width: '70%' }} />
+          <span className={styles.skeletonLine} style={{ width: '80%' }} />
+        </div>
       </article>
     );
   }

@@ -26,6 +26,13 @@ const PHASES = [
   },
 ];
 
+const REPLAY_EVENT = 'mettle:replay-walkthrough';
+
+/** Re-open the walkthrough from anywhere in the app (e.g. the topbar). */
+export function replayWalkthrough() {
+  window.dispatchEvent(new Event(REPLAY_EVENT));
+}
+
 export function WelcomeOverlay({ onDismiss }: { onDismiss?: () => void }) {
   const [visible, setVisible] = useState(false);
   const [panel, setPanel] = useState(0);
@@ -33,6 +40,15 @@ export function WelcomeOverlay({ onDismiss }: { onDismiss?: () => void }) {
   useEffect(() => {
     const seen = localStorage.getItem(WALKTHROUGH_KEY);
     if (!seen) setVisible(true);
+  }, []);
+
+  useEffect(() => {
+    const replay = () => {
+      setPanel(0);
+      setVisible(true);
+    };
+    window.addEventListener(REPLAY_EVENT, replay);
+    return () => window.removeEventListener(REPLAY_EVENT, replay);
   }, []);
 
   useEffect(() => {
@@ -149,7 +165,7 @@ function PanelStart() {
         and walk you through each phase.
       </p>
       <div className={styles.hint}>
-        You can always come back to the event list using the "All events" button.
+        You can always come back to the event list using the "Back" button in the sidebar.
       </div>
     </div>
   );
