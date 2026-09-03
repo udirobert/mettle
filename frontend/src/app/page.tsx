@@ -10,6 +10,7 @@ import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
 import { replayWalkthrough } from '@/components/welcome-overlay';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
+import { findEvent } from '@/fixtures/lp-event';
 
 import styles from './page.module.css';
 
@@ -143,7 +144,8 @@ function formatScenarioName(id: string | undefined): string {
 }
 
 export default function HomePage() {
-  const { state, setPhase, openEvent, isAgentRunning, setPrivacyMode } = useConversationState();
+  const { state, setPhase, setPartial, openEvent, isAgentRunning, setPrivacyMode } =
+    useConversationState();
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
   const [showEventList, setShowEventList] = useState(!state.scenario_id);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -199,6 +201,41 @@ export default function HomePage() {
     setLocalPhase('prep');
   };
 
+  // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
+  // state reset that also seeds a light coach brief so Rehearse is unlocked,
+  // then jumps straight in.
+  const handleQuickRehearsal = () => {
+    if (isAgentRunning) return;
+    const event = findEvent('lp_renewal');
+    if (!event) return;
+    setPartial({
+      scenario_id: event.id,
+      phase: 'rehearsal',
+      stakes: event.stakes,
+      counterpart_profile: event.counterpartProfile,
+      user_weak_points: event.userWeakPoints,
+      coach_analysis: {
+        blind_spots: ['Your liquidity story is a promise, not yet a track record.'],
+        concrete_moves: ['Name the distribution date before she asks for it.'],
+        likely_objections: ['"Why should this cycle be different from the last one?"'],
+        opening_strategy: 'Lead with the memo date, not the ask.',
+        perspectives: [],
+        disagreements: ['Whether to open with liquidity or governance.'],
+        consensus: ['The fee step-up needs to be justified by realized DPI.'],
+      },
+      coach_stage: 'ready',
+      context_brief: undefined,
+      transcript: [],
+      nudges_sent: [],
+      nudge_acknowledgements: [],
+      reactive_reply: null,
+      debrief_notes: [],
+    });
+    setShowEventList(false);
+    setLocalPhase('rehearsal');
+    localStorage.setItem('mettle.walkthrough.seen', 'true');
+  };
+
   const handleBackToEvents = () => {
     setShowEventList(true);
   };
@@ -218,7 +255,7 @@ export default function HomePage() {
               <span>Mettle</span>
             </div>
           </header>
-          <EventList onSelectEvent={handleSelectEvent} />
+          <EventList onSelectEvent={handleSelectEvent} onQuickRehearsal={handleQuickRehearsal} />
         </main>
       </CopilotChatConfigurationProvider>
     );

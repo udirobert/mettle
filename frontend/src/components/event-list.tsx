@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Clock, Repeat, Shield, User } from 'lucide-react';
+import { ArrowRight, Clock, Repeat, Shield, User, Zap } from 'lucide-react';
 
 import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
@@ -22,7 +22,13 @@ function readCarryCount(counterpart: string): number {
   }
 }
 
-export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: string) => void }) {
+export function EventList({
+  onSelectEvent,
+  onQuickRehearsal,
+}: {
+  onSelectEvent: (scenarioId: string) => void;
+  onQuickRehearsal?: () => void;
+}) {
   const { state } = useConversationState();
   const [carryCount] = useState(() => readCarryCount(LP_EVENT.counterpart));
 
@@ -49,6 +55,21 @@ export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: strin
           Not every meeting. This one. {LP_EVENT.stakes.replace(/\.$/, '')}, two days out.
         </p>
       </header>
+
+      {onQuickRehearsal && (
+        <button
+          className={styles.quickRehearsal}
+          onClick={onQuickRehearsal}
+          type="button"
+          aria-label="Skip setup and try a 60-second rehearsal with the sample counterpart"
+        >
+          <Zap size={15} aria-hidden="true" />
+          <span>
+            <strong>No setup — feel it first.</strong> Jump straight into a 60-second rehearsal.
+          </span>
+          <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      )}
 
       <button
         className={styles.hero}

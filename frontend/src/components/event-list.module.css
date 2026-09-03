@@ -290,3 +290,36 @@
     font-size: 1.7rem;
   }
 }
+
+/* Skip-setup quick rehearsal CTA */
+.quickRehearsal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px dashed var(--line-strong, rgba(30, 64, 255, 0.45));
+  background: var(--tint-rail, rgba(30, 64, 255, 0.06));
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13.5px;
+  line-height: 1.4;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+.quickRehearsal:hover {
+  background: var(--tint-rail-strong, rgba(30, 64, 255, 0.12));
+  transform: translateY(-1px);
+}
+.quickRehearsal span {
+  flex: 1;
+  color: var(--ink-soft, #475569);
+}
+.quickRehearsal strong {
+  color: var(--ink);
+  display: block;
+  font-size: 14px;
+}

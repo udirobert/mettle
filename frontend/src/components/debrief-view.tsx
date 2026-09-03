@@ -10,9 +10,11 @@ import {
   Download,
   Flag,
   Mail,
+  Link2,
 } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { buildFollowUpMemo, buildMailtoHref, copyText } from '@/lib/share-artifacts';
+import { encodeShareLink } from '@/lib/share-link';
 
 type PersistedDebrief = {
   notes: string[];
@@ -142,6 +144,23 @@ export function DebriefView() {
     URL.revokeObjectURL(url);
   };
 
+  // Shareable read-only link: actions only, encoded in the URL fragment so
+  // nothing is stored server-side. Respects privacy mode (omits stakes there).
+  const copyShareLink = async () => {
+    const link = encodeShareLink({
+      v: 1,
+      counterpart: counterpartFull,
+      stakes: (state.privacy_mode ?? 'private') === 'private' ? undefined : state.stakes,
+      savedAt: new Date().toISOString(),
+      commitments: commitmentNotes,
+      stillOpen: assumptionNotes,
+      alsoDo: nextNotes.slice(1),
+    });
+    const ok = await copyText(link);
+    setMemoStatus(ok ? 'Share link copied — read-only, actions only' : 'Copy failed');
+    window.setTimeout(() => setMemoStatus(null), 2600);
+  };
+
   return (
     <div className="mettle-phase">
       <header>
@@ -229,6 +248,13 @@ export function DebriefView() {
               </button>
               <button className="mettle-icon-action" onClick={downloadMemo} type="button">
                 <Download size={14} aria-hidden="true" /> Download
+              </button>
+              <button
+                className="mettle-icon-action"
+                onClick={() => void copyShareLink()}
+                type="button"
+              >
+                <Link2 size={14} aria-hidden="true" /> Share link
               </button>
             </div>
             {memoStatus && (
