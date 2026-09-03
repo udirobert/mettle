@@ -1,7 +1,7 @@
 'use client';
 
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
-import { LP_EVENT } from '@/fixtures/lp-event';
+import { findEvent } from '@/fixtures/lp-event';
 
 /**
  * Shared conversation state contract — mirrors backend/graph/state.py.
@@ -87,6 +87,12 @@ export type CoachAnalysis = {
   consensus: string[];
 };
 
+export type NudgeAcknowledgement = {
+  nudge_id: string;
+  resolution: 'acted' | 'skipped';
+  at: string;
+};
+
 export type ConversationState = {
   scenario_id: string;
   stakes: string;
@@ -103,6 +109,8 @@ export type ConversationState = {
   coach_stage?: 'idle' | 'debating' | 'perspectives' | 'ready';
   context_brief?: ContextBrief;
   reactive_query_prefill?: string | null;
+  nudge_acknowledgements?: NudgeAcknowledgement[];
+  privacy_mode?: 'private' | 'shared';
 };
 
 export type ConversationStateUpdate = Partial<ConversationState>;
@@ -215,31 +223,39 @@ export function useConversationState() {
   };
 
   const openEvent = (scenarioId: string) => {
-    if (scenarioId === LP_EVENT.id) {
-      setPartial({
-        scenario_id: LP_EVENT.id,
-        phase: 'prep',
-        stakes: LP_EVENT.stakes,
-        counterpart_profile: LP_EVENT.counterpartProfile,
-        user_weak_points: LP_EVENT.userWeakPoints,
-        coach_analysis: undefined,
-        coach_stage: 'idle',
-        context_brief: undefined,
-        transcript: [],
-        nudges_sent: [],
-        reactive_reply: null,
-        debrief_notes: [],
-      });
-      return;
-    }
+    const event = findEvent(scenarioId);
+    if (!event) return;
 
     setPartial({
-      scenario_id: scenarioId,
+      scenario_id: event.id,
       phase: 'prep',
+      stakes: event.stakes,
+      counterpart_profile: event.counterpartProfile,
+      user_weak_points: event.userWeakPoints,
       coach_analysis: undefined,
       coach_stage: 'idle',
       context_brief: undefined,
+      transcript: [],
+      nudges_sent: [],
+      nudge_acknowledgements: [],
+      reactive_reply: null,
+      debrief_notes: [],
     });
+  };
+
+  const acknowledgeNudge = (nudgeId: string, resolution: 'acted' | 'skipped') => {
+    const acknowledgements = state.nudge_acknowledgements ?? [];
+    if (acknowledgements.some((ack) => ack.nudge_id === nudgeId)) return;
+    setPartial({
+      nudge_acknowledgements: [
+        ...acknowledgements,
+        { nudge_id: nudgeId, resolution, at: new Date().toISOString() },
+      ],
+    });
+  };
+
+  const setPrivacyMode = (mode: 'private' | 'shared') => {
+    setPartial({ privacy_mode: mode });
   };
 
   const runCoach = async (
@@ -277,6 +293,8 @@ export function useConversationState() {
     runOpponentTurn,
     runDebrief,
     startReactiveSession,
+    acknowledgeNudge,
+    setPrivacyMode,
     isAgentRunning: agent.isRunning,
   };
 }

@@ -12,6 +12,18 @@ export default function WebMCPPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
+        <p
+          style={{
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            margin: '0 0 0.75rem',
+            textTransform: 'uppercase',
+          }}
+        >
+          Mettle
+        </p>
         <h1>Mettle on WebMCP</h1>
         <p className={styles.lead}>
           A high-stakes conversation layer the browser&apos;s own agent can drive. The page below

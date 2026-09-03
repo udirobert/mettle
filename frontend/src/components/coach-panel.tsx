@@ -11,11 +11,13 @@ import {
   FileText,
   Inbox,
   MessageCircle,
+  Pencil,
   RefreshCw,
   Scale,
   Share2,
   ShieldCheck,
   Swords,
+  Undo2,
   X,
 } from 'lucide-react';
 
@@ -127,6 +129,7 @@ function PasteEvidencePanel() {
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const name = counterpartName(state);
+  const privacy = state.privacy_mode ?? 'private';
 
   const extract = async (source: string) => {
     const cleaned = source.trim();
@@ -186,6 +189,14 @@ function PasteEvidencePanel() {
       <strong>Forward or paste the thread with {name}.</strong>
       <p className="mt-2">
         The agent will propose claims. You keep or reject each one before the council runs.
+        {privacy === 'private' && (
+          <>
+            {' '}
+            <strong style={{ color: 'var(--cobalt)' }}>
+              Private mode: nothing here leaves this room.
+            </strong>
+          </>
+        )}
       </p>
       <textarea
         className="mettle-textarea"
@@ -229,15 +240,49 @@ function PasteEvidencePanel() {
 function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
   const { state, setPartial, runCoach, isAgentRunning } = useConversationState();
   const name = counterpartName(state);
+  const privacy = state.privacy_mode ?? 'private';
   const claims = brief.claims ?? [];
   const approvedCount = claims.filter((claim) => claim.decision === 'approved').length;
   const pendingCount = claims.filter(
     (claim) => !claim.decision || claim.decision === 'pending',
   ).length;
 
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+  const [lastRejected, setLastRejected] = useState<{ index: number; claim: EvidenceClaim } | null>(
+    null,
+  );
+  const [undoVisible, setUndoVisible] = useState(false);
+
+  const saveEdit = (index: number) => {
+    const cleaned = editDraft.trim();
+    if (cleaned) {
+      const nextClaims = claims.map((claim, i) =>
+        i === index ? { ...claim, claim: cleaned } : claim,
+      );
+      setPartial({ context_brief: { ...brief, claims: nextClaims } });
+    }
+    setEditingIndex(null);
+  };
+
   const setDecision = (index: number, decision: EvidenceClaim['decision']) => {
+    if (decision === 'rejected') {
+      setLastRejected({ index, claim: claims[index] });
+      setUndoVisible(true);
+      window.setTimeout(() => setUndoVisible(false), 5000);
+    }
     const nextClaims = claims.map((claim, i) => (i === index ? { ...claim, decision } : claim));
     setPartial({ context_brief: { ...brief, claims: nextClaims } });
+  };
+
+  const undoReject = () => {
+    if (!lastRejected) return;
+    const nextClaims = claims.map((claim, i) =>
+      i === lastRejected.index ? { ...lastRejected.claim, decision: 'pending' as const } : claim,
+    );
+    setPartial({ context_brief: { ...brief, claims: nextClaims } });
+    setUndoVisible(false);
+    setLastRejected(null);
   };
 
   const approveAllPending = () => {
@@ -279,6 +324,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
       <ul className={styles.claimList}>
         {claims.map((claim, index) => {
           const decision = claim.decision ?? 'pending';
+          const editing = editingIndex === index;
           return (
             <li
               key={`${claim.claim}-${index}`}
@@ -286,7 +332,51 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
             >
               <div className={styles.claimBody}>
                 <span className={styles.claimRelevance}>{claim.relevance}</span>
-                <span>{claim.claim}</span>
+                {editing ? (
+                  <span className={styles.claimEditRow}>
+                    <input
+                      aria-label="Edit claim"
+                      autoFocus
+                      className="mettle-input"
+                      onChange={(event) => setEditDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') saveEdit(index);
+                        if (event.key === 'Escape') setEditingIndex(null);
+                      }}
+                      value={editDraft}
+                    />
+                    <button
+                      className={`${styles.claimBtn} ${styles.claimBtnOn}`}
+                      onClick={() => saveEdit(index)}
+                      type="button"
+                    >
+                      <Check size={13} aria-hidden="true" /> Save
+                    </button>
+                    <button
+                      className={styles.claimBtn}
+                      onClick={() => setEditingIndex(null)}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                  </span>
+                ) : (
+                  <>
+                    <span>{claim.claim}</span>
+                    <button
+                      aria-label="Edit claim"
+                      className={styles.claimEditBtn}
+                      onClick={() => {
+                        setEditDraft(claim.claim);
+                        setEditingIndex(index);
+                      }}
+                      title="Edit this claim before keeping it"
+                      type="button"
+                    >
+                      <Pencil size={12} aria-hidden="true" /> Edit
+                    </button>
+                  </>
+                )}
               </div>
               <div className={styles.claimActions} role="group" aria-label="Claim decision">
                 <button
@@ -333,7 +423,17 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
       </div>
       <p className={styles.skipHint}>
         The Skeptic, {name}, and the Negotiator will only cite kept claims.
+        {privacy === 'private' && ' Private mode is on — shares are anonymized.'}
       </p>
+
+      {undoVisible && lastRejected && (
+        <div className={styles.undoToast} role="status">
+          <span>Claim rejected.</span>
+          <button className={styles.undoBtn} onClick={undoReject} type="button">
+            <Undo2 size={13} aria-hidden="true" /> Undo
+          </button>
+        </div>
+      )}
     </section>
   );
 }

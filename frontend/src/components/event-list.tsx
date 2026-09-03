@@ -1,16 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Clock, Shield, User } from 'lucide-react';
+import { ArrowRight, Clock, Repeat, Shield, User } from 'lucide-react';
 
-import { CONTRAST_EVENTS, LP_EVENT } from '@/fixtures/lp-event';
+import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
 
 import styles from './event-list.module.css';
 
+/** Carry-forward marker: open items persisted by a previous debrief with this counterpart. */
+function readCarryCount(counterpart: string): number {
+  try {
+    const raw = window.localStorage.getItem(
+      `mettle.carry.${counterpart.toLowerCase().replace(/\s+/g, '-')}`,
+    );
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as { items?: string[] };
+    return parsed.items?.length ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: string) => void }) {
   const { state } = useConversationState();
-  const [showContrast, setShowContrast] = useState(false);
+  const [carryCount] = useState(() => readCarryCount(LP_EVENT.counterpart));
 
   const isElena = state.scenario_id === LP_EVENT.id;
   const hasBrief = isElena && !!state.coach_analysis;
@@ -67,6 +81,16 @@ export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: strin
           </span>
         </div>
 
+        {carryCount > 0 && (
+          <div className={styles.carryBadge} aria-label="Open items from your last conversation">
+            <Repeat size={13} aria-hidden="true" />
+            <span>
+              {carryCount} open item{carryCount === 1 ? '' : 's'} carried from your last debrief
+              with {LP_EVENT.counterpart.split(' ')[0]}
+            </span>
+          </div>
+        )}
+
         <div className={styles.heroNext}>
           <ArrowRight size={16} aria-hidden="true" />
           <span>{nextMove}</span>
@@ -74,26 +98,37 @@ export function EventList({ onSelectEvent }: { onSelectEvent: (scenarioId: strin
       </button>
 
       <div className={styles.contrast}>
-        <button
-          className={styles.contrastToggle}
-          onClick={() => setShowContrast((value) => !value)}
-          type="button"
-          aria-expanded={showContrast}
-        >
-          {showContrast ? 'Hide' : 'Show'} other calendar noise
-        </button>
-        {showContrast && (
-          <ul className={styles.contrastList}>
-            {CONTRAST_EVENTS.map((event) => (
-              <li key={event.id} className={styles.contrastItem}>
-                <span className={styles.contrastName}>{event.name}</span>
+        <p className={styles.kicker}>Also on the calendar</p>
+        <ul className={styles.eventCards}>
+          {SECONDARY_EVENTS.map((event) => (
+            <li key={event.id}>
+              <button
+                className={styles.eventCard}
+                onClick={() => onSelectEvent(event.id)}
+                aria-label={`Open ${event.name} with ${event.counterpart}`}
+                type="button"
+              >
+                <div className={styles.heroTop}>
+                  <span className={styles.heroTime}>
+                    <Clock size={13} aria-hidden="true" />
+                    {event.timeUntil}
+                  </span>
+                  <span className={styles.heroRisk}>
+                    <Shield size={12} aria-hidden="true" />
+                    {event.risk} risk
+                  </span>
+                </div>
+                <span className={styles.eventCardName}>{event.name}</span>
                 <span className={styles.contrastDetail}>
                   {event.counterpart} · {event.stakes}
                 </span>
-              </li>
-            ))}
-          </ul>
-        )}
+                <span className={styles.eventCardCta}>
+                  <ArrowRight size={13} aria-hidden="true" /> Prep this
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

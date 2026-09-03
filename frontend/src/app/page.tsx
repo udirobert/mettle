@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, CircleHelp, Radio } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
@@ -122,9 +122,10 @@ function formatScenarioName(id: string | undefined): string {
 }
 
 export default function HomePage() {
-  const { state, setPhase, openEvent, isAgentRunning } = useConversationState();
+  const { state, setPhase, openEvent, isAgentRunning, setPrivacyMode } = useConversationState();
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
   const [showEventList, setShowEventList] = useState(!state.scenario_id);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     if (state.phase && state.phase !== localPhase) {
@@ -136,6 +137,39 @@ export default function HomePage() {
     setLocalPhase(phase);
     setPhase(phase);
   };
+
+  // Keyboard flow: 1–4 switch (unlocked) phases, ? opens shortcuts, Escape closes.
+  useEffect(() => {
+    if (showEventList) return;
+    const handleKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === '?') {
+        setShowShortcuts((value) => !value);
+        return;
+      }
+      if (event.key === 'Escape') {
+        setShowShortcuts(false);
+        return;
+      }
+      const index = ['1', '2', '3', '4'].indexOf(event.key);
+      if (index >= 0) {
+        const phase = PHASES[index];
+        if (phase && isPhaseUnlocked(phase.id, state)) selectPhase(phase.id);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEventList, state]);
+
+  const privacy = state.privacy_mode ?? 'private';
 
   const handleSelectEvent = (scenarioId: string) => {
     if (isAgentRunning) return;
@@ -190,8 +224,25 @@ export default function HomePage() {
           <div className={styles.confidential}>
             <button
               className={styles.replayBtn}
+              onClick={() => setPrivacyMode(privacy === 'private' ? 'shared' : 'private')}
+              title={
+                privacy === 'private'
+                  ? 'Private mode — evidence is redacted in shares'
+                  : 'Shared mode — full context allowed in shares'
+              }
+              type="button"
+            >
+              {privacy === 'private' ? (
+                <Lock size={13} aria-hidden="true" />
+              ) : (
+                <LockOpen size={13} aria-hidden="true" />
+              )}
+              <span>{privacy === 'private' ? 'Private' : 'Shared'}</span>
+            </button>
+            <button
+              className={styles.replayBtn}
               onClick={replayWalkthrough}
-              title="Replay the walkthrough"
+              title="Replay the walkthrough (?)"
               type="button"
             >
               <CircleHelp size={14} aria-hidden="true" />
@@ -271,13 +322,45 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-            <div className={styles.phaseCanvas}>
+            <div className={`${styles.phaseCanvas} mettle-fade-in`} key={localPhase}>
               <PhaseCanvas phase={localPhase} />
             </div>
           </section>
 
           {localPhase === 'live' && <SignalStack phase={localPhase} />}
         </div>
+
+        {showShortcuts && (
+          <div
+            className={styles.shortcutsOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Keyboard shortcuts"
+            onClick={() => setShowShortcuts(false)}
+          >
+            <div className={styles.shortcutsCard} onClick={(e) => e.stopPropagation()}>
+              <p className="mettle-kicker">Keyboard</p>
+              <ul className={styles.shortcutsList}>
+                <li>
+                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to Coach / Rehearse / Live / Debrief</span>
+                </li>
+                <li>
+                  <kbd>?</kbd> <span>Show or hide this panel</span>
+                </li>
+                <li>
+                  <kbd>Esc</kbd> <span>Close panels</span>
+                </li>
+              </ul>
+              <button
+                className="mettle-action"
+                onClick={() => setShowShortcuts(false)}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </CopilotChatConfigurationProvider>
   );

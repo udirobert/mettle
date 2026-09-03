@@ -35,7 +35,7 @@
 }
 
 .hero {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--ink);
   box-shadow: 6px 6px 0 var(--ink);
   padding: 1.75rem 1.75rem 1.5rem;
@@ -142,7 +142,7 @@
 }
 
 .prepReady {
-  color: #5a7500;
+  color: var(--signal-strong-ink);
 }
 
 .heroNext {
@@ -160,6 +160,74 @@
   flex-shrink: 0;
   color: var(--cobalt);
   margin-top: 0.15rem;
+}
+
+.carryBadge {
+  align-items: center;
+  background: var(--tint-signal);
+  border: 1px solid var(--signal-strong-ink);
+  color: var(--signal-strong-ink);
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.eventCards {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+}
+
+.eventCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+  width: 100%;
+}
+
+.eventCard:hover {
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.eventCard:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 3px;
+}
+
+.eventCardName {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.eventCardCta {
+  align-items: center;
+  color: var(--cobalt);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 0.3rem;
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
 }
 
 .contrast {

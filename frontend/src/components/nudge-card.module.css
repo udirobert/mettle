@@ -3,7 +3,7 @@
 }
 
 .signal {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-top: 4px solid var(--nudge-accent);
   min-height: 126px;
@@ -20,8 +20,8 @@
 
 .concession {
   --nudge-accent: var(--tomato);
-  background: #fff0eb;
-  border-color: #f5ada0;
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
   border-left-color: var(--nudge-accent);
   border-top-color: var(--nudge-accent);
 }
@@ -36,8 +36,8 @@
 
 .repetition {
   --nudge-accent: var(--cobalt);
-  background: #e2e8ff;
-  border-color: #aab8fa;
+  background: var(--tint-accent);
+  border-color: var(--tint-accent-line);
   border-left-color: var(--nudge-accent);
   border-top-color: var(--nudge-accent);
 }
@@ -92,4 +92,20 @@
 .signal .hint {
   font-size: 11px;
   line-height: 1.45;
+}
+
+/* Nudge arrival: quick, attention-drawing, suppressed under reduced motion globally. */
+.signal {
+  animation: nudgeArrive 260ms ease-out;
+}
+
+@keyframes nudgeArrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

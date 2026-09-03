@@ -6,7 +6,7 @@
 
 .topbar {
   align-items: center;
-  background: #fffdf7;
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
   display: grid;
   grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
@@ -117,6 +117,53 @@
   background: var(--lime);
   border-color: var(--ink);
   color: var(--ink);
+}
+
+.shortcutsOverlay {
+  align-items: center;
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 60;
+}
+
+.shortcutsCard {
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  display: grid;
+  gap: 14px;
+  max-width: 380px;
+  padding: 22px 24px;
+  width: calc(100% - 40px);
+}
+
+.shortcutsList {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shortcutsList li {
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.shortcutsList kbd {
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 24px;
+  padding: 3px 7px;
+  text-align: center;
 }
 .statusDot {
   background: var(--lime);
@@ -308,7 +355,7 @@
 }
 
 .canvas {
-  background: #fffdf7;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -356,7 +403,7 @@
 }
 
 .signalStack {
-  background: #f3efe6;
+  background: var(--surface-alt);
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -376,7 +423,7 @@
   text-transform: uppercase;
 }
 .signalCard {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   min-height: 126px;
   padding: 15px;

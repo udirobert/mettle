@@ -2,13 +2,14 @@
 
 import { FormEvent, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
-import { ArrowUp, ChevronDown, Radio, Send, Zap } from 'lucide-react';
+import { ArrowUp, Check, ChevronDown, Play, Radio, Send, ThumbsDown, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { NudgeCard } from '@/components/nudge-card';
 
 /** Live: one intervention, then the transcript. Restraint over inventory. */
 export function WingmanSidePanel() {
-  const { state, runLiveTurn, startReactiveSession, isAgentRunning } = useConversationState();
+  const { state, runLiveTurn, startReactiveSession, setPartial, acknowledgeNudge, isAgentRunning } =
+    useConversationState();
   const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
   const [showTranscript, setShowTranscript] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -18,6 +19,24 @@ export function WingmanSidePanel() {
   const counterpartFirst =
     String(state.counterpart_profile?.name ?? '').split(' ')[0] || 'Counterpart';
   const transcript = state.transcript ?? [];
+  const acknowledgements = state.nudge_acknowledgements ?? [];
+  const latestAck = latestNudge
+    ? acknowledgements.find((ack) => ack.nudge_id === latestNudge.id)
+    : undefined;
+
+  /** Empty-room helper: drop in the counterpart's likely opening so Live can be tried solo. */
+  const simulateOpening = () => {
+    if (transcript.length > 0) return;
+    setPartial({
+      transcript: [
+        {
+          speaker: 'counterpart',
+          text: `Before we go further — walk me through why I should trust the plan this time.`,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    });
+  };
 
   const reactiveInterrupt = useInterrupt({
     agentId: 'default',
@@ -96,12 +115,40 @@ export function WingmanSidePanel() {
           <NudgeCard
             nudge={latestNudge}
             actionLabel="Get a reframe"
-            onAction={() =>
+            onAction={() => {
+              acknowledgeNudge(latestNudge.id, 'acted');
               void startReactiveSession(
                 `The wingman flagged: "${latestNudge.message}". What should I say next?`,
-              )
-            }
+              );
+            }}
           />
+          {latestAck ? (
+            <p
+              className="mettle-kicker"
+              role="status"
+              style={{ color: 'var(--signal-strong-ink)', marginTop: 8 }}
+            >
+              <Check size={12} className="inline" aria-hidden="true" />{' '}
+              {latestAck.resolution === 'acted' ? 'Handled' : 'Skipped'} — noted for the debrief.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2" style={{ marginTop: 10 }}>
+              <button
+                className="mettle-action"
+                onClick={() => acknowledgeNudge(latestNudge.id, 'acted')}
+                type="button"
+              >
+                <Check size={13} aria-hidden="true" /> I said it
+              </button>
+              <button
+                className="mettle-icon-action"
+                onClick={() => acknowledgeNudge(latestNudge.id, 'skipped')}
+                type="button"
+              >
+                <ThumbsDown size={13} aria-hidden="true" /> Didn't
+              </button>
+            </div>
+          )}
           {reactiveInterrupt ?? (
             <button
               className="mettle-action"
@@ -124,6 +171,16 @@ export function WingmanSidePanel() {
             Wingman only interrupts for a concession, long monologue, repetition, or timing signal.
             Ask when you need a line.
           </p>
+          {transcript.length === 0 && (
+            <button
+              className="mettle-icon-action"
+              onClick={simulateOpening}
+              type="button"
+              style={{ marginTop: 12 }}
+            >
+              <Play size={13} aria-hidden="true" /> Simulate {counterpartFirst}'s opening
+            </button>
+          )}
           {reactiveInterrupt ?? (
             <button
               className="mettle-action"
@@ -140,7 +197,7 @@ export function WingmanSidePanel() {
 
       <form className="flex gap-2" onSubmit={submitTranscript}>
         <div
-          className="flex shrink-0 border border-[var(--line)] bg-[#fffdf7] p-1"
+          className="flex shrink-0 border border-[var(--line)] bg-[var(--surface)] p-1"
           role="group"
           aria-label="Transcript speaker"
         >

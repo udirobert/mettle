@@ -6,6 +6,8 @@
 :root.dark,
 .dark {
   --canvas: #f7f4ec;
+  --surface: #fffdf7;
+  --surface-alt: #f3efe6;
   --background: var(--canvas);
   --foreground: #162039;
   --ink: #162039;
@@ -16,7 +18,17 @@
   --lime: #d8f35e;
   --sun: #ffc94a;
 
-  --card: #fffdf7;
+  /* Tinted surfaces for risk / signal / accent cards. */
+  --tint-accent: #e2e8ff;
+  --tint-accent-line: #aab8fa;
+  --tint-signal: #f1fad2;
+  --tint-signal-line: #cde36c;
+  --signal-strong: #83a600;
+  --signal-strong-ink: #5a7500;
+  --tint-risk: #fff0eb;
+  --tint-risk-line: #f5ada0;
+
+  --card: var(--surface);
   --card-foreground: var(--ink);
   --primary: var(--cobalt);
   --primary-foreground: #ffffff;
@@ -24,14 +36,14 @@
   --secondary-foreground: var(--ink);
   --muted: #ece7dc;
   --muted-foreground: var(--ink-soft);
-  --accent: #e2e8ff;
+  --accent: var(--tint-accent);
   --accent-foreground: var(--ink);
   --destructive: var(--tomato);
   --destructive-foreground: #ffffff;
   --border: var(--line);
   --input: var(--line);
   --ring: var(--cobalt);
-  --chart-tooltip-bg: #fffdf7;
+  --chart-tooltip-bg: var(--surface);
   --chart-tooltip-border: var(--line);
   --chart-axis: var(--ink-soft);
   --radius: 0.25rem;
@@ -42,7 +54,7 @@
   --font-code: var(--font-mono);
   --cpk-default-font-family: var(--font-body);
   --cpk-mint-400: var(--lime);
-  --cpk-mint-800: #5a7500;
+  --cpk-mint-800: var(--signal-strong-ink);
   --cpk-lilac-400: #aebeff;
   --cpk-orange-400: var(--sun);
   --cpk-yellow-400: var(--sun);
@@ -136,24 +148,24 @@ input:focus-visible {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .mettle-card {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   padding: 16px;
 }
 .mettle-card--accent {
-  background: #e2e8ff;
-  border-color: #aab8fa;
+  background: var(--tint-accent);
+  border-color: var(--tint-accent-line);
   border-left: 5px solid var(--cobalt);
 }
 .mettle-card--risk {
-  background: #fff0eb;
-  border-color: #f5ada0;
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
   border-left: 5px solid var(--tomato);
 }
 .mettle-card--signal {
-  background: #f1fad2;
-  border-color: #cde36c;
-  border-left: 5px solid #83a600;
+  background: var(--tint-signal);
+  border-color: var(--tint-signal-line);
+  border-left: 5px solid var(--signal-strong);
 }
 .mettle-card:hover {
   box-shadow: 3px 3px 0 var(--ink);
@@ -179,7 +191,7 @@ input:focus-visible {
   padding: 0;
 }
 .mettle-list li {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   font-size: 12px;
   line-height: 1.5;
@@ -231,7 +243,7 @@ input:focus-visible {
 }
 
 .mettle-input {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   color: var(--ink);
   min-width: 0;
@@ -265,7 +277,7 @@ input:focus-visible {
 }
 
 .mettle-textarea {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   color: var(--ink);
   margin-top: 12px;
@@ -296,12 +308,12 @@ textarea:focus-visible {
   padding: 12px 14px;
 }
 .mettle-turn--user {
-  background: #e2e8ff;
-  border-color: #aab8fa;
+  background: var(--tint-accent);
+  border-color: var(--tint-accent-line);
   justify-self: end;
 }
 .mettle-turn--counterpart {
-  background: #fffdf7;
+  background: var(--surface);
   border-left: 4px solid var(--tomato);
 }
 .mettle-turn-label {
@@ -324,5 +336,58 @@ textarea:focus-visible {
   }
   .mettle-headline {
     font-size: 25px;
+  }
+}
+
+/* Phase-transition crossfade */
+.mettle-fade-in {
+  animation: mettleFadeIn 240ms ease-out;
+}
+
+@keyframes mettleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respect users who prefer reduced motion: kill decorative animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dark mode: same tokens, night values. The cobalt rail keeps its identity. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #131829;
+    --surface: #1b2138;
+    --surface-alt: #171c30;
+    --foreground: #ece7dc;
+    --ink: #ece7dc;
+    --ink-soft: #a3abbd;
+    --line: #3a4260;
+
+    --tint-accent: #232c4e;
+    --tint-accent-line: #41519b;
+    --tint-signal: #26301c;
+    --tint-signal-line: #5a7500;
+    --signal-strong: #b4e04a;
+    --signal-strong-ink: #d8f35e;
+    --tint-risk: #34201d;
+    --tint-risk-line: #a1544a;
+
+    --secondary: #232a45;
+    --muted: #232a45;
   }
 }

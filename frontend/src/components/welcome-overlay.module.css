@@ -79,7 +79,7 @@
 .hint {
   margin-top: 24px;
   padding: 12px 16px;
-  background: #fff0eb;
+  background: var(--tint-risk);
   border-left: 3px solid var(--tomato);
   font-size: 13px;
   color: var(--ink-soft);

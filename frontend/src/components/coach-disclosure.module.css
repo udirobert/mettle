@@ -8,7 +8,7 @@
 
 .collapsibleHeader {
   padding: 1rem 1.25rem;
-  background: #fffdf7;
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
   cursor: pointer;
   display: flex;
@@ -59,7 +59,7 @@
 
 .collapsibleContent {
   padding: 1.25rem;
-  background: #fffdf7;
+  background: var(--surface);
 }
 
 .hero {
@@ -76,7 +76,7 @@
 
 .shareBar {
   border: 1px solid var(--line);
-  background: #fffdf7;
+  background: var(--surface);
   padding: 0.85rem 1rem;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .shareStatus {
-  color: #5a7500;
+  color: var(--signal-strong-ink);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
@@ -121,15 +121,15 @@
 }
 
 .heroAgree {
-  background: #f1fad2;
+  background: var(--tint-signal);
 }
 
 .heroSplit {
-  background: #fff0eb;
+  background: var(--tint-risk);
 }
 
 .heroMove {
-  background: #e2e8ff;
+  background: var(--tint-accent);
 }
 
 .heroMove p {
@@ -153,7 +153,7 @@
   display: grid;
   gap: 14px;
   border: 1px solid var(--ink);
-  background: #fffdf7;
+  background: var(--surface);
   padding: 1rem;
   box-shadow: 5px 5px 0 var(--ink);
 }
@@ -181,7 +181,7 @@
   background: linear-gradient(
     90deg,
     var(--line) 25%,
-    color-mix(in srgb, var(--line) 45%, #fffdf7) 50%,
+    color-mix(in srgb, var(--line) 45%, var(--surface)) 50%,
     var(--line) 75%
   );
   background-size: 200% 100%;
@@ -245,19 +245,96 @@
   flex: 1;
 }
 
+.claimEditRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.claimEditRow .mettle-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 7px 10px;
+}
+
+.claimEditBtn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  gap: 4px;
+  justify-self: start;
+  letter-spacing: 0.04em;
+  padding: 2px 0;
+  text-transform: uppercase;
+}
+
+.claimEditBtn:hover {
+  color: var(--cobalt);
+}
+
+.undoToast {
+  align-items: center;
+  animation: undoIn 200ms ease-out;
+  background: var(--ink);
+  bottom: 24px;
+  color: var(--surface);
+  display: flex;
+  font-size: 12px;
+  gap: 14px;
+  justify-content: space-between;
+  left: 50%;
+  padding: 10px 14px;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+@keyframes undoIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.undoBtn {
+  align-items: center;
+  background: var(--lime);
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+  text-transform: uppercase;
+}
+
 .claim_approved {
-  border-color: #83a600;
-  background: #f1fad2;
+  border-color: var(--signal-strong);
+  background: var(--tint-signal);
 }
 
 .claim_rejected {
-  border-color: #f5ada0;
-  background: #fff0eb;
+  border-color: var(--tint-risk-line);
+  background: var(--tint-risk);
   opacity: 0.72;
 }
 
 .claim_pending {
-  background: #fffdf7;
+  background: var(--surface);
 }
 
 .claimActions {
@@ -288,8 +365,8 @@
 }
 
 .claimBtnOn {
-  background: #83a600;
-  border-color: #83a600;
+  background: var(--signal-strong);
+  border-color: var(--signal-strong);
   color: #fff;
 }
 
@@ -305,7 +382,7 @@
 }
 
 .perspectiveCard {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   padding: 1rem;
 }
@@ -379,7 +456,7 @@
 }
 
 .claimList li {
-  background: #fffdf7;
+  background: var(--surface);
   border: 1px solid var(--line);
   display: grid;
   gap: 6px;
