@@ -57,6 +57,10 @@ out of the box.
 
 ## Deploy
 
+The production frontend is at `https://mettle-xi.vercel.app` and is linked to
+this GitHub repository. Pushing to `main` autodeploys. The WebMCP demo page is at
+`https://mettle-xi.vercel.app/webmcp`.
+
 Backend (Render):
 
 ```bash
@@ -68,12 +72,10 @@ OpenAI key is set, every endpoint falls back to deterministic output.
 
 Frontend (Vercel):
 
-```bash
-cd frontend
-vercel --prod
-```
-
-Set `AGENT_URL` to the deployed backend URL in the Vercel dashboard.
+Pushing to `main` autodeploys to `mettle-xi.vercel.app`. In the Vercel project
+dashboard, set `AGENT_URL` to the deployed backend URL. For local development,
+copy `frontend/.env.example` to `frontend/.env` and leave `AGENT_URL` as
+`http://localhost:8123`.
 
 ## Run
 
