@@ -108,8 +108,13 @@ def claims_from_page_text(text: str, source_id: str) -> list[EvidenceClaim]:
     return claims
 
 
-async def research_public_pages(urls: list[str]) -> ContextBrief:
-    """Read each URL in one recorded Solari session and return a draft brief."""
+async def research_public_pages(urls: list[str], *, hardened: bool = False) -> ContextBrief:
+    """Read each URL in one recorded Solari session and return a draft brief.
+
+    `hardened` turns on Solari's stealth fingerprinting and CAPTCHA solving, for
+    public pages that turn away ordinary scrapers (e.g. industry bodies behind
+    bot protection).
+    """
     targets = normalize_urls(urls)
     brief: ContextBrief = {
         "status": "draft",
@@ -125,7 +130,9 @@ async def research_public_pages(urls: list[str]) -> ContextBrief:
 
     async with _client() as solari:
         # Recording is opt-in per session; without it the replay 404s forever.
-        browser = await solari.launch(recording=True, retries=1)
+        browser = await solari.launch(
+            recording=True, stealth=hardened, captcha=hardened, retries=1
+        )
         session_id = browser.id
         try:
             page = await browser.new_page()

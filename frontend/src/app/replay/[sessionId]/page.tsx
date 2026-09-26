@@ -29,13 +29,13 @@ export default async function ReplayPage({
         </Link>
       </div>
       <section className="mettle-share-card" aria-labelledby="replay-title">
-        <p className="mettle-kicker">Research receipt</p>
+        <p className="mettle-kicker">Research receipt · recorded by Solari</p>
         <h1 id="replay-title" className="mettle-share-title">
           {title || 'How this evidence was gathered'}
         </h1>
         <p className="mettle-copy">
-          A recorded cloud browser read this page for your brief. Watch exactly what it saw — every
-          claim it proposed is traceable to this session.
+          A recorded Solari cloud browser read this page for your brief. Watch exactly what it saw.
+          Every claim it proposed traces back to this session.
           {url && (
             <>
               {' '}

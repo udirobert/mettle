@@ -309,6 +309,25 @@ input:focus-visible {
   margin-top: 6px;
 }
 
+.mettle-receipt-btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--cobalt);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 4px;
+  letter-spacing: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.mettle-receipt-btn:hover {
+  color: var(--ink);
+}
+
 .mettle-source-line a {
   align-items: center;
   color: var(--cobalt);
@@ -533,6 +552,13 @@ textarea:focus-visible {
   padding: 0.2rem 0.5rem;
   text-transform: uppercase;
   transform: rotate(-6deg);
+}
+.mettle-stamp--small {
+  border-width: 1.5px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 0.05rem 0.35rem;
+  transform: rotate(-4deg);
 }
 
 /* Backstage: Live is the one deliberately dim place. Night tokens are

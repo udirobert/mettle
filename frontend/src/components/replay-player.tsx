@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import { RefreshCw } from 'lucide-react';
 
+import { replayDataUrl } from '@/lib/research';
+
 type ReplayEvent = { type: number; timestamp: number; data: unknown };
 
 async function fetchReplay(url: string): Promise<ReplayEvent[]> {
@@ -17,13 +19,13 @@ async function fetchReplay(url: string): Promise<ReplayEvent[]> {
 }
 
 /** Plays back the rrweb DOM recording of a Solari research session. */
-export function ReplayPlayer({ sessionId }: { sessionId: string }) {
+export function ReplayPlayer({ sessionId, height = 420 }: { sessionId: string; height?: number }) {
   const {
     data: events,
     error,
     isLoading,
     mutate,
-  } = useSWR(`/api/research/replay/${encodeURIComponent(sessionId)}`, fetchReplay, {
+  } = useSWR(replayDataUrl(sessionId), fetchReplay, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });
@@ -45,7 +47,7 @@ export function ReplayPlayer({ sessionId }: { sessionId: string }) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           events: events as any,
           width: Math.min(target.clientWidth || 720, 960),
-          height: 420,
+          height,
           autoPlay: true,
           skipInactive: true,
         },
@@ -56,12 +58,12 @@ export function ReplayPlayer({ sessionId }: { sessionId: string }) {
       cancelled = true;
       player?.$destroy?.();
     };
-  }, [events]);
+  }, [events, height]);
 
   if (isLoading) {
     return (
-      <p className="mettle-copy" role="status" style={{ marginTop: 20 }}>
-        Fetching the recording — uploads can take up to 30 seconds after a run…
+      <p className="mettle-label" role="status" style={{ marginTop: 20 }}>
+        Fetching the recording…
       </p>
     );
   }
@@ -70,10 +72,7 @@ export function ReplayPlayer({ sessionId }: { sessionId: string }) {
     return (
       <div className="mettle-card mettle-card--risk" role="alert" style={{ marginTop: 20 }}>
         <strong>The replay isn&apos;t available yet.</strong>
-        <p>
-          Recordings upload shortly after the research run finishes. If this persists, the session
-          may have expired.
-        </p>
+        <p>Recordings upload shortly after a run. If this persists, the session may have expired.</p>
         <button
           className="mettle-icon-action"
           onClick={() => void mutate()}
@@ -86,7 +85,5 @@ export function ReplayPlayer({ sessionId }: { sessionId: string }) {
     );
   }
 
-  return (
-    <div ref={mountRef} style={{ marginTop: 20, overflow: 'hidden' }} aria-label="Session replay" />
-  );
+  return <div ref={mountRef} style={{ overflow: 'hidden' }} aria-label="Session replay" />;
 }

@@ -1,6 +1,24 @@
 import type { ContextBrief, ContextSource } from '@/hooks/use-conversation-state';
+import sampleResearch from '@/fixtures/sample-research.json';
 
 export const MAX_RESEARCH_URLS = 5;
+
+/** Recordings bundled with the app (see backend/scripts/record_sample.py). */
+const BUNDLED_REPLAY_PREFIX = 'sample-';
+
+/** Recorded public research for the sample meeting; empty until it has been recorded. */
+export const SAMPLE_RESEARCH = sampleResearch as ContextBrief;
+
+export function hasSampleResearch(): boolean {
+  return SAMPLE_RESEARCH.claims.length > 0;
+}
+
+/** Where the rrweb NDJSON lives: bundled statically, or proxied from Solari. */
+export function replayDataUrl(sessionId: string): string {
+  return sessionId.startsWith(BUNDLED_REPLAY_PREFIX)
+    ? `/replays/${encodeURIComponent(sessionId)}.ndjson`
+    : `/api/research/replay/${encodeURIComponent(sessionId)}`;
+}
 
 export function parseUrls(text: string): string[] {
   const urls: string[] = [];

@@ -48,7 +48,7 @@ export function useIntro() {
 const MODES = [
   { icon: IdCard, when: 'Minutes out', name: 'Card', what: 'Your lines on one screen.' },
   { icon: Flame, when: 'Hours out', name: 'Rehearse', what: 'They push back. You practise.' },
-  { icon: CalendarClock, when: 'Days out', name: 'Prep', what: 'A full brief from your threads.' },
+  { icon: CalendarClock, when: 'Days out', name: 'Prep', what: 'A full brief. Every public fact, recorded and replayable.' },
 ];
 
 function order(index: number): CSSProperties {

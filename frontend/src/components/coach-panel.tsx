@@ -23,7 +23,8 @@ import {
 
 import { SAMPLE_ELENA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
-import { findSource, mergeBriefs, replayHref } from '@/lib/research';
+import { SAMPLE_RESEARCH, findSource, hasSampleResearch, mergeBriefs } from '@/lib/research';
+import { ReceiptDrawer } from '@/components/receipt-drawer';
 import { Fold } from '@/components/fold';
 import { ResearchSourcesForm, useResearchAvailable } from '@/components/research-sources-form';
 import { useConversationState } from '@/hooks/use-conversation-state';
@@ -182,6 +183,11 @@ function PasteEvidencePanel() {
     if (!cleaned || extracting) return;
     setExtracting(true);
     setError(null);
+    // The sample thread arrives with the sample's recorded public research alongside it.
+    const withSample = (brief: ContextBrief): ContextBrief =>
+      cleaned === SAMPLE_ELENA_THREAD.trim() && hasSampleResearch()
+        ? mergeBriefs(brief, SAMPLE_RESEARCH)
+        : brief;
     try {
       const response = await fetch('/api/extract-context', {
         method: 'POST',
@@ -198,11 +204,12 @@ function PasteEvidencePanel() {
         setExtracting(false);
         return;
       }
+      const merged = withSample(brief);
       const withDecisions: ContextBrief = {
-        ...brief,
+        ...merged,
         status: 'draft',
         user_approved_at: null,
-        claims: brief.claims.map((claim) => ({
+        claims: merged.claims.map((claim) => ({
           ...claim,
           decision: claim.decision ?? 'pending',
         })),
@@ -218,7 +225,7 @@ function PasteEvidencePanel() {
         return;
       }
       setPartial({
-        context_brief: { ...brief, status: 'draft', user_approved_at: null },
+        context_brief: { ...withSample(brief), status: 'draft', user_approved_at: null },
         coach_analysis: undefined,
         coach_stage: 'idle',
       });
@@ -262,7 +269,7 @@ function PasteEvidencePanel() {
           onClick={() => setText(SAMPLE_ELENA_THREAD)}
           type="button"
         >
-          Use sample thread
+          {hasSampleResearch() ? 'Use sample thread + recorded sources' : 'Use sample thread'}
         </button>
       </div>
       <Fold label="Other ways to add evidence">
@@ -432,7 +439,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                     >
                       <Pencil size={12} aria-hidden="true" /> Edit
                     </button>
-                    <SourceLine brief={brief} sourceIds={claim.source_ids} />
+                    <SourceLine brief={brief} sourceIds={claim.source_ids} claim={claim.claim} />
                   </>
                 )}
               </div>
@@ -621,20 +628,30 @@ function PerspectiveGrid({ analysis }: { analysis: CoachAnalysis | undefined }) 
   );
 }
 
-function SourceLine({ brief, sourceIds }: { brief: ContextBrief; sourceIds: string[] }) {
+function SourceLine({
+  brief,
+  sourceIds,
+  claim,
+}: {
+  brief: ContextBrief;
+  sourceIds: string[];
+  claim: string;
+}) {
+  const [open, setOpen] = useState(false);
   // Pasted claims come from the thread the user is looking at; only researched
   // claims need a receipt.
   const source = findSource(brief, sourceIds);
   if (!source || source.provider !== 'solari') return null;
-  const replay = replayHref(source);
   return (
     <span className="mettle-source-line">
+      <span className="mettle-stamp mettle-stamp--small">Recorded</span>
       <span>{source.author || source.title}</span>
-      {replay && (
-        <a href={replay} target="_blank" rel="noopener noreferrer">
-          <PlayCircle size={11} aria-hidden="true" /> Watch how this was found
-        </a>
+      {source.replay_session_id && (
+        <button className="mettle-receipt-btn" onClick={() => setOpen(true)} type="button">
+          <PlayCircle size={11} aria-hidden="true" /> Watch it being found
+        </button>
       )}
+      {open && <ReceiptDrawer claim={claim} source={source} onClose={() => setOpen(false)} />}
     </span>
   );
 }
@@ -910,7 +927,7 @@ function EvidenceRecap({
               <span>
                 {claim.relevance} · {claim.confidence}
               </span>
-              <SourceLine brief={brief} sourceIds={claim.source_ids} />
+              <SourceLine brief={brief} sourceIds={claim.source_ids} claim={claim.claim} />
             </span>
           </li>
         ))}
