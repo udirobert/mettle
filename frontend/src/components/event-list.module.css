@@ -40,21 +40,185 @@
   box-shadow: 6px 6px 0 var(--ink);
   padding: 1.75rem 1.75rem 1.5rem;
   text-align: left;
-  cursor: pointer;
   width: 100%;
+}
+
+.when {
+  border-top: 1px solid var(--ink);
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+}
+
+.whenLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.whenOptions {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .whenOptions {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.whenOption {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.8rem 0.9rem;
+  text-align: left;
   transition:
     transform 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
-.hero:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0 var(--ink);
+.whenOption:hover {
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
 }
 
-.hero:focus-visible {
+.whenOption:focus-visible,
+.cardAction:focus-visible,
+.eventCardButton:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
-  outline-offset: 3px;
+  outline-offset: 2px;
+}
+
+.whenPrimary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+.whenPrimary:hover {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+}
+
+.whenTime {
+  align-items: center;
+  color: var(--ink-soft);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.whenPrimary .whenTime,
+.whenPrimary .whenDetail {
+  color: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.whenAction {
+  align-items: center;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+
+.whenDetail {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.sectionHead {
+  align-items: baseline;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.sectionMeta {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kindChip {
+  background: var(--tint-accent);
+  border: 1px solid var(--tint-accent-line);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+}
+
+.kindChip[data-kind='Bad news'] {
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
+}
+
+.eventCardStakes {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-top: 0.25rem;
+  text-wrap: pretty;
+}
+
+.eventCardActions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.cardAction {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.cardAction:hover {
+  border-color: var(--ink);
+}
+
+.cardActionPrimary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+  margin-left: auto;
+}
+
+.cardActionPrimary:hover {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
 }
 
 .heroTop {
@@ -270,10 +434,11 @@
   padding: 0;
 }
 
-.eventCard {
+.eventCard,
+.eventCardButton {
   background: var(--surface);
   border: 1px solid var(--line);
-  cursor: pointer;
+  color: var(--ink);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -287,15 +452,19 @@
   width: 100%;
 }
 
-.eventCard:hover {
-  border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
-  transform: translate(-2px, -2px);
+.eventCard .heroTop,
+.eventCardButton .heroTop {
+  margin-bottom: 0.5rem;
 }
 
-.eventCard:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
-  outline-offset: 3px;
+.eventCardButton {
+  cursor: pointer;
+}
+
+.eventCard:hover,
+.eventCardButton:hover {
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
 }
 
 .eventCardName {
@@ -375,37 +544,4 @@
   .heroName {
     font-size: 1.7rem;
   }
-}
-
-/* Skip-setup quick rehearsal CTA */
-.quickRehearsal {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  padding: 14px 18px;
-  border-radius: 14px;
-  border: 1px dashed var(--line-strong, rgba(30, 64, 255, 0.45));
-  background: var(--tint-rail, rgba(30, 64, 255, 0.06));
-  color: var(--ink);
-  cursor: pointer;
-  font-size: 13.5px;
-  line-height: 1.4;
-  transition:
-    transform 120ms ease,
-    background 120ms ease;
-}
-.quickRehearsal:hover {
-  background: var(--tint-rail-strong, rgba(30, 64, 255, 0.12));
-  transform: translateY(-1px);
-}
-.quickRehearsal span {
-  flex: 1;
-  color: var(--ink-soft, #475569);
-}
-.quickRehearsal strong {
-  color: var(--ink);
-  display: block;
-  font-size: 14px;
 }

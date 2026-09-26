@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Clock, Repeat, Shield, TrendingUp, User, Zap } from 'lucide-react';
+import {
+  ArrowRight,
+  CalendarClock,
+  Clock,
+  Flame,
+  IdCard,
+  Repeat,
+  Shield,
+  TrendingUp,
+} from 'lucide-react';
 
 import {
   FUND_III,
@@ -10,9 +19,15 @@ import {
   topObjectionPattern,
   type LpStatus,
 } from '@/fixtures/fundraise';
-import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
+import {
+  LP_EVENT,
+  RAISE_EVENTS,
+  SECONDARY_EVENTS,
+  type MettleEvent,
+} from '@/fixtures/lp-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { Fold } from '@/components/fold';
+import { WalkInCard } from '@/components/walk-in-card';
 
 import styles from './event-list.module.css';
 
@@ -37,15 +52,20 @@ function readCarryCount(counterpart: string): number {
   }
 }
 
+function firstName(event: MettleEvent) {
+  return event.counterpart.split(' ')[0];
+}
+
 export function EventList({
   onSelectEvent,
-  onQuickRehearsal,
+  onQuickSpar,
 }: {
   onSelectEvent: (scenarioId: string) => void;
-  onQuickRehearsal?: () => void;
+  onQuickSpar: (scenarioId: string) => void;
 }) {
   const { state } = useConversationState();
   const [carryCount] = useState(() => readCarryCount(LP_EVENT.counterpart));
+  const [walkInEvent, setWalkInEvent] = useState<MettleEvent | null>(null);
 
   const isElena = state.scenario_id === LP_EVENT.id;
   const hasBrief = isElena && !!state.coach_analysis;
@@ -53,17 +73,19 @@ export function EventList({
     isElena &&
     state.context_brief?.status === 'approved' &&
     (state.context_brief.claims?.length ?? 0) > 0;
-  const prepIncomplete = !hasBrief;
 
-  const nextMove = !hasEvidence
-    ? 'Paste the thread with Elena, then build the brief.'
+  const fullPrepDetail = !hasEvidence
+    ? 'Paste the thread, approve the evidence, build the brief.'
     : !hasBrief
-      ? 'Evidence is approved. Build the brief.'
-      : 'Brief is ready — spar with Elena before the meeting.';
+      ? 'Evidence approved. Build the brief.'
+      : 'Brief is ready. Spar, then walk in.';
 
   const pattern = topObjectionPattern(FUND_III);
   const commitments = openCommitments(FUND_III);
   const pipeline = FUND_III.lps.filter((lp) => lp.status !== 'next');
+
+  const briefFor = (event: MettleEvent) =>
+    state.scenario_id === event.id ? (state.coach_analysis ?? null) : null;
 
   return (
     <div className={styles.container}>
@@ -77,27 +99,7 @@ export function EventList({
         </p>
       </header>
 
-      {onQuickRehearsal && (
-        <button
-          className={styles.quickRehearsal}
-          onClick={onQuickRehearsal}
-          type="button"
-          aria-label="Skip setup and try a 60-second rehearsal with the sample counterpart"
-        >
-          <Zap size={15} aria-hidden="true" />
-          <span>
-            <strong>No setup — feel it first.</strong> Take a 60-second sparring round.
-          </span>
-          <ArrowRight size={15} aria-hidden="true" />
-        </button>
-      )}
-
-      <button
-        className={styles.hero}
-        onClick={() => onSelectEvent(LP_EVENT.id)}
-        aria-label={`Open ${LP_EVENT.name} with ${LP_EVENT.counterpart}`}
-        type="button"
-      >
+      <article className={styles.hero} aria-labelledby="hero-name">
         <div className={styles.heroTop}>
           <span className={styles.heroTime}>
             <Clock size={14} aria-hidden="true" />
@@ -110,25 +112,17 @@ export function EventList({
         </div>
 
         <p className={styles.heroStakes}>{LP_EVENT.stakes.replace(/\.$/, '')}</p>
-        <h2 className={styles.heroName}>{LP_EVENT.counterpart}</h2>
+        <h2 id="hero-name" className={styles.heroName}>
+          {LP_EVENT.counterpart}
+        </h2>
         <p className={styles.heroRole}>{LP_EVENT.counterpartRole}</p>
-
-        <div className={styles.heroMeta}>
-          <span className={styles.heroCounterpart}>
-            <User size={14} aria-hidden="true" />
-            {LP_EVENT.name}
-          </span>
-          <span className={prepIncomplete ? styles.prepIncomplete : styles.prepReady}>
-            {prepIncomplete ? 'Prep incomplete' : 'Brief ready'}
-          </span>
-        </div>
 
         {carryCount > 0 && (
           <div className={styles.carryBadge} aria-label="Open items from your last conversation">
             <Repeat size={13} aria-hidden="true" />
             <span>
-              {carryCount} open item{carryCount === 1 ? '' : 's'} carried from your last debrief
-              with {LP_EVENT.counterpart.split(' ')[0]}
+              {carryCount} open item{carryCount === 1 ? '' : 's'} carried from your last close-out
+              with {firstName(LP_EVENT)}
             </span>
           </div>
         )}
@@ -138,16 +132,109 @@ export function EventList({
             <TrendingUp size={13} aria-hidden="true" />
             <span>
               <strong>{pattern.label}</strong> came up with {pattern.count} of the {pattern.of}{' '}
-              LPs you&apos;ve met. Expect it from {LP_EVENT.counterpart.split(' ')[0]}.
+              LPs you&apos;ve met. Expect it from {firstName(LP_EVENT)}.
             </span>
           </p>
         )}
 
-        <div className={styles.heroNext}>
-          <ArrowRight size={16} aria-hidden="true" />
-          <span>{nextMove}</span>
+        <div className={styles.when} role="group" aria-labelledby="when-label">
+          <p id="when-label" className={styles.whenLabel}>
+            How long until you&apos;re in the room?
+          </p>
+          <div className={styles.whenOptions}>
+            <button
+              type="button"
+              className={styles.whenOption}
+              onClick={() => setWalkInEvent(LP_EVENT)}
+            >
+              <span className={styles.whenTime}>
+                <IdCard size={14} aria-hidden="true" /> Minutes
+              </span>
+              <span className={styles.whenAction}>Walk-in card</span>
+              <span className={styles.whenDetail}>Opening, comebacks, one thing to avoid.</span>
+            </button>
+            <button
+              type="button"
+              className={styles.whenOption}
+              onClick={() => onQuickSpar(LP_EVENT.id)}
+            >
+              <span className={styles.whenTime}>
+                <Flame size={14} aria-hidden="true" /> Hours
+              </span>
+              <span className={styles.whenAction}>One quick round</span>
+              <span className={styles.whenDetail}>
+                {firstName(LP_EVENT)} presses on the hardest question.
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.whenOption} ${styles.whenPrimary}`}
+              onClick={() => onSelectEvent(LP_EVENT.id)}
+            >
+              <span className={styles.whenTime}>
+                <CalendarClock size={14} aria-hidden="true" /> A day or more
+              </span>
+              <span className={styles.whenAction}>
+                Full prep <ArrowRight size={14} aria-hidden="true" />
+              </span>
+              <span className={styles.whenDetail}>{fullPrepDetail}</span>
+            </button>
+          </div>
         </div>
-      </button>
+      </article>
+
+      <section className={styles.contrast} aria-labelledby="raise-next">
+        <div className={styles.sectionHead}>
+          <h2 id="raise-next" className={styles.sectionTitle}>
+            Also coming up in the raise
+          </h2>
+          <span className={styles.sectionMeta}>{RAISE_EVENTS.length} conversations</span>
+        </div>
+        <ul className={styles.eventCards}>
+          {RAISE_EVENTS.map((event) => (
+            <li key={event.id} className={styles.eventCard}>
+              <div className={styles.heroTop}>
+                <span className={styles.kindChip} data-kind={event.kind}>
+                  {event.kind}
+                </span>
+                <span className={styles.heroTime}>
+                  <Clock size={13} aria-hidden="true" />
+                  {event.timeUntil}
+                </span>
+              </div>
+              <span className={styles.eventCardName}>{event.counterpart}</span>
+              <span className={styles.contrastDetail}>{event.counterpartRole}</span>
+              <span className={styles.eventCardStakes}>{event.stakes}</span>
+              <div className={styles.eventCardActions}>
+                <button
+                  type="button"
+                  className={styles.cardAction}
+                  onClick={() => setWalkInEvent(event)}
+                  aria-label={`Walk-in card for ${event.counterpart}`}
+                >
+                  <IdCard size={13} aria-hidden="true" /> Card
+                </button>
+                <button
+                  type="button"
+                  className={styles.cardAction}
+                  onClick={() => onQuickSpar(event.id)}
+                  aria-label={`One quick round with ${event.counterpart}`}
+                >
+                  <Flame size={13} aria-hidden="true" /> Spar
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.cardAction} ${styles.cardActionPrimary}`}
+                  onClick={() => onSelectEvent(event.id)}
+                  aria-label={`Full prep for ${event.counterpart}`}
+                >
+                  Prep <ArrowRight size={13} aria-hidden="true" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <div className={styles.contrast}>
         <Fold
@@ -179,24 +266,21 @@ export function EventList({
       </div>
 
       <div className={styles.contrast}>
-        <Fold label="Other conversations" meta={`${SECONDARY_EVENTS.length} consequential`}>
+        <Fold label="Beyond the raise" meta={`${SECONDARY_EVENTS.length} conversations`}>
           <ul className={styles.eventCards}>
             {SECONDARY_EVENTS.map((event) => (
               <li key={event.id}>
                 <button
-                  className={styles.eventCard}
+                  className={styles.eventCardButton}
                   onClick={() => onSelectEvent(event.id)}
                   aria-label={`Open ${event.name} with ${event.counterpart}`}
                   type="button"
                 >
                   <div className={styles.heroTop}>
+                    <span className={styles.kindChip}>{event.kind}</span>
                     <span className={styles.heroTime}>
                       <Clock size={13} aria-hidden="true" />
                       {event.timeUntil}
-                    </span>
-                    <span className={styles.heroRisk}>
-                      <Shield size={12} aria-hidden="true" />
-                      {event.risk} risk
                     </span>
                   </div>
                   <span className={styles.eventCardName}>{event.name}</span>
@@ -212,6 +296,19 @@ export function EventList({
           </ul>
         </Fold>
       </div>
+
+      {walkInEvent && (
+        <WalkInCard
+          event={walkInEvent}
+          analysis={briefFor(walkInEvent)}
+          onClose={() => setWalkInEvent(null)}
+          onSpar={() => {
+            const id = walkInEvent.id;
+            setWalkInEvent(null);
+            onQuickSpar(id);
+          }}
+        />
+      )}
     </div>
   );
 }

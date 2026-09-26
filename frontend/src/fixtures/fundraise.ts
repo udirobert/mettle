@@ -51,18 +51,21 @@ export const FUND_III: Fundraise = {
       status: 'met',
       objections: ['liquidity', 'key_person'],
       openCommitment: 'Send Q2 exit pipeline by Friday',
+      scenarioId: 'lp_endowment_followup',
     },
     {
       name: 'Priya Raman',
       org: 'Castell Family Office',
       status: 'met',
       objections: ['liquidity', 'fees'],
+      scenarioId: 'lp_family_office',
     },
     {
       name: 'Tom Becker',
       org: 'Meridian Pension',
       status: 'committed',
       objections: ['key_person'],
+      scenarioId: 'lp_bad_news',
     },
     {
       name: 'Ana Soto',
@@ -76,6 +79,7 @@ export const FUND_III: Fundraise = {
       org: 'Aster Insurance',
       status: 'scheduled',
       objections: [],
+      scenarioId: 'lp_first_meeting',
     },
   ],
 };

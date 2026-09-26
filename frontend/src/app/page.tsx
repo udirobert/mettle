@@ -198,12 +198,12 @@ export default function HomePage() {
     markEntry('prep');
   };
 
-  // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
-  // state reset that also seeds a light coach brief so Rehearse is unlocked,
-  // then jumps straight in.
-  const handleQuickRehearsal = () => {
+  // "Hours, not days" entry: skip the brief and spar now. One atomic state
+  // reset seeds a light brief from the scenario's walk-in lines so Spar is
+  // unlocked, then jumps straight in.
+  const handleQuickSpar = (scenarioId: string) => {
     if (isAgentRunning) return;
-    const event = findEvent('lp_renewal');
+    const event = findEvent(scenarioId);
     if (!event) return;
     setPartial({
       scenario_id: event.id,
@@ -212,13 +212,14 @@ export default function HomePage() {
       counterpart_profile: event.counterpartProfile,
       user_weak_points: event.userWeakPoints,
       coach_analysis: {
-        blind_spots: ['Your liquidity story is a promise, not yet a track record.'],
-        concrete_moves: ['Name the distribution date before she asks for it.'],
-        likely_objections: ['"Why should this cycle be different from the last one?"'],
-        opening_strategy: 'Lead with the memo date, not the ask.',
+        blind_spots: event.userWeakPoints.slice(0, 1),
+        concrete_moves: event.walkIn.ifThen.map((line) => line.response),
+        likely_objections: event.walkIn.ifThen.map((line) => line.trigger),
+        opening_strategy: event.walkIn.opening,
+        if_then: event.walkIn.ifThen,
         perspectives: [],
-        disagreements: ['Whether to open with liquidity or governance.'],
-        consensus: ['The fee step-up needs to be justified by realized DPI.'],
+        disagreements: [],
+        consensus: [event.walkIn.avoid],
       },
       coach_stage: 'ready',
       context_brief: undefined,
@@ -254,7 +255,7 @@ export default function HomePage() {
               <span>Mettle</span>
             </div>
           </header>
-          <EventList onSelectEvent={handleSelectEvent} onQuickRehearsal={handleQuickRehearsal} />
+          <EventList onSelectEvent={handleSelectEvent} onQuickSpar={handleQuickSpar} />
         </main>
       </CopilotChatConfigurationProvider>
     );
