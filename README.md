@@ -137,6 +137,11 @@ npm run build
   claim, debate only with kept claims; re-debate anytime.
 - **Done (shared)** — follow-up memo from Debrief (`mailto` + copy) and
   shareable council split from Coach (copy / anonymized; no transcript).
+- **Done (shared)** — restraint pass after user feedback: time-based entry
+  (Minutes / Hours / Days), walk-in card as the standard output, a single
+  "Show working" disclosure on the brief, visual artefacts (raise bar, pattern
+  dots) and sequenced motion in place of explanatory copy. Principles in
+  `docs/NORTH_STAR.md` → Restraint.
 - **Next (Person B)** — real context ingestion (Gmail/Calendar OAuth + public
   research). Paste HITL remains the unscalable path that teaches the contract.
 - **Stretch** — LiveKit voice adapter. Additive — the demo is complete without it.
