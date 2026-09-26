@@ -535,6 +535,21 @@ textarea:focus-visible {
   transform: rotate(-6deg);
 }
 
+/* Backstage: Live is the one deliberately dim place. Night tokens are
+   scoped to this subtree further down (next to dark mode). */
+.mettle-backstage {
+  background-color: var(--canvas);
+  background-image: radial-gradient(
+    ellipse at 50% -10%,
+    color-mix(in srgb, var(--cobalt) 16%, transparent),
+    transparent 60%
+  );
+  color: var(--ink);
+}
+.mettle-backstage .mettle-kicker {
+  color: var(--ink-soft);
+}
+
 /* ---- Motion vocabulary: four moves, each with one job. ---- */
 
 /* 1. Deal: an artefact lands on the table. */
@@ -616,7 +631,28 @@ textarea:focus-visible {
   }
 }
 
-/* Dark mode: same tokens, night values. The cobalt rail keeps its identity. */
+/* Dark mode: same tokens, night values. The cobalt rail keeps its identity.
+   Backstage (Live) always uses the night values, whatever the system theme. */
+.mettle-backstage {
+  --canvas: #131829;
+  --surface: #1b2138;
+  --surface-alt: #171c30;
+  --foreground: #ece7dc;
+  --ink: #ece7dc;
+  --ink-soft: #a3abbd;
+  --line: #3a4260;
+  --tint-accent: #232c4e;
+  --tint-accent-line: #41519b;
+  --tint-signal: #26301c;
+  --tint-signal-line: #5a7500;
+  --signal-strong: #b4e04a;
+  --signal-strong-ink: #d8f35e;
+  --tint-risk: #34201d;
+  --tint-risk-line: #a1544a;
+  --secondary: #232a45;
+  --muted: #232a45;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --canvas: #131829;

@@ -97,23 +97,21 @@ export function WingmanSidePanel() {
   };
 
   return (
-    <div className="mettle-phase">
+    <div className="mettle-phase mettle-backstage">
       <header className="flex items-center justify-between gap-3">
         <div>
-          <p className="mettle-kicker">Live · one interruption at a time</p>
+          <p className="mettle-kicker">Backstage · live</p>
           <h2 className="mettle-headline">Stay in the room.</h2>
         </div>
-        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--ink-soft)]">
-          <Radio size={12} className="mr-1 inline" aria-hidden="true" />
+        <span className="mettle-label inline-flex items-center gap-2">
+          <span className="mettle-spike mettle-spike--them mettle-spike--live" aria-hidden="true" />
+          <Radio size={12} className="sr-only" aria-hidden="true" />
           {isAgentRunning ? 'Thinking' : 'Listening'}
         </span>
       </header>
 
       {transcript.length === 0 && (
-        <p className="mettle-premise">
-          Keep this beside you during the call — log each turn as it happens, and the wingman
-          interrupts only when it matters.
-        </p>
+        <p className="mettle-premise">Log each turn. You&apos;ll only hear from us when it matters.</p>
       )}
 
       {reactiveReply ? (

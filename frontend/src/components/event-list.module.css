@@ -160,13 +160,45 @@
   line-height: 1.55;
 }
 
+/* The top call sheet, taped to the board. */
 .hero {
   background: var(--surface);
   border: 1px solid var(--ink);
   box-shadow: 6px 6px 0 var(--ink);
   padding: 1.75rem 1.75rem 1.5rem;
+  position: relative;
   text-align: left;
   width: 100%;
+}
+
+.hero::before {
+  background: color-mix(in srgb, var(--lime) 70%, transparent);
+  content: '';
+  height: 1.1rem;
+  left: 50%;
+  position: absolute;
+  top: -0.55rem;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 5rem;
+}
+
+.whenLabel {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Pinned call slips: a touch askew, straightened when picked up. */
+.eventCards > li:nth-child(odd) .eventCardButton {
+  transform: rotate(-0.5deg);
+}
+
+.eventCards > li:nth-child(even) .eventCardButton {
+  transform: rotate(0.45deg);
+}
+
+.eventCards > li .eventCardButton:hover {
+  transform: rotate(0deg) translate(-1px, -1px);
 }
 
 .when {

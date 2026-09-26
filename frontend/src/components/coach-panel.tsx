@@ -531,32 +531,78 @@ function CouncilChamber({
   // produced it fold away below. While debating, the seats ARE the progress.
   if (ready && analysis) {
     return (
-      <section className={styles.council} aria-label="Council verdict">
+      <section className={`${styles.council} mettle-deal`} aria-label="Council verdict">
+        <div className={styles.verdictHead}>
+          <span className="mettle-label">Your lines · for the room</span>
+          <span className="mettle-stamp">Drafted</span>
+        </div>
         <DisagreementHero analysis={analysis} counterpart={counterpart} />
       </section>
     );
   }
 
+  return <WritersRoom analysis={analysis} debating={debating} />;
+}
+
+/** While the council debates, three seats around a table take the floor in turn. */
+function WritersRoom({
+  analysis,
+  debating,
+}: {
+  analysis: CoachAnalysis | undefined;
+  debating: boolean;
+}) {
+  const spoken = new Map((analysis?.perspectives ?? []).map((p) => [p.name, p]));
+  const onFloor = PERSPECTIVE_ORDER.find((name) => !spoken.has(name));
+  const latest = [...PERSPECTIVE_ORDER].reverse().find((name) => spoken.has(name));
+  const latestLine = latest ? firstSentence(spoken.get(latest)!.analysis) : null;
+
   return (
-    <section className={styles.council} aria-label="Adversarial council" aria-busy={debating}>
-      <div className={styles.councilHead}>
-        <p className="mettle-kicker">
-          <Swords size={13} /> Council
-        </p>
-        <strong>
-          {perspectives.length > 0
-            ? 'Perspectives in. Synthesizing the split…'
-            : 'Convening three adversaries…'}
-        </strong>
+    <section
+      className={`${styles.writersRoom} mettle-plan`}
+      aria-label="Writers' room: three adversaries"
+      aria-busy={debating}
+    >
+      <span className={`${styles.roomLabel} mettle-label`}>Writers&apos; room</span>
+
+      <div className={styles.roomTable}>
+        <ul className={styles.roomSeats}>
+          {PERSPECTIVE_ORDER.map((name) => {
+            const meta = PERSPECTIVE_META[name];
+            const status = spoken.has(name) ? 'spoken' : name === onFloor ? 'floor' : 'waiting';
+            return (
+              <li key={name} className={styles.roomSeat} data-status={status}>
+                <span className="mettle-seat" aria-hidden="true">
+                  {status === 'spoken' ? <Check size={15} /> : meta.label.split(' ')[1][0]}
+                </span>
+                <span className={styles.roomSeatName}>{meta.label.replace('The ', '')}</span>
+                <span className={`${styles.roomSeatState} mettle-label`}>
+                  {status === 'spoken' ? 'Said it' : status === 'floor' ? 'Has the floor' : 'Waiting'}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <div className={styles.roomSurface} aria-hidden="true" />
       </div>
-      <PerspectiveGrid analysis={analysis} />
-      <div className={styles.synthesisPending} aria-live="polite">
-        {perspectives.length === 0
-          ? 'Waiting for the first lens…'
-          : 'Holding synthesis until all three have spoken.'}
-      </div>
+
+      <p className={styles.roomStatus} aria-live="polite">
+        {latestLine && latest ? (
+          <>
+            <span className="mettle-label">{PERSPECTIVE_META[latest].label}</span>
+            <span className={styles.roomQuote}>&ldquo;{latestLine}&rdquo;</span>
+          </>
+        ) : (
+          <span className="mettle-label">Three adversaries, reading your position…</span>
+        )}
+      </p>
     </section>
   );
+}
+
+function firstSentence(text: string): string {
+  const match = text.match(/^.{20,160}?[.!?](\s|$)/);
+  return (match ? match[0] : text.slice(0, 140)).trim();
 }
 
 function PerspectiveGrid({ analysis }: { analysis: CoachAnalysis | undefined }) {
