@@ -69,6 +69,13 @@ Examples:
 - Salary negotiation: company comp philosophy, recent layoffs, market salary
   ranges, and role benchmarks.
 
+- `Solari` (shipped): recorded cloud browser for user-named URLs
+  (`backend/research/solari.py`, `POST /research`). One recorded session reads
+  up to five pages; claims return `decision: "pending"` with a
+  `replay_session_id` on each source, and the UI links every researched claim
+  to `/replay/<session>` so the user can watch how it was gathered. Enabled
+  only when `SOLARI_API_KEY` is set; otherwise the option is hidden.
+
 During live Wingman, avoid open-ended public browsing. It is too slow and too
 risky for high-stakes moments. Wingman should rely on the approved brief,
 current transcript, and deterministic trigger rules. If the user explicitly asks

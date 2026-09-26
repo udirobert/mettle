@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
   ArrowRight,
   Check,
-  ChevronDown,
   CircleAlert,
   Copy,
   Eye,
@@ -12,6 +11,7 @@ import {
   Inbox,
   MessageCircle,
   Pencil,
+  PlayCircle,
   RefreshCw,
   Scale,
   Share2,
@@ -23,6 +23,9 @@ import {
 
 import { SAMPLE_ELENA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
+import { findSource, mergeBriefs, replayHref } from '@/lib/research';
+import { Fold } from '@/components/fold';
+import { ResearchSourcesForm, useResearchAvailable } from '@/components/research-sources-form';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type {
   CoachAnalysis,
@@ -65,17 +68,21 @@ export function CoachPanel() {
     { label: 'Council', done: ready && !!analysis },
   ];
   const activeStep = steps.findIndex((step) => !step.done);
+  const atStart = needsPaste && !showCouncil;
 
   return (
     <div className="mettle-phase">
       <header>
         <p className="mettle-kicker">2 days out · you decide what Mettle sees</p>
-        <h2 className="mettle-headline">Walk in with a point of view.</h2>
-        <p className="mettle-copy">
-          Paste the email thread, keep the claims you trust, and watch three adversaries attack your
-          position — so {name} can&apos;t surprise you with anything they haven&apos;t already
-          tried.
-        </p>
+        <h2 className="mettle-headline">
+          {ready && analysis ? 'Your point of view.' : 'Walk in with a point of view.'}
+        </h2>
+        {atStart && (
+          <p className="mettle-copy">
+            Paste the thread, keep the claims you trust, and three adversaries attack your position
+            — so {name} can&apos;t surprise you.
+          </p>
+        )}
         <div className="mettle-coach-steps" aria-label="Coach progress">
           {steps.map((step, index) => (
             <div
@@ -129,23 +136,41 @@ export function CoachPanel() {
       )}
 
       {ready && analysis && (
-        <>
+        <div>
           <button className="mettle-action" onClick={() => setPhase('rehearsal')} type="button">
             Rehearse this with {name}
             <ArrowRight size={14} aria-hidden="true" />
           </button>
-          <PressureTest analysis={analysis} />
-        </>
+        </div>
       )}
 
-      {approved && (
-        <EvidenceRecap
-          brief={brief}
-          onReDebate={() => void runCoach(state.scenario_id || 'lp_renewal')}
-          isAgentRunning={isAgentRunning}
-        />
+      {(ready || approved || (needsPaste && showCouncil)) && (
+        <div>
+          {ready && analysis && (
+            <Fold label="How the council got there" meta="3 perspectives">
+              <PerspectiveGrid analysis={analysis} />
+            </Fold>
+          )}
+          {ready && analysis && <PressureTest analysis={analysis} />}
+          {approved && (
+            <EvidenceRecap
+              brief={brief}
+              onReDebate={() => void runCoach(state.scenario_id || 'lp_renewal')}
+              isAgentRunning={isAgentRunning}
+            />
+          )}
+          {needsPaste && showCouncil && (
+            <Fold label="Add evidence" meta="council ran without a thread">
+              <PasteEvidencePanel />
+            </Fold>
+          )}
+          {ready && analysis && (
+            <Fold label="Share the split" meta="no thread, no evidence">
+              <ShareSplit analysis={analysis} counterpart={name} stakes={state.stakes} />
+            </Fold>
+          )}
+        </div>
       )}
-      {needsPaste && showCouncil && <PasteEvidencePanel />}
     </div>
   );
 }
@@ -157,6 +182,7 @@ function PasteEvidencePanel() {
   const [error, setError] = useState<string | null>(null);
   const name = counterpartName(state);
   const privacy = state.privacy_mode ?? 'private';
+  const researchAvailable = useResearchAvailable();
 
   const extract = async (source: string) => {
     const cleaned = source.trim();
@@ -215,22 +241,16 @@ function PasteEvidencePanel() {
       </p>
       <strong>Forward or paste the thread with {name}.</strong>
       <p className="mt-2">
-        The agent will propose claims. You keep or reject each one before the council runs.
-        {privacy === 'private' && (
-          <>
-            {' '}
-            <strong style={{ color: 'var(--cobalt)' }}>
-              Private mode: nothing here leaves this room.
-            </strong>
-          </>
-        )}
+        You&apos;ll keep or reject each proposed claim before anything reaches the council.
+        {privacy === 'private' && ' Private mode is on.'}
       </p>
       <textarea
         className="mettle-textarea"
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder={`From: ${name}\nSubject: Re: Q3…\n\nPaste the emails here.`}
-        rows={10}
+        rows={6}
+        style={{ minHeight: 140 }}
         aria-label={`Paste correspondence with ${name}`}
       />
       {error && <p className={styles.pasteError}>{error}</p>}
@@ -251,15 +271,31 @@ function PasteEvidencePanel() {
         >
           Use sample thread
         </button>
-        <button
-          className={styles.skipBtn}
-          disabled={isAgentRunning}
-          onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
-          type="button"
-        >
-          Skip paste — use the scenario file
-        </button>
       </div>
+      <Fold label="Other ways to add evidence">
+        {researchAvailable && (
+          <ResearchSourcesForm
+            counterpart={name}
+            onBrief={(researched) =>
+              setPartial({
+                context_brief: mergeBriefs(undefined, researched),
+                coach_analysis: undefined,
+                coach_stage: 'idle',
+              })
+            }
+          />
+        )}
+        <div>
+          <button
+            className={styles.skipBtn}
+            disabled={isAgentRunning}
+            onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
+            type="button"
+          >
+            Skip evidence — run the council on the scenario file
+          </button>
+        </div>
+      </Fold>
     </section>
   );
 }
@@ -269,6 +305,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
   const name = counterpartName(state);
   const privacy = state.privacy_mode ?? 'private';
   const claims = brief.claims ?? [];
+  const researchAvailable = useResearchAvailable();
   const approvedCount = claims.filter((claim) => claim.decision === 'approved').length;
   const pendingCount = claims.filter(
     (claim) => !claim.decision || claim.decision === 'pending',
@@ -402,6 +439,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                     >
                       <Pencil size={12} aria-hidden="true" /> Edit
                     </button>
+                    <SourceLine brief={brief} sourceIds={claim.source_ids} />
                   </>
                 )}
               </div>
@@ -452,6 +490,14 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
         The Skeptic, {name}, and the Negotiator will only cite kept claims.
         {privacy === 'private' && ' Private mode is on — shares are anonymized.'}
       </p>
+      {researchAvailable && (
+        <Fold label="Add public sources" meta="recorded, replayable">
+          <ResearchSourcesForm
+            counterpart={name}
+            onBrief={(researched) => setPartial({ context_brief: mergeBriefs(brief, researched) })}
+          />
+        </Fold>
+      )}
 
       {undoVisible && lastRejected && (
         <div className={styles.undoToast} role="status">
@@ -487,7 +533,16 @@ function CouncilChamber({
   ready: boolean;
 }) {
   const perspectives = analysis?.perspectives ?? [];
-  const byName = Object.fromEntries(perspectives.map((p) => [p.name, p]));
+
+  // Once synthesis lands, the verdict is the interface; the three lenses that
+  // produced it fold away below. While debating, the seats ARE the progress.
+  if (ready && analysis) {
+    return (
+      <section className={styles.council} aria-label="Council verdict">
+        <DisagreementHero analysis={analysis} counterpart={counterpart} />
+      </section>
+    );
+  }
 
   return (
     <section className={styles.council} aria-label="Adversarial council" aria-busy={debating}>
@@ -496,38 +551,52 @@ function CouncilChamber({
           <Swords size={13} /> Council
         </p>
         <strong>
-          {ready
-            ? 'Synthesis locked. Disagreement preserved.'
-            : perspectives.length > 0
-              ? 'Perspectives in. Synthesizing the split…'
-              : 'Convening three adversaries…'}
+          {perspectives.length > 0
+            ? 'Perspectives in. Synthesizing the split…'
+            : 'Convening three adversaries…'}
         </strong>
       </div>
-
-      <div className={styles.perspectiveGrid}>
-        {PERSPECTIVE_ORDER.map((name) => {
-          const perspective = byName[name];
-          return (
-            <PerspectiveSeat
-              key={name}
-              name={name}
-              perspective={perspective}
-              waiting={!perspective}
-            />
-          );
-        })}
+      <PerspectiveGrid analysis={analysis} />
+      <div className={styles.synthesisPending} aria-live="polite">
+        {perspectives.length === 0
+          ? 'Waiting for the first lens…'
+          : 'Holding synthesis until all three have spoken.'}
       </div>
-
-      {ready && analysis ? (
-        <DisagreementHero analysis={analysis} counterpart={counterpart} stakes={stakes} />
-      ) : (
-        <div className={styles.synthesisPending} aria-live="polite">
-          {perspectives.length === 0
-            ? 'Waiting for the first lens…'
-            : 'Holding synthesis until all three have spoken.'}
-        </div>
-      )}
     </section>
+  );
+}
+
+function PerspectiveGrid({ analysis }: { analysis: CoachAnalysis | undefined }) {
+  const byName = Object.fromEntries((analysis?.perspectives ?? []).map((p) => [p.name, p]));
+  return (
+    <div className={styles.perspectiveGrid}>
+      {PERSPECTIVE_ORDER.map((name) => (
+        <PerspectiveSeat
+          key={name}
+          name={name}
+          perspective={byName[name]}
+          waiting={!byName[name]}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SourceLine({ brief, sourceIds }: { brief: ContextBrief; sourceIds: string[] }) {
+  // Pasted claims come from the thread the user is looking at; only researched
+  // claims need a receipt.
+  const source = findSource(brief, sourceIds);
+  if (!source || source.provider !== 'solari') return null;
+  const replay = replayHref(source);
+  return (
+    <span className="mettle-source-line">
+      <span>{source.author || source.title}</span>
+      {replay && (
+        <a href={replay} target="_blank" rel="noopener noreferrer">
+          <PlayCircle size={11} aria-hidden="true" /> Watch how this was found
+        </a>
+      )}
+    </span>
   );
 }
 
@@ -587,6 +656,38 @@ function PerspectiveSeat({
 function DisagreementHero({
   analysis,
   counterpart,
+}: {
+  analysis: CoachAnalysis;
+  counterpart: string;
+}) {
+  const agreed = analysis.consensus?.[0];
+  const split = analysis.disagreements?.[0];
+  const move = analysis.opening_strategy || analysis.concrete_moves?.[0];
+
+  return (
+    <div className={styles.hero} aria-label="Council disagreement">
+      <div className={`${styles.heroBlock} ${styles.heroMove}`}>
+        <p className="mettle-kicker">The move</p>
+        <strong>{move || `Ask ${counterpart} what would make renewal simple.`}</strong>
+        <p>Two sentences you can actually say. Then stop.</p>
+      </div>
+      <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
+        <p className="mettle-kicker">They agreed</p>
+        <strong>{agreed || 'The council has not named a shared point yet.'}</strong>
+      </div>
+      <div className={`${styles.heroBlock} ${styles.heroSplit}`}>
+        <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
+          They split
+        </p>
+        <strong>{split || 'No material conflict in the three lenses.'}</strong>
+      </div>
+    </div>
+  );
+}
+
+function ShareSplit({
+  analysis,
+  counterpart,
   stakes,
 }: {
   analysis: CoachAnalysis;
@@ -594,9 +695,6 @@ function DisagreementHero({
   stakes?: string;
 }) {
   const [shareStatus, setShareStatus] = useState<string | null>(null);
-  const agreed = analysis.consensus?.[0];
-  const split = analysis.disagreements?.[0];
-  const move = analysis.opening_strategy || analysis.concrete_moves?.[0];
 
   const share = async (anonymize: boolean) => {
     const text = buildCouncilSplitText({ analysis, counterpart, stakes, anonymize });
@@ -608,28 +706,10 @@ function DisagreementHero({
   };
 
   return (
-    <div className={styles.heroWrap}>
-      <div className={styles.hero} aria-label="Council disagreement">
-        <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
-          <p className="mettle-kicker">They agreed</p>
-          <strong>{agreed || 'The council has not named a shared point yet.'}</strong>
-        </div>
-        <div className={`${styles.heroBlock} ${styles.heroSplit}`}>
-          <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
-            They split
-          </p>
-          <strong>{split || 'No material conflict in the three lenses.'}</strong>
-        </div>
-        <div className={`${styles.heroBlock} ${styles.heroMove}`}>
-          <p className="mettle-kicker">The move</p>
-          <strong>{move || `Ask ${counterpart} what would make renewal simple.`}</strong>
-          <p>Two sentences you can actually say. Then stop.</p>
-        </div>
-      </div>
-
+    <div>
       <div className={styles.shareBar}>
         <p className={styles.shareHint}>
-          <Share2 size={12} aria-hidden="true" /> Share the split — no thread, no evidence
+          <Share2 size={12} aria-hidden="true" /> What they agreed, where they split, the move
         </p>
         <div className={styles.shareActions}>
           <button className="mettle-action" onClick={() => void share(false)} type="button">
@@ -654,17 +734,16 @@ function PressureTest({ analysis }: { analysis: CoachAnalysis }) {
   const weakPoints = state.user_weak_points ?? [];
 
   return (
-    <CollapsibleSection
-      title="Pressure test detail"
-      summary={`${analysis.blind_spots?.length || 0} blind spots · ${analysis.concrete_moves?.length || 0} moves · ${analysis.likely_objections?.length || 0} objections`}
-      icon={Swords}
+    <Fold
+      label="Pressure test detail"
+      meta={`${analysis.blind_spots?.length || 0} blind spots · ${analysis.likely_objections?.length || 0} objections`}
     >
-      <div className="mettle-grid" style={{ marginTop: 12 }}>
+      <div className="mettle-grid">
         <AnalysisCard title="Blind spots" items={analysis.blind_spots} tone="risk" />
         <AnalysisCard title="Concrete moves" items={analysis.concrete_moves} tone="signal" />
         <AnalysisCard title="Likely objections" items={analysis.likely_objections} tone="accent" />
       </div>
-      <div className="mettle-card" style={{ marginTop: 12 }}>
+      <div className="mettle-card">
         <p className="mettle-kicker">
           <CircleAlert size={13} /> Your weak points
         </p>
@@ -686,7 +765,7 @@ function PressureTest({ analysis }: { analysis: CoachAnalysis }) {
           Add weak point
         </button>
       </div>
-    </CollapsibleSection>
+    </Fold>
   );
 }
 
@@ -729,94 +808,48 @@ function EvidenceRecap({
   isAgentRunning: boolean;
 }) {
   if (!brief.claims.length) return null;
+  const replayable = brief.sources.filter((source) => source.replay_session_id).length;
 
   return (
-    <CollapsibleSection
-      title="Approved evidence"
-      summary={`${brief.claims.length} kept claims · re-debate anytime`}
-      icon={Inbox}
-      className="border-[var(--lime)]"
+    <Fold
+      label="Approved evidence"
+      meta={`${brief.claims.length} kept${replayable ? ` · ${replayable} recorded` : ''}`}
     >
-      <ul className="space-y-3">
+      <ul className="mettle-list">
         {brief.claims.map((claim, index) => (
-          <li
-            key={index}
-            className="border-l-2 border-[var(--lime)] bg-white px-3 py-2 text-xs leading-relaxed"
-          >
-            <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
-            <div className="mt-1 font-mono text-[10px] uppercase text-[var(--ink-soft)]">
-              {claim.relevance} · {claim.confidence} confidence
-            </div>
+          <li key={`${claim.claim}-${index}`}>
+            {claim.claim}
+            <span className="mettle-source-line">
+              <span>
+                {claim.relevance} · {claim.confidence}
+              </span>
+              <SourceLine brief={brief} sourceIds={claim.source_ids} />
+            </span>
           </li>
         ))}
       </ul>
       {brief.open_commitments.length > 0 && (
-        <div className="mt-4 border-t border-[var(--line)] pt-3">
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--tomato)]">
-            Open commitments
+        <div className="mettle-card mettle-card--risk">
+          <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
+            <FileText size={12} aria-hidden="true" /> Open commitments
           </p>
-          <ul className="mt-2 space-y-1">
+          <ul className="mettle-list">
             {brief.open_commitments.map((commitment, index) => (
-              <li key={index} className="flex items-start gap-2 text-xs">
-                <FileText size={12} className="mt-0.5 text-[var(--tomato)]" />
-                <span>{commitment}</span>
-              </li>
+              <li key={`${commitment}-${index}`}>{commitment}</li>
             ))}
           </ul>
         </div>
       )}
-      <button
-        className="mettle-action"
-        disabled={isAgentRunning}
-        onClick={onReDebate}
-        type="button"
-        style={{ marginTop: 14 }}
-      >
-        <RefreshCw size={14} aria-hidden="true" /> Re-debate with this brief
-      </button>
-    </CollapsibleSection>
-  );
-}
-
-type CollapsibleSectionProps = {
-  title: string;
-  summary?: string;
-  icon?: React.ComponentType<{ size?: number; className?: string }>;
-  className?: string;
-  children: ReactNode;
-};
-
-function CollapsibleSection({
-  title,
-  summary,
-  icon: Icon,
-  className = '',
-  children,
-}: CollapsibleSectionProps) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className={`${styles.collapsible} ${className}`}>
-      <button
-        type="button"
-        className={styles.collapsibleHeader}
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <div className={styles.collapsibleLeft}>
-          {Icon && <Icon size={16} className={styles.collapsibleIcon} aria-hidden="true" />}
-          <div>
-            <h3 className={styles.collapsibleTitle}>{title}</h3>
-            {summary && <p className={styles.collapsibleSummary}>{summary}</p>}
-          </div>
-        </div>
-        <ChevronDown
-          size={18}
-          aria-hidden="true"
-          className={`${styles.collapsibleChevron} ${open ? styles.collapsibleChevronOpen : ''}`}
-        />
-      </button>
-      {open && <div className={styles.collapsibleContent}>{children}</div>}
-    </div>
+      <div>
+        <button
+          className="mettle-icon-action"
+          disabled={isAgentRunning}
+          onClick={onReDebate}
+          type="button"
+        >
+          <RefreshCw size={14} aria-hidden="true" /> Re-debate with this brief
+        </button>
+      </div>
+    </Fold>
   );
 }

@@ -12,7 +12,7 @@ import os
 import uvicorn
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
 from copilotkit import LangGraphAGUIAgent
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel, Field
@@ -26,6 +26,7 @@ from graph.opponent import run_opponent
 from graph.scenarios import load_scenario
 from graph.state import ConversationState
 from graph.wingman_reactive import answer_reactive_query
+from research import solari as research
 from server_config import allowed_origins
 
 
@@ -81,6 +82,39 @@ async def extract_context(body: ExtractContextRequest) -> dict:
         body.text,
         counterpart_name=body.counterpart_name,
     )
+
+
+class ResearchRequest(BaseModel):
+    urls: list[str] = Field(default_factory=list, max_length=research.MAX_URLS)
+
+
+@app.get("/research/status")
+async def research_status() -> dict:
+    return {"available": research.is_configured(), "max_urls": research.MAX_URLS}
+
+
+@app.post("/research")
+async def run_research(body: ResearchRequest) -> dict:
+    """Read user-named public pages in a recorded Solari session → draft brief."""
+    if not research.normalize_urls(body.urls):
+        raise HTTPException(status_code=422, detail="Add at least one http(s) URL.")
+    try:
+        return await research.research_public_pages(body.urls)
+    except research.ResearchUnavailable as err:
+        raise HTTPException(status_code=503, detail="Public research is not configured.") from err
+
+
+@app.get("/research/replay/{session_id}")
+async def research_replay(session_id: str) -> Response:
+    if not research.valid_session_id(session_id):
+        raise HTTPException(status_code=404, detail="Unknown session")
+    try:
+        replay = await research.fetch_replay(session_id)
+    except research.ResearchUnavailable as err:
+        raise HTTPException(status_code=503, detail="Public research is not configured.") from err
+    if replay is None:
+        raise HTTPException(status_code=404, detail="Replay not uploaded yet")
+    return Response(content=replay, media_type="application/x-ndjson")
 
 
 def _build_state(req: WebMCPStateRequest) -> ConversationState:

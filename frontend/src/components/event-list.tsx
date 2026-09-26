@@ -5,6 +5,7 @@ import { ArrowRight, Clock, Repeat, Shield, User, Zap } from 'lucide-react';
 
 import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { Fold } from '@/components/fold';
 
 import styles from './event-list.module.css';
 
@@ -119,37 +120,38 @@ export function EventList({
       </button>
 
       <div className={styles.contrast}>
-        <p className={styles.kicker}>Also on the calendar</p>
-        <ul className={styles.eventCards}>
-          {SECONDARY_EVENTS.map((event) => (
-            <li key={event.id}>
-              <button
-                className={styles.eventCard}
-                onClick={() => onSelectEvent(event.id)}
-                aria-label={`Open ${event.name} with ${event.counterpart}`}
-                type="button"
-              >
-                <div className={styles.heroTop}>
-                  <span className={styles.heroTime}>
-                    <Clock size={13} aria-hidden="true" />
-                    {event.timeUntil}
+        <Fold label="Also on your calendar" meta={`${SECONDARY_EVENTS.length} consequential`}>
+          <ul className={styles.eventCards}>
+            {SECONDARY_EVENTS.map((event) => (
+              <li key={event.id}>
+                <button
+                  className={styles.eventCard}
+                  onClick={() => onSelectEvent(event.id)}
+                  aria-label={`Open ${event.name} with ${event.counterpart}`}
+                  type="button"
+                >
+                  <div className={styles.heroTop}>
+                    <span className={styles.heroTime}>
+                      <Clock size={13} aria-hidden="true" />
+                      {event.timeUntil}
+                    </span>
+                    <span className={styles.heroRisk}>
+                      <Shield size={12} aria-hidden="true" />
+                      {event.risk} risk
+                    </span>
+                  </div>
+                  <span className={styles.eventCardName}>{event.name}</span>
+                  <span className={styles.contrastDetail}>
+                    {event.counterpart} · {event.stakes}
                   </span>
-                  <span className={styles.heroRisk}>
-                    <Shield size={12} aria-hidden="true" />
-                    {event.risk} risk
+                  <span className={styles.eventCardCta}>
+                    <ArrowRight size={13} aria-hidden="true" /> Prep this
                   </span>
-                </div>
-                <span className={styles.eventCardName}>{event.name}</span>
-                <span className={styles.contrastDetail}>
-                  {event.counterpart} · {event.stakes}
-                </span>
-                <span className={styles.eventCardCta}>
-                  <ArrowRight size={13} aria-hidden="true" /> Prep this
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Fold>
       </div>
     </div>
   );

@@ -42,12 +42,15 @@ class ContextSource(TypedDict):
         "exa",
         "firecrawl",
         "tinyfish",
+        "solari",
         "manual",
     ]
     title: str
     author: str | None
     timestamp: str | None
     url: str | None
+    # Solari recorded browser session that gathered this source (replayable).
+    replay_session_id: NotRequired[str | None]
 
 
 class EvidenceClaim(TypedDict):

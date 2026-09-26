@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
+import { ArrowLeft, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
@@ -125,11 +125,6 @@ function SignalStack({ phase }: { phase: Phase }) {
       )}
     </aside>
   );
-}
-
-function formatScenarioName(id: string | undefined): string {
-  if (!id) return 'Consequential conversation';
-  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function HomePage() {
@@ -309,8 +304,6 @@ export default function HomePage() {
               <CircleHelp size={14} aria-hidden="true" />
               <span>Replay tour</span>
             </button>
-            <BadgeCheck size={16} aria-hidden="true" />
-            {formatScenarioName(state.scenario_id)}
           </div>
         </header>
 
@@ -377,12 +370,6 @@ export default function HomePage() {
             <div className={styles.canvasBar}>
               <h1>{PHASES.find((item) => item.id === localPhase)?.label}</h1>
               <JourneyTracker current={localPhase} />
-              {state.stakes && (
-                <div className={styles.canvasStakes}>
-                  <span className={styles.stakesDot} />
-                  {state.stakes}
-                </div>
-              )}
             </div>
             <div className={`${styles.phaseCanvas} mettle-fade-in`} key={localPhase}>
               <PhaseCanvas phase={localPhase} />

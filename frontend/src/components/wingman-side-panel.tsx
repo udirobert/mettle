@@ -2,19 +2,10 @@
 
 import { FormEvent, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
-import {
-  ArrowUp,
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Play,
-  Radio,
-  Send,
-  ThumbsDown,
-  Zap,
-} from 'lucide-react';
+import { ArrowUp, ArrowRight, Check, Play, Radio, Send, ThumbsDown, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { NudgeCard } from '@/components/nudge-card';
+import { Fold } from '@/components/fold';
 
 /** Live: one intervention, then the transcript. Restraint over inventory. */
 export function WingmanSidePanel() {
@@ -28,8 +19,6 @@ export function WingmanSidePanel() {
     isAgentRunning,
   } = useConversationState();
   const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
-  const [showTranscript, setShowTranscript] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const nudges = state.nudges_sent ?? [];
   const latestNudge = nudges.at(-1);
   const reactiveReply = state.reactive_reply ?? null;
@@ -87,6 +76,18 @@ export function WingmanSidePanel() {
     ),
   });
 
+  const quickAnswer = reactiveInterrupt ?? (
+    <button
+      className="mettle-action"
+      disabled={isAgentRunning}
+      onClick={() => void startReactiveSession()}
+      type="button"
+      style={{ marginTop: 12 }}
+    >
+      <Zap size={14} aria-hidden="true" /> Quick answer
+    </button>
+  );
+
   const submitTranscript = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = new FormData(event.currentTarget).get('transcript');
@@ -108,10 +109,12 @@ export function WingmanSidePanel() {
         </span>
       </header>
 
-      <p className="mettle-premise">
-        Keep this beside you during the call — log each turn as it happens, and the wingman
-        interrupts only when it matters.
-      </p>
+      {transcript.length === 0 && (
+        <p className="mettle-premise">
+          Keep this beside you during the call — log each turn as it happens, and the wingman
+          interrupts only when it matters.
+        </p>
+      )}
 
       {reactiveReply ? (
         <section className="mettle-card mettle-card--accent" aria-label="Current intervention">
@@ -120,17 +123,7 @@ export function WingmanSidePanel() {
           </p>
           <strong>{reactiveReply}</strong>
           <p>Two sentences. Then stop and listen.</p>
-          {reactiveInterrupt ?? (
-            <button
-              className="mettle-action"
-              disabled={isAgentRunning}
-              onClick={() => void startReactiveSession()}
-              type="button"
-              style={{ marginTop: 12 }}
-            >
-              <Zap size={14} aria-hidden="true" /> Quick answer
-            </button>
-          )}
+          {quickAnswer}
         </section>
       ) : latestNudge ? (
         <section aria-label="Current intervention">
@@ -171,49 +164,28 @@ export function WingmanSidePanel() {
               </button>
             </div>
           )}
-          {reactiveInterrupt ?? (
-            <button
-              className="mettle-action"
-              disabled={isAgentRunning}
-              onClick={() => void startReactiveSession()}
-              type="button"
-              style={{ marginTop: 12 }}
-            >
-              <Zap size={14} aria-hidden="true" /> Quick answer
-            </button>
-          )}
+          {quickAnswer}
         </section>
       ) : (
         <section className="mettle-card mettle-card--accent" aria-label="Current intervention">
           <p className="mettle-kicker">
             <Zap size={13} /> Standing by
           </p>
-          <strong>No pattern has crossed the threshold.</strong>
-          <p>
-            Wingman only interrupts for a concession, long monologue, repetition, or timing signal.
-            Ask when you need a line.
-          </p>
-          {transcript.length === 0 && (
-            <button
-              className="mettle-icon-action"
-              onClick={simulateOpening}
-              type="button"
-              style={{ marginTop: 12 }}
-            >
-              <Play size={13} aria-hidden="true" /> Simulate {counterpartFirst}'s opening
-            </button>
-          )}
-          {reactiveInterrupt ?? (
-            <button
-              className="mettle-action"
-              disabled={isAgentRunning}
-              onClick={() => void startReactiveSession()}
-              type="button"
-              style={{ marginTop: 12 }}
-            >
-              <Zap size={14} aria-hidden="true" /> Quick answer
-            </button>
-          )}
+          <strong>Quiet until something matters.</strong>
+          <p>Wingman interrupts only for a concession, monologue, repetition, or timing slip.</p>
+          <div className="flex flex-wrap gap-2">
+            {quickAnswer}
+            {transcript.length === 0 && (
+              <button
+                className="mettle-icon-action"
+                onClick={simulateOpening}
+                type="button"
+                style={{ marginTop: 12 }}
+              >
+                <Play size={13} aria-hidden="true" /> Simulate {counterpartFirst}&apos;s opening
+              </button>
+            )}
+          </div>
         </section>
       )}
 
@@ -249,68 +221,43 @@ export function WingmanSidePanel() {
         </button>
       </form>
 
-      <button
-        className="mettle-fold"
-        onClick={() => setShowTranscript((value) => !value)}
-        type="button"
-        aria-expanded={showTranscript}
-      >
-        <span>
-          Transcript · {transcript.length} turn{transcript.length === 1 ? '' : 's'}
-        </span>
-        <ChevronDown
-          size={16}
-          className={showTranscript ? 'rotate-180 transition-transform' : 'transition-transform'}
-          aria-hidden="true"
-        />
-      </button>
-      {showTranscript && (
-        <section className="mettle-transcript" aria-label="Live transcript">
-          {transcript.length === 0 ? (
-            <p className="text-sm text-[var(--ink-soft)]">No turns yet. Add what was just said.</p>
-          ) : (
-            transcript.map((turn, index) => (
-              <div
-                key={`${turn.timestamp}-${index}`}
-                className={`mettle-turn ${turn.speaker === 'user' ? 'mettle-turn--user' : 'mettle-turn--counterpart'}`}
-              >
-                <span className="mettle-turn-label">
-                  {turn.speaker === 'user' ? 'You' : counterpartFirst}
-                </span>
-                {turn.text}
-              </div>
-            ))
-          )}
-        </section>
-      )}
+      <div>
+        <Fold
+          label="Transcript"
+          meta={`${transcript.length} turn${transcript.length === 1 ? '' : 's'}`}
+        >
+          <section className="mettle-transcript" aria-label="Live transcript">
+            {transcript.length === 0 ? (
+              <p className="text-sm text-[var(--ink-soft)]">
+                No turns yet. Add what was just said.
+              </p>
+            ) : (
+              transcript.map((turn, index) => (
+                <div
+                  key={`${turn.timestamp}-${index}`}
+                  className={`mettle-turn ${turn.speaker === 'user' ? 'mettle-turn--user' : 'mettle-turn--counterpart'}`}
+                >
+                  <span className="mettle-turn-label">
+                    {turn.speaker === 'user' ? 'You' : counterpartFirst}
+                  </span>
+                  {turn.text}
+                </div>
+              ))
+            )}
+          </section>
+        </Fold>
 
-      {nudges.length > 1 && (
-        <>
-          <button
-            className="mettle-fold"
-            onClick={() => setShowHistory((value) => !value)}
-            type="button"
-            aria-expanded={showHistory}
-          >
-            <span>Earlier signals · {nudges.length - 1}</span>
-            <ChevronDown
-              size={16}
-              className={showHistory ? 'rotate-180 transition-transform' : 'transition-transform'}
-              aria-hidden="true"
-            />
-          </button>
-          {showHistory && (
-            <div className="grid gap-2">
-              {nudges
-                .slice(0, -1)
-                .reverse()
-                .map((nudge) => (
-                  <NudgeCard key={nudge.id} nudge={nudge} />
-                ))}
-            </div>
-          )}
-        </>
-      )}
+        {nudges.length > 1 && (
+          <Fold label="Earlier signals" meta={`${nudges.length - 1}`}>
+            {nudges
+              .slice(0, -1)
+              .reverse()
+              .map((nudge) => (
+                <NudgeCard key={nudge.id} nudge={nudge} />
+              ))}
+          </Fold>
+        )}
+      </div>
 
       {/* Exit path: once the conversation is real, offer the handoff to Debrief. */}
       {(() => {

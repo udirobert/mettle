@@ -243,7 +243,7 @@
 .nextChip {
   margin-left: auto;
   background: var(--lime);
-  color: var(--ink);
+  color: var(--on-lime);
   font-family: var(--font-mono);
   font-size: 8px;
   font-weight: 800;
@@ -287,12 +287,12 @@
 .phaseButtonActive {
   background: var(--lime);
   border-color: #273ea8;
-  color: var(--ink);
+  color: var(--on-lime);
   transform: translateX(3px);
 }
 .phaseButtonActive:hover {
   background: var(--lime);
-  color: var(--ink);
+  color: var(--on-lime);
 }
 
 .phaseButtonMuted {
