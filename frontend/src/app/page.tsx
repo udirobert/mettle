@@ -17,6 +17,7 @@ import {
 } from '@/components/journey-tracker';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 import { findEvent } from '@/fixtures/lp-event';
+import { PHASE_LABELS } from '@/lib/phase-labels';
 
 import styles from './page.module.css';
 
@@ -44,10 +45,10 @@ const DebriefView = dynamic(() => import('@/components/debrief-view').then((m) =
 });
 
 const PHASES: Array<{ id: Phase; label: string }> = [
-  { id: 'prep', label: 'Coach' },
-  { id: 'rehearsal', label: 'Rehearse' },
-  { id: 'live', label: 'Live' },
-  { id: 'debrief', label: 'Debrief' },
+  { id: 'prep', label: PHASE_LABELS.prep },
+  { id: 'rehearsal', label: PHASE_LABELS.rehearsal },
+  { id: 'live', label: PHASE_LABELS.live },
+  { id: 'debrief', label: PHASE_LABELS.debrief },
 ];
 
 function getPhaseHint(phase: Phase, state: ConversationState): string {
@@ -56,11 +57,11 @@ function getPhaseHint(phase: Phase, state: ConversationState): string {
   }
   switch (phase) {
     case 'rehearsal':
-      return 'Finish the Coach brief before rehearsing';
+      return 'Finish the brief before sparring';
     case 'live':
-      return 'Run a rehearsal before going live';
+      return 'Spar a round before going live';
     case 'debrief':
-      return 'Hold a real conversation — live or rehearsed — before debriefing';
+      return 'Hold a real conversation — live or sparred — before closing it out';
     default:
       return '';
   }
@@ -393,7 +394,7 @@ export default function HomePage() {
               <p className="mettle-kicker">Keyboard</p>
               <ul className={styles.shortcutsList}>
                 <li>
-                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to Coach / Rehearse / Live / Debrief</span>
+                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to {Object.values(PHASE_LABELS).join(' / ')}</span>
                 </li>
                 <li>
                   <kbd>?</kbd> <span>Show or hide this panel</span>

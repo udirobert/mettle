@@ -85,6 +85,8 @@ export type CoachAnalysis = {
   concrete_moves: string[];
   likely_objections: string[];
   opening_strategy: string;
+  /** "If she says X → you say Y." Absent on briefs saved before this shipped. */
+  if_then?: Array<{ trigger: string; response: string }>;
   perspectives: PerspectiveResult[];
   disagreements: string[];
   consensus: string[];

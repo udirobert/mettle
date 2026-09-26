@@ -138,7 +138,7 @@ export function CoachPanel() {
       {ready && analysis && (
         <div>
           <button className="mettle-action" onClick={() => setPhase('rehearsal')} type="button">
-            Rehearse this with {name}
+            Spar with {name}
             <ArrowRight size={14} aria-hidden="true" />
           </button>
         </div>
@@ -663,13 +663,26 @@ function DisagreementHero({
   const agreed = analysis.consensus?.[0];
   const split = analysis.disagreements?.[0];
   const move = analysis.opening_strategy || analysis.concrete_moves?.[0];
+  const lines = (analysis.if_then ?? []).slice(0, 3);
+  const firstName = counterpart.split(' ')[0];
 
   return (
-    <div className={styles.hero} aria-label="Council disagreement">
+    <div className={styles.hero} aria-label="Council verdict">
       <div className={`${styles.heroBlock} ${styles.heroMove}`}>
-        <p className="mettle-kicker">The move</p>
-        <strong>{move || `Ask ${counterpart} what would make renewal simple.`}</strong>
-        <p>Two sentences you can actually say. Then stop.</p>
+        <p className="mettle-kicker">Your opening</p>
+        <strong>{move || `Ask ${firstName} what would make renewal simple.`}</strong>
+        {lines.length > 0 ? (
+          <dl className={styles.ifThen} aria-label={`If ${firstName} pushes back`}>
+            {lines.map((line, index) => (
+              <div key={`${line.trigger}-${index}`}>
+                <dt>If {line.trigger.replace(/\.$/, '')}</dt>
+                <dd>{line.response}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p>Two sentences you can actually say. Then stop.</p>
+        )}
       </div>
       <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
         <p className="mettle-kicker">They agreed</p>
@@ -745,7 +758,7 @@ function PressureTest({ analysis }: { analysis: CoachAnalysis }) {
       </div>
       <div className="mettle-card">
         <p className="mettle-kicker">
-          <CircleAlert size={13} /> Your weak points
+          <CircleAlert size={13} /> Where your position breaks
         </p>
         <ul className="mettle-list" style={{ marginTop: 11 }}>
           {weakPoints.length === 0 ? (

@@ -3,26 +3,28 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, CheckCircle2, Shield, X, Zap } from 'lucide-react';
 
+import { PHASE_LABELS } from '@/lib/phase-labels';
+
 import styles from './welcome-overlay.module.css';
 
 const WALKTHROUGH_KEY = 'mettle.walkthrough.seen';
 
 const PHASES = [
   {
-    label: 'Coach',
-    description: 'Stress-test your position with adversarial analysis before the room does.',
+    label: PHASE_LABELS.prep,
+    description: 'Three adversaries attack your position — not you — and hand back your lines.',
   },
   {
-    label: 'Rehearse',
-    description: 'Role-play the conversation against a skeptical counterpart.',
+    label: PHASE_LABELS.rehearsal,
+    description: 'Take the hardest questions privately, before the room asks them.',
   },
   {
-    label: 'Live',
-    description: 'Get real-time tactical support during the actual conversation.',
+    label: PHASE_LABELS.live,
+    description: 'Quiet signals beside you during the real conversation. Only when it matters.',
   },
   {
-    label: 'Debrief',
-    description: 'Capture commitments and open items before they evaporate.',
+    label: PHASE_LABELS.debrief,
+    description: 'Log what you promised, and send the memo that makes you look prepared.',
   },
 ];
 
@@ -118,8 +120,8 @@ function PanelIntro() {
         you can't afford to get wrong.
       </h1>
       <p className={styles.body}>
-        Mettle is a stakes-aware preparation layer. It stress-tests your position, rehearses the
-        hard parts, and supports you in the moment.
+        You run the room. Mettle is your staff: a private murder board that attacks your
+        position, hands back your lines, and remembers every promise across the raise.
       </p>
     </div>
   );

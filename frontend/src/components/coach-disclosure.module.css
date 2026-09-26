@@ -138,6 +138,34 @@
   margin: 0.45rem 0 0;
 }
 
+.ifThen {
+  display: grid;
+  gap: 10px;
+  margin: 0.9rem 0 0;
+}
+
+.ifThen > div {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 3px;
+  padding-top: 10px;
+}
+
+.ifThen dt {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ifThen dd {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .perspectiveGrid {
   display: grid;
   gap: 12px;

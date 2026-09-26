@@ -1,13 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Clock, Repeat, Shield, User, Zap } from 'lucide-react';
+import { ArrowRight, Clock, Repeat, Shield, TrendingUp, User, Zap } from 'lucide-react';
 
+import {
+  FUND_III,
+  OBJECTION_LABELS,
+  openCommitments,
+  topObjectionPattern,
+  type LpStatus,
+} from '@/fixtures/fundraise';
 import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { Fold } from '@/components/fold';
 
 import styles from './event-list.module.css';
+
+const STATUS_LABELS: Record<LpStatus, string> = {
+  committed: 'Committed',
+  met: 'In diligence',
+  next: 'Next',
+  scheduled: 'Scheduled',
+};
 
 /** Carry-forward marker: open items persisted by a previous debrief with this counterpart. */
 function readCarryCount(counterpart: string): number {
@@ -42,15 +56,21 @@ export function EventList({
   const prepIncomplete = !hasBrief;
 
   const nextMove = !hasEvidence
-    ? 'Paste the thread with Elena, then run Coach.'
+    ? 'Paste the thread with Elena, then build the brief.'
     : !hasBrief
-      ? 'Evidence is approved. Run Coach.'
-      : 'Open Coach — then rehearse with Elena.';
+      ? 'Evidence is approved. Build the brief.'
+      : 'Brief is ready — spar with Elena before the meeting.';
+
+  const pattern = topObjectionPattern(FUND_III);
+  const commitments = openCommitments(FUND_III);
+  const pipeline = FUND_III.lps.filter((lp) => lp.status !== 'next');
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <p className={styles.kicker}>Your consequential conversation</p>
+        <p className={styles.kicker}>
+          {FUND_III.name} raise · {FUND_III.committed} of {FUND_III.target}
+        </p>
         <h1 className={styles.title}>The one you cannot afford to wing.</h1>
         <p className={styles.subtitle}>
           Not every meeting. This one. {LP_EVENT.stakes.replace(/\.$/, '')}, two days out.
@@ -66,7 +86,7 @@ export function EventList({
         >
           <Zap size={15} aria-hidden="true" />
           <span>
-            <strong>No setup — feel it first.</strong> Jump straight into a 60-second rehearsal.
+            <strong>No setup — feel it first.</strong> Take a 60-second sparring round.
           </span>
           <ArrowRight size={15} aria-hidden="true" />
         </button>
@@ -113,6 +133,16 @@ export function EventList({
           </div>
         )}
 
+        {pattern && (
+          <p className={styles.pattern}>
+            <TrendingUp size={13} aria-hidden="true" />
+            <span>
+              <strong>{pattern.label}</strong> came up with {pattern.count} of the {pattern.of}{' '}
+              LPs you&apos;ve met. Expect it from {LP_EVENT.counterpart.split(' ')[0]}.
+            </span>
+          </p>
+        )}
+
         <div className={styles.heroNext}>
           <ArrowRight size={16} aria-hidden="true" />
           <span>{nextMove}</span>
@@ -120,7 +150,36 @@ export function EventList({
       </button>
 
       <div className={styles.contrast}>
-        <Fold label="Also on your calendar" meta={`${SECONDARY_EVENTS.length} consequential`}>
+        <Fold
+          label={`Across the ${FUND_III.name} raise`}
+          meta={`${pipeline.length} LPs · ${commitments.length} open promises`}
+        >
+          <ul className={styles.pipeline} aria-label="LP pipeline">
+            {pipeline.map((lp) => (
+              <li key={lp.name} className={styles.pipelineRow}>
+                <span className={styles.pipelineWho}>
+                  <strong>{lp.name}</strong>
+                  <span className={styles.contrastDetail}>{lp.org}</span>
+                </span>
+                <span className={styles.pipelineThemes}>
+                  {lp.objections.length > 0
+                    ? lp.objections.map((theme) => OBJECTION_LABELS[theme]).join(' · ')
+                    : 'Not met yet'}
+                  {lp.openCommitment && (
+                    <span className={styles.pipelinePromise}>Owed: {lp.openCommitment}</span>
+                  )}
+                </span>
+                <span className={styles.pipelineStatus} data-status={lp.status}>
+                  {STATUS_LABELS[lp.status]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Fold>
+      </div>
+
+      <div className={styles.contrast}>
+        <Fold label="Other conversations" meta={`${SECONDARY_EVENTS.length} consequential`}>
           <ul className={styles.eventCards}>
             {SECONDARY_EVENTS.map((event) => (
               <li key={event.id}>

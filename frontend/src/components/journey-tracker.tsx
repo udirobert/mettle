@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Lock } from 'lucide-react';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
+import { PHASE_LABELS } from '@/lib/phase-labels';
 
 /**
  * Journey visibility layer.
@@ -17,10 +18,10 @@ import { useConversationState, type ConversationState } from '@/hooks/use-conver
 export type Phase = 'prep' | 'rehearsal' | 'live' | 'debrief';
 
 const JOURNEY: Array<{ id: Phase; label: string }> = [
-  { id: 'prep', label: 'Brief' },
-  { id: 'rehearsal', label: 'Rehearse' },
-  { id: 'live', label: 'Live' },
-  { id: 'debrief', label: 'Debrief' },
+  { id: 'prep', label: PHASE_LABELS.prep },
+  { id: 'rehearsal', label: PHASE_LABELS.rehearsal },
+  { id: 'live', label: PHASE_LABELS.live },
+  { id: 'debrief', label: PHASE_LABELS.debrief },
 ];
 
 export function isPhaseUnlocked(phase: Phase, state: ConversationState): boolean {
@@ -44,9 +45,9 @@ export function isPhaseUnlocked(phase: Phase, state: ConversationState): boolean
 
 const UNLOCK_ANNOUNCEMENTS: Record<Phase, string> = {
   prep: '',
-  rehearsal: 'Rehearse is open — hear the pushback before the room gives it to you.',
+  rehearsal: 'Spar is open — take the hardest questions here, privately, before the room.',
   live: 'Live is open — keep it beside you during the real conversation.',
-  debrief: 'Debrief is open — capture the commitments before they evaporate.',
+  debrief: 'Close is open — log what you promised before it evaporates.',
 };
 
 export function JourneyTracker({ current }: { current: Phase }) {

@@ -83,6 +83,13 @@ class ContextBrief(TypedDict):
     user_approved_at: str | None
 
 
+class IfThenLine(TypedDict):
+    """An implementation intention: when the counterpart does X, the user says Y."""
+
+    trigger: str
+    response: str
+
+
 class CoachAnalysis(TypedDict):
     """Structured output from the Coach stress-test.
 
@@ -99,6 +106,9 @@ class CoachAnalysis(TypedDict):
     concrete_moves: list[str]
     likely_objections: list[str]
     opening_strategy: str
+    # "If she says X → you say Y." Required for structured output (LangChain
+    # can't convert NotRequired[list[TypedDict]]); readers still use .get().
+    if_then: list[IfThenLine]
     perspectives: list[PerspectiveResult]
     disagreements: list[str]
     consensus: list[str]

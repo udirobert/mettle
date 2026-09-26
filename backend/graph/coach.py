@@ -82,9 +82,13 @@ Output 3-5 paragraphs. Be specific about the emotional dynamics, not \
 generic negotiation theory."""
 
 SYNTHESIS_PROMPT = """\
-You are the lead coach. Three advisors just analyzed this position \
-independently. Your job is to synthesize their outputs into a single \
-coherent briefing.
+You are the principal's chief of staff. Three advisors just attacked \
+the principal's position independently. Synthesize their outputs into a \
+single briefing the principal can walk in with.
+
+Tone: you work for the principal. Critique the POSITION, never the \
+person. Do not grade, lecture, or say "you should have". Write moves \
+the principal can say out loud, in their own voice.
 
 CRITICAL: You must surface where they disagreed, not paper over it. \
 If the Skeptic says the position is weak and the Negotiator says it is \
@@ -99,6 +103,9 @@ Produce:
 - concrete_moves: specific things to do or say
 - likely_objections: what the counterpart will lead with
 - opening_strategy: the first 60 seconds, in one paragraph
+- if_then: 2-4 lines pairing a likely counterpart move (trigger, e.g. \
+"She asks why liquidity will be different this time") with the exact \
+words to say back (response, one or two sentences, first person)
 - perspectives: preserve each advisor's full analysis (name + text)
 - disagreements: where the advisors conflicted — this is NOT a merge, \
 it is a list of the actual tensions
@@ -161,6 +168,29 @@ FALLBACK_ANALYSIS: CoachAnalysis = {
         "Acknowledge the prior gap, state the operational change, then name the ask. "
         "Do not lead with portfolio performance."
     ),
+    "if_then": [
+        {
+            "trigger": "She asks why the liquidity timeline is credible this time.",
+            "response": (
+                "We changed how we exit, not just when. Here is the dated milestone "
+                "we will report against."
+            ),
+        },
+        {
+            "trigger": "She floats renewing at a reduced allocation.",
+            "response": (
+                "Before we size it — what would make the full $40M an easy decision "
+                "for your committee?"
+            ),
+        },
+        {
+            "trigger": "She calls the fee step-up unjustified.",
+            "response": (
+                "Fair. Tie the step-up to the liquidity milestone — if we miss it, "
+                "the step-up waits."
+            ),
+        },
+    ],
     "perspectives": FALLBACK_PERSPECTIVES,
     "disagreements": [
         "The Skeptic sees the position as fundamentally weak on liquidity; "
@@ -279,6 +309,7 @@ def _empty_partial_analysis(perspectives: list[PerspectiveResult]) -> CoachAnaly
         "concrete_moves": [],
         "likely_objections": [],
         "opening_strategy": "",
+        "if_then": [],
         "perspectives": perspectives,
         "disagreements": [],
         "consensus": [],
