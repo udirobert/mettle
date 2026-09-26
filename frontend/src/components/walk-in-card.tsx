@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Ban, Flame, X } from 'lucide-react';
+import { useEffect, useRef, type CSSProperties } from 'react';
+import { ArrowRight, Ban, Flame, X } from 'lucide-react';
 
 import type { MettleEvent, WalkIn } from '@/fixtures/lp-event';
 import type { CoachAnalysis } from '@/hooks/use-conversation-state';
@@ -19,16 +19,22 @@ function resolveWalkIn(event: MettleEvent, analysis: CoachAnalysis | null): Walk
   };
 }
 
+function step(index: number): CSSProperties {
+  return { '--i': index } as CSSProperties;
+}
+
 export function WalkInCard({
   event,
   analysis,
   onClose,
   onSpar,
+  onPrep,
 }: {
   event: MettleEvent;
   analysis: CoachAnalysis | null;
   onClose: () => void;
   onSpar: () => void;
+  onPrep: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const card = resolveWalkIn(event, analysis);
@@ -53,12 +59,12 @@ export function WalkInCard({
         <header className={styles.head}>
           <div>
             <p className={styles.kicker}>
-              Walk-in card · {analysis ? 'from your brief' : 'starter lines'}
+              {event.kind} · {event.timeUntil}
             </p>
             <h2 id="walk-in-title" className={styles.title}>
               {event.counterpart}
             </h2>
-            <p className={styles.role}>{event.counterpartRole}</p>
+            <p className={styles.role}>{event.stakes}</p>
           </div>
           <button
             type="button"
@@ -70,32 +76,36 @@ export function WalkInCard({
           </button>
         </header>
 
-        <section className={styles.opening} aria-label="Your opening">
-          <p className={styles.label}>Open with</p>
+        <section className={`${styles.opening} ${styles.step}`} style={step(0)} aria-label="Your opening">
+          <p className={styles.label}>Open</p>
           <p className={styles.openingText}>{card.opening}</p>
         </section>
 
         <dl className={styles.lines} aria-label={`If ${firstName} pushes back`}>
           {card.ifThen.map((line, index) => (
-            <div key={`${line.trigger}-${index}`} className={styles.line}>
+            <div key={`${line.trigger}-${index}`} className={`${styles.line} ${styles.step}`} style={step(index + 1)}>
               <dt>If {line.trigger.replace(/\.$/, '')}</dt>
               <dd>{line.response}</dd>
             </div>
           ))}
         </dl>
 
-        <p className={styles.avoid}>
+        <p className={`${styles.avoid} ${styles.step}`} style={step(card.ifThen.length + 1)}>
           <Ban size={14} aria-hidden="true" />
           <span>
-            <strong>Don&apos;t:</strong> {card.avoid.replace(/^(Don't|Do not)\s*/i, '')}
+            <span className="sr-only">{"Don't: "}</span>
+            {card.avoid.replace(/^(Don't|Do not)\s*/i, '')}
           </span>
         </p>
 
         <footer className={styles.foot}>
           <button type="button" className={styles.spar} onClick={onSpar}>
-            <Flame size={14} aria-hidden="true" /> One quick round with {firstName}
+            <Flame size={14} aria-hidden="true" /> Spar
           </button>
-          <span className={styles.hint}>Private. Nothing is shared.</span>
+          <button type="button" className={styles.prep} onClick={onPrep}>
+            Full prep <ArrowRight size={14} aria-hidden="true" />
+          </button>
+          <span className={styles.hint}>{analysis ? 'From your brief' : 'Starter lines'}</span>
         </footer>
       </div>
     </dialog>

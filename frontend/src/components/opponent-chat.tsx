@@ -68,9 +68,7 @@ export function OpponentChat() {
         <p className="mettle-kicker">
           <Flame size={13} className="inline" aria-hidden="true" /> Spar · {counterpart} · private
         </p>
-        <h2 className="mettle-headline">
-          Answer {firstName}. Do not pitch around {firstName}.
-        </h2>
+        <h2 className="mettle-headline">Answer {firstName}. Don&apos;t pitch.</h2>
       </header>
 
       {transcript.length === 0 ? (
@@ -78,9 +76,10 @@ export function OpponentChat() {
           <p className="mettle-kicker">{counterpart}</p>
           <strong>&ldquo;{OPENING}&rdquo;</strong>
           {openingMove && (
-            <p className="mt-2">
-              Your brief opens with: {openingMove} Use it — or find a better one.
-            </p>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-sm">Your opening</summary>
+              <p className="mt-1">{openingMove}</p>
+            </details>
           )}
         </section>
       ) : (
@@ -110,7 +109,7 @@ export function OpponentChat() {
         </aside>
       )}
 
-      {userTurns >= 2 && watchFor && !feedback && (
+      {userTurns === 2 && watchFor && !feedback && (
         <aside className="mettle-card mettle-card--accent" aria-label="Pattern to watch">
           <p className="mettle-kicker">Soft spot to protect</p>
           <strong>{watchFor}</strong>

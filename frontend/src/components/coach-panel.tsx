@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ArrowRight,
   Check,
@@ -73,15 +73,12 @@ export function CoachPanel() {
   return (
     <div className="mettle-phase">
       <header>
-        <p className="mettle-kicker">2 days out · you decide what Mettle sees</p>
+        <p className="mettle-kicker">Brief · {name}</p>
         <h2 className="mettle-headline">
-          {ready && analysis ? 'Your point of view.' : 'Walk in with a point of view.'}
+          {ready && analysis ? 'Walk in with this.' : 'So nothing surprises you.'}
         </h2>
         {atStart && (
-          <p className="mettle-copy">
-            Paste the thread, keep the claims you trust, and three adversaries attack your position
-            — so {name} can&apos;t surprise you.
-          </p>
+          <p className="mettle-copy">Paste the thread. Keep what&apos;s true. Three adversaries attack it.</p>
         )}
         <div className="mettle-coach-steps" aria-label="Coach progress">
           {steps.map((step, index) => (
@@ -144,32 +141,28 @@ export function CoachPanel() {
         </div>
       )}
 
-      {(ready || approved || (needsPaste && showCouncil)) && (
-        <div>
-          {ready && analysis && (
-            <Fold label="How the council got there" meta="3 perspectives">
+      {ready && analysis && (
+        <Fold label="Show working" meta={workingMeta(analysis, approved ? brief : undefined)}>
+          <div className={styles.working}>
+            <SplitRow analysis={analysis} />
+            <WorkingSection title="Three adversaries">
               <PerspectiveGrid analysis={analysis} />
-            </Fold>
-          )}
-          {ready && analysis && <PressureTest analysis={analysis} />}
-          {approved && (
-            <EvidenceRecap
-              brief={brief}
-              onReDebate={() => void runCoach(state.scenario_id || 'lp_renewal')}
-              isAgentRunning={isAgentRunning}
-            />
-          )}
-          {needsPaste && showCouncil && (
-            <Fold label="Add evidence" meta="council ran without a thread">
-              <PasteEvidencePanel />
-            </Fold>
-          )}
-          {ready && analysis && (
-            <Fold label="Share the split" meta="no thread, no evidence">
-              <ShareSplit analysis={analysis} counterpart={name} stakes={state.stakes} />
-            </Fold>
-          )}
-        </div>
+            </WorkingSection>
+            <PressureTest analysis={analysis} />
+            {approved ? (
+              <EvidenceRecap
+                brief={brief}
+                onReDebate={() => void runCoach(state.scenario_id || 'lp_renewal')}
+                isAgentRunning={isAgentRunning}
+              />
+            ) : (
+              <WorkingSection title="Add evidence">
+                <PasteEvidencePanel />
+              </WorkingSection>
+            )}
+            <ShareSplit analysis={analysis} counterpart={name} stakes={state.stakes} />
+          </div>
+        </Fold>
       )}
     </div>
   );
@@ -660,40 +653,79 @@ function DisagreementHero({
   analysis: CoachAnalysis;
   counterpart: string;
 }) {
-  const agreed = analysis.consensus?.[0];
-  const split = analysis.disagreements?.[0];
   const move = analysis.opening_strategy || analysis.concrete_moves?.[0];
   const lines = (analysis.if_then ?? []).slice(0, 3);
   const firstName = counterpart.split(' ')[0];
 
   return (
     <div className={styles.hero} aria-label="Council verdict">
-      <div className={`${styles.heroBlock} ${styles.heroMove}`}>
-        <p className="mettle-kicker">Your opening</p>
+      <div className={`${styles.heroBlock} ${styles.heroMove} ${styles.verdictStep}`} style={step(0)}>
+        <p className="mettle-kicker">Open</p>
         <strong>{move || `Ask ${firstName} what would make renewal simple.`}</strong>
-        {lines.length > 0 ? (
-          <dl className={styles.ifThen} aria-label={`If ${firstName} pushes back`}>
-            {lines.map((line, index) => (
-              <div key={`${line.trigger}-${index}`}>
-                <dt>If {line.trigger.replace(/\.$/, '')}</dt>
-                <dd>{line.response}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p>Two sentences you can actually say. Then stop.</p>
-        )}
       </div>
-      <div className={`${styles.heroBlock} ${styles.heroAgree}`}>
-        <p className="mettle-kicker">They agreed</p>
-        <strong>{agreed || 'The council has not named a shared point yet.'}</strong>
-      </div>
-      <div className={`${styles.heroBlock} ${styles.heroSplit}`}>
-        <p className="mettle-kicker" style={{ color: 'var(--tomato)' }}>
-          They split
-        </p>
-        <strong>{split || 'No material conflict in the three lenses.'}</strong>
-      </div>
+      {lines.length > 0 && (
+        <dl className={`${styles.heroBlock} ${styles.ifThen}`} aria-label={`If ${firstName} pushes back`}>
+          {lines.map((line, index) => (
+            <div key={`${line.trigger}-${index}`} className={styles.verdictStep} style={step(index + 1)}>
+              <dt>If {line.trigger.replace(/\.$/, '')}</dt>
+              <dd>{line.response}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+function step(index: number): CSSProperties {
+  return { '--i': index } as CSSProperties;
+}
+
+function workingMeta(analysis: CoachAnalysis, brief?: ContextBrief): string {
+  const parts = ['3 adversaries'];
+  if (analysis.disagreements?.length) parts.push('1 split');
+  if (brief?.claims.length) parts.push(`${brief.claims.length} claims`);
+  return parts.join(' · ');
+}
+
+function WorkingSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className={styles.workingSection}>
+      <h3 className={styles.workingTitle}>{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+/** Where the three agreed and where they split, as one visual row. */
+function SplitRow({ analysis }: { analysis: CoachAnalysis }) {
+  const agreed = analysis.consensus?.[0];
+  const split = analysis.disagreements?.[0];
+  if (!agreed && !split) return null;
+  return (
+    <div className={styles.splitRow}>
+      {agreed && (
+        <div className={styles.splitCell}>
+          <span className={styles.splitMarkAgree} aria-hidden="true">
+            <Check size={12} />
+          </span>
+          <span>
+            <span className="sr-only">Agreed: </span>
+            {agreed}
+          </span>
+        </div>
+      )}
+      {split && (
+        <div className={styles.splitCell}>
+          <span className={styles.splitMarkSplit} aria-hidden="true">
+            <Scale size={12} />
+          </span>
+          <span>
+            <span className="sr-only">Split: </span>
+            {split}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -747,10 +779,7 @@ function PressureTest({ analysis }: { analysis: CoachAnalysis }) {
   const weakPoints = state.user_weak_points ?? [];
 
   return (
-    <Fold
-      label="Pressure test detail"
-      meta={`${analysis.blind_spots?.length || 0} blind spots · ${analysis.likely_objections?.length || 0} objections`}
-    >
+    <WorkingSection title="Pressure test">
       <div className="mettle-grid">
         <AnalysisCard title="Blind spots" items={analysis.blind_spots} tone="risk" />
         <AnalysisCard title="Concrete moves" items={analysis.concrete_moves} tone="signal" />
@@ -778,7 +807,7 @@ function PressureTest({ analysis }: { analysis: CoachAnalysis }) {
           Add weak point
         </button>
       </div>
-    </Fold>
+    </WorkingSection>
   );
 }
 
@@ -824,9 +853,8 @@ function EvidenceRecap({
   const replayable = brief.sources.filter((source) => source.replay_session_id).length;
 
   return (
-    <Fold
-      label="Approved evidence"
-      meta={`${brief.claims.length} kept${replayable ? ` · ${replayable} recorded` : ''}`}
+    <WorkingSection
+      title={`Evidence · ${brief.claims.length} kept${replayable ? ` · ${replayable} recorded` : ''}`}
     >
       <ul className="mettle-list">
         {brief.claims.map((claim, index) => (
@@ -863,6 +891,6 @@ function EvidenceRecap({
           <RefreshCw size={14} aria-hidden="true" /> Re-debate with this brief
         </button>
       </div>
-    </Fold>
+    </WorkingSection>
   );
 }
