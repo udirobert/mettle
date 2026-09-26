@@ -20,6 +20,7 @@ dependencies = [
   "pip>=26.0.1",
   "langchain-anthropic==1.4.1",
   "psycopg[binary,pool]>=3.2,<4.0",
+  "solari-browser>=0.1.2",
 ]
 
 [dependency-groups]

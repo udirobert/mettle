@@ -142,6 +142,27 @@ is working.
 - If a screen could be reused for generic meeting notes or customer support,
   sharpen it until it only makes sense for high-stakes conversations.
 
+### Restraint (from user testing: "verbose, overwhelming")
+
+The answer is the product; the reasoning is there when asked for.
+
+- **One job per screen.** Each screen answers "what do I say or do next?"
+- **The walk-in card is the standard output.** Brief, Spar and Close all reduce
+  to: one opening, up to three if-then lines, one "don't".
+- **One "Show working" per screen.** Adversaries, split, pressure test and
+  evidence live behind a single disclosure — never several stacked folds.
+- **Word budgets.** Headline ≤ 8 words, any line ≤ 20, lists ≤ 3 items;
+  under ~60 visible words on home and ~90 on the brief verdict.
+- **Show, don't narrate.** Prefer artefacts and motion to sentences: the raise
+  bar ($ committed / target), the pattern dots (objection hit 3 of 4 LPs), the
+  card dealt onto the table with lines read out in sequence.
+- **Explain once.** Helper copy appears on first use, then gets out of the way.
+- **One note per Spar turn.** The conversation breathes between nudges.
+- **Motion has one job:** sequence information. All of it respects
+  `prefers-reduced-motion`.
+- **Test:** a user should be able to say what they'd say first within 5
+  seconds on any screen.
+
 ## Product Language
 
 Preferred positioning:

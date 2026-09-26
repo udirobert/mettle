@@ -5,7 +5,133 @@
 }
 
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* One staggered entrance for the whole page, ordered by --i. */
+.reveal {
+  animation: revealIn 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+@keyframes revealIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.raiseLine {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+}
+
+.raiseLine .kicker {
+  margin: 0;
+}
+
+.raiseAmount {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.raiseAmount span {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.raiseBar {
+  background: var(--line);
+  height: 4px;
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.raiseBar span {
+  animation: fillTo 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) 250ms both;
+  background: var(--cobalt);
+  display: block;
+  height: 100%;
+  width: var(--pct);
+}
+
+@keyframes fillTo {
+  from {
+    width: 0;
+  }
+}
+
+.patternDots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dot,
+.dotHit {
+  animation: dotIn 260ms ease-out both;
+  animation-delay: calc(500ms + var(--i, 0) * 120ms);
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 999px;
+  height: 10px;
+  width: 10px;
+}
+
+.dotHit {
+  background: var(--tomato);
+  border-color: var(--tomato);
+}
+
+@keyframes dotIn {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+.subhead {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 1.5rem 0 0.25rem;
+  text-transform: uppercase;
+}
+
+.otherList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.otherRow {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  text-align: left;
+  width: 100%;
+}
+
+.otherRow strong {
+  flex: 1;
+  font-weight: 600;
+}
+
+.otherRow:hover strong {
+  color: var(--cobalt);
+}
+
+.otherRow:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 2px;
 }
 
 .kicker {
@@ -40,21 +166,180 @@
   box-shadow: 6px 6px 0 var(--ink);
   padding: 1.75rem 1.75rem 1.5rem;
   text-align: left;
-  cursor: pointer;
   width: 100%;
+}
+
+.when {
+  border-top: 1px solid var(--ink);
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+}
+
+.whenLabel {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.whenOptions {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.whenOption {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem;
+  text-align: left;
   transition:
     transform 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
-.hero:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0 var(--ink);
+.whenOption:hover {
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
 }
 
-.hero:focus-visible {
+.whenOption:focus-visible,
+.cardAction:focus-visible,
+.eventCardButton:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
-  outline-offset: 3px;
+  outline-offset: 2px;
+}
+
+.whenPrimary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+.whenPrimary:hover {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+}
+
+.whenTime {
+  align-items: center;
+  color: var(--ink-soft);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.whenPrimary .whenTime {
+  color: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.whenAction {
+  align-items: center;
+  display: inline-flex;
+  font-size: 1.05rem;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+
+.whenOption:hover svg {
+  transform: translateX(2px);
+}
+
+.whenOption svg {
+  transition: transform 160ms ease;
+}
+
+.sectionHead {
+  align-items: baseline;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.sectionMeta {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kindChip {
+  background: var(--tint-accent);
+  border: 1px solid var(--tint-accent-line);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+}
+
+.kindChip[data-kind='Bad news'] {
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
+}
+
+.eventCardStakes {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-top: 0.25rem;
+  text-wrap: pretty;
+}
+
+.eventCardActions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.cardAction {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.cardAction:hover {
+  border-color: var(--ink);
+}
+
+.cardActionPrimary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+  margin-left: auto;
+}
+
+.cardActionPrimary:hover {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
 }
 
 .heroTop {
@@ -162,6 +447,90 @@
   margin-top: 0.15rem;
 }
 
+.pattern {
+  align-items: flex-start;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  display: flex;
+  font-size: 0.85rem;
+  gap: 0.5rem;
+  line-height: 1.45;
+  margin: 1rem 0 0;
+  padding-top: 0.9rem;
+}
+
+.pattern {
+  align-items: center;
+}
+
+.pattern strong {
+  color: var(--ink);
+}
+
+.pipeline {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pipelineRow {
+  align-items: start;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.35rem 1rem;
+  grid-template-columns: 1fr auto;
+  padding: 0.75rem 0;
+}
+
+.pipelineWho {
+  display: grid;
+  gap: 2px;
+}
+
+.pipelineThemes {
+  color: var(--ink-soft);
+  display: grid;
+  font-size: 0.8rem;
+  gap: 3px;
+  grid-column: 1 / -1;
+  line-height: 1.4;
+}
+
+.pipelinePromise {
+  color: var(--signal-strong-ink);
+  font-weight: 600;
+}
+
+.pipelineStatus {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  grid-column: 2;
+  grid-row: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pipelineStatus[data-status='committed'] {
+  color: var(--signal-strong-ink);
+}
+
+@media (min-width: 640px) {
+  .pipelineRow {
+    grid-template-columns: minmax(10rem, 1fr) 2fr auto;
+  }
+
+  .pipelineThemes {
+    grid-column: 2;
+  }
+
+  .pipelineStatus {
+    grid-column: 3;
+  }
+}
+
 .carryBadge {
   align-items: center;
   background: var(--tint-signal);
@@ -184,10 +553,11 @@
   padding: 0;
 }
 
-.eventCard {
+.eventCard,
+.eventCardButton {
   background: var(--surface);
   border: 1px solid var(--line);
-  cursor: pointer;
+  color: var(--ink);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -201,15 +571,19 @@
   width: 100%;
 }
 
-.eventCard:hover {
-  border-color: var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
-  transform: translate(-2px, -2px);
+.eventCard .heroTop,
+.eventCardButton .heroTop {
+  margin-bottom: 0.5rem;
 }
 
-.eventCard:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
-  outline-offset: 3px;
+.eventCardButton {
+  cursor: pointer;
+}
+
+.eventCard:hover,
+.eventCardButton:hover {
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
 }
 
 .eventCardName {
@@ -289,37 +663,4 @@
   .heroName {
     font-size: 1.7rem;
   }
-}
-
-/* Skip-setup quick rehearsal CTA */
-.quickRehearsal {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  padding: 14px 18px;
-  border-radius: 14px;
-  border: 1px dashed var(--line-strong, rgba(30, 64, 255, 0.45));
-  background: var(--tint-rail, rgba(30, 64, 255, 0.06));
-  color: var(--ink);
-  cursor: pointer;
-  font-size: 13.5px;
-  line-height: 1.4;
-  transition:
-    transform 120ms ease,
-    background 120ms ease;
-}
-.quickRehearsal:hover {
-  background: var(--tint-rail-strong, rgba(30, 64, 255, 0.12));
-  transform: translateY(-1px);
-}
-.quickRehearsal span {
-  flex: 1;
-  color: var(--ink-soft, #475569);
-}
-.quickRehearsal strong {
-  color: var(--ink);
-  display: block;
-  font-size: 14px;
 }

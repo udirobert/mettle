@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
+import { ArrowLeft, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
@@ -17,6 +17,7 @@ import {
 } from '@/components/journey-tracker';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 import { findEvent } from '@/fixtures/lp-event';
+import { PHASE_LABELS } from '@/lib/phase-labels';
 
 import styles from './page.module.css';
 
@@ -44,10 +45,10 @@ const DebriefView = dynamic(() => import('@/components/debrief-view').then((m) =
 });
 
 const PHASES: Array<{ id: Phase; label: string }> = [
-  { id: 'prep', label: 'Coach' },
-  { id: 'rehearsal', label: 'Rehearse' },
-  { id: 'live', label: 'Live' },
-  { id: 'debrief', label: 'Debrief' },
+  { id: 'prep', label: PHASE_LABELS.prep },
+  { id: 'rehearsal', label: PHASE_LABELS.rehearsal },
+  { id: 'live', label: PHASE_LABELS.live },
+  { id: 'debrief', label: PHASE_LABELS.debrief },
 ];
 
 function getPhaseHint(phase: Phase, state: ConversationState): string {
@@ -56,11 +57,11 @@ function getPhaseHint(phase: Phase, state: ConversationState): string {
   }
   switch (phase) {
     case 'rehearsal':
-      return 'Finish the Coach brief before rehearsing';
+      return 'Finish the brief before sparring';
     case 'live':
-      return 'Run a rehearsal before going live';
+      return 'Spar a round before going live';
     case 'debrief':
-      return 'Hold a real conversation — live or rehearsed — before debriefing';
+      return 'Hold a real conversation — live or sparred — before closing it out';
     default:
       return '';
   }
@@ -125,11 +126,6 @@ function SignalStack({ phase }: { phase: Phase }) {
       )}
     </aside>
   );
-}
-
-function formatScenarioName(id: string | undefined): string {
-  if (!id) return 'Consequential conversation';
-  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function HomePage() {
@@ -202,12 +198,12 @@ export default function HomePage() {
     markEntry('prep');
   };
 
-  // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
-  // state reset that also seeds a light coach brief so Rehearse is unlocked,
-  // then jumps straight in.
-  const handleQuickRehearsal = () => {
+  // "Hours, not days" entry: skip the brief and spar now. One atomic state
+  // reset seeds a light brief from the scenario's walk-in lines so Spar is
+  // unlocked, then jumps straight in.
+  const handleQuickSpar = (scenarioId: string) => {
     if (isAgentRunning) return;
-    const event = findEvent('lp_renewal');
+    const event = findEvent(scenarioId);
     if (!event) return;
     setPartial({
       scenario_id: event.id,
@@ -216,13 +212,14 @@ export default function HomePage() {
       counterpart_profile: event.counterpartProfile,
       user_weak_points: event.userWeakPoints,
       coach_analysis: {
-        blind_spots: ['Your liquidity story is a promise, not yet a track record.'],
-        concrete_moves: ['Name the distribution date before she asks for it.'],
-        likely_objections: ['"Why should this cycle be different from the last one?"'],
-        opening_strategy: 'Lead with the memo date, not the ask.',
+        blind_spots: event.userWeakPoints.slice(0, 1),
+        concrete_moves: event.walkIn.ifThen.map((line) => line.response),
+        likely_objections: event.walkIn.ifThen.map((line) => line.trigger),
+        opening_strategy: event.walkIn.opening,
+        if_then: event.walkIn.ifThen,
         perspectives: [],
-        disagreements: ['Whether to open with liquidity or governance.'],
-        consensus: ['The fee step-up needs to be justified by realized DPI.'],
+        disagreements: [],
+        consensus: [event.walkIn.avoid],
       },
       coach_stage: 'ready',
       context_brief: undefined,
@@ -258,7 +255,7 @@ export default function HomePage() {
               <span>Mettle</span>
             </div>
           </header>
-          <EventList onSelectEvent={handleSelectEvent} onQuickRehearsal={handleQuickRehearsal} />
+          <EventList onSelectEvent={handleSelectEvent} onQuickSpar={handleQuickSpar} />
         </main>
       </CopilotChatConfigurationProvider>
     );
@@ -309,8 +306,6 @@ export default function HomePage() {
               <CircleHelp size={14} aria-hidden="true" />
               <span>Replay tour</span>
             </button>
-            <BadgeCheck size={16} aria-hidden="true" />
-            {formatScenarioName(state.scenario_id)}
           </div>
         </header>
 
@@ -377,12 +372,6 @@ export default function HomePage() {
             <div className={styles.canvasBar}>
               <h1>{PHASES.find((item) => item.id === localPhase)?.label}</h1>
               <JourneyTracker current={localPhase} />
-              {state.stakes && (
-                <div className={styles.canvasStakes}>
-                  <span className={styles.stakesDot} />
-                  {state.stakes}
-                </div>
-              )}
             </div>
             <div className={`${styles.phaseCanvas} mettle-fade-in`} key={localPhase}>
               <PhaseCanvas phase={localPhase} />
@@ -406,7 +395,7 @@ export default function HomePage() {
               <p className="mettle-kicker">Keyboard</p>
               <ul className={styles.shortcutsList}>
                 <li>
-                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to Coach / Rehearse / Live / Debrief</span>
+                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to {Object.values(PHASE_LABELS).join(' / ')}</span>
                 </li>
                 <li>
                   <kbd>?</kbd> <span>Show or hide this panel</span>

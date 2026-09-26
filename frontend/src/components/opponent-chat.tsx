@@ -9,29 +9,33 @@ const OPENING =
 const CONCESSION_PATTERN =
   /\b(sorry|maybe|perhaps|i guess|we could|happy to|of course|absolutely|whatever works|if you want)\b/i;
 
-/** Heuristic per-turn coaching: matches the audit ask for feedback between rehearsal turns. */
-function coachFeedback(
+/**
+ * Per-turn read of how the counterpart will hear the answer. Framed as their
+ * reaction to the position, never a grade of the person.
+ */
+function counterpartRead(
   text: string,
   weakPoints: string[],
+  firstName: string,
 ): { headline: string; detail: string } | null {
   const words = text.trim().split(/\s+/).length;
   if (words > 110) {
     return {
-      headline: 'That ran long.',
-      detail: 'Cut it to one sentence: the ask, then the reason. Monologues hand over the floor.',
+      headline: `${firstName} stopped listening halfway.`,
+      detail: 'Lead with the ask, then one reason. The rest can wait for the follow-up.',
     };
   }
   if (CONCESSION_PATTERN.test(text)) {
     return {
-      headline: 'That read as a concession.',
-      detail: 'You gave ground before testing what would unlock agreement. Try asking first.',
+      headline: `${firstName} hears room to cut.`,
+      detail: 'That phrasing signals flexibility before any condition is on the table. Ask first.',
     };
   }
   const numberFree = !/\d/.test(text) && weakPoints.some((p) => /number|detail|data/i.test(p));
   if (numberFree) {
     return {
-      headline: 'No specifics in that answer.',
-      detail: 'Your pattern is to stay abstract. Anchor the next version in one number you own.',
+      headline: `${firstName} has nothing to hold you to.`,
+      detail: 'Anchor the next version in one number you own.',
     };
   }
   return null;
@@ -50,24 +54,21 @@ export function OpponentChat() {
   const userTurns = transcript.filter((turn) => turn.speaker === 'user').length;
   const watchFor = state.user_weak_points?.[0];
 
-  // Coach interjects on the most recent user turn, as it happens in the room would.
   const lastUserTurn = [...transcript].reverse().find((turn) => turn.speaker === 'user');
   const lastTurnIsLatest =
     transcript.length > 0 && lastUserTurn === transcript[transcript.length - 1];
   const feedback =
     lastTurnIsLatest && lastUserTurn
-      ? coachFeedback(lastUserTurn.text, state.user_weak_points ?? [])
+      ? counterpartRead(lastUserTurn.text, state.user_weak_points ?? [], firstName)
       : null;
 
   return (
     <div className="mettle-phase">
       <header>
         <p className="mettle-kicker">
-          <Flame size={13} className="inline" aria-hidden="true" /> Rehearse · {counterpart}
+          <Flame size={13} className="inline" aria-hidden="true" /> Spar · {counterpart} · private
         </p>
-        <h2 className="mettle-headline">
-          Answer {firstName}. Do not pitch around {firstName}.
-        </h2>
+        <h2 className="mettle-headline">Answer {firstName}. Don&apos;t pitch.</h2>
       </header>
 
       {transcript.length === 0 ? (
@@ -75,9 +76,10 @@ export function OpponentChat() {
           <p className="mettle-kicker">{counterpart}</p>
           <strong>&ldquo;{OPENING}&rdquo;</strong>
           {openingMove && (
-            <p className="mt-2">
-              Coach&apos;s first move was: {openingMove} Try it — or find a better one.
-            </p>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-sm">Your opening</summary>
+              <p className="mt-1">{openingMove}</p>
+            </details>
           )}
         </section>
       ) : (
@@ -97,19 +99,19 @@ export function OpponentChat() {
       )}
 
       {feedback && (
-        <aside className="mettle-card mettle-card--accent" aria-label="Coach interjection">
+        <aside className="mettle-card mettle-card--accent" aria-label={`How ${firstName} heard that`}>
           <p className="mettle-kicker">
-            <MessageCircleWarning size={13} className="inline" aria-hidden="true" /> Coach ·
-            mid-turn
+            <MessageCircleWarning size={13} className="inline" aria-hidden="true" /> How{' '}
+            {firstName} heard that
           </p>
           <strong>{feedback.headline}</strong>
           <p className="mt-2">{feedback.detail}</p>
         </aside>
       )}
 
-      {userTurns >= 2 && watchFor && !feedback && (
+      {userTurns === 2 && watchFor && !feedback && (
         <aside className="mettle-card mettle-card--accent" aria-label="Pattern to watch">
-          <p className="mettle-kicker">Watch your pattern</p>
+          <p className="mettle-kicker">Soft spot to protect</p>
           <strong>{watchFor}</strong>
         </aside>
       )}

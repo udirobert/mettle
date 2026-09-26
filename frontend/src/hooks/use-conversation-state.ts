@@ -42,11 +42,14 @@ export type ContextSource = {
     | 'exa'
     | 'firecrawl'
     | 'tinyfish'
+    | 'solari'
     | 'manual';
   title: string;
   author: string | null;
   timestamp: string | null;
   url: string | null;
+  /** Solari recorded browser session that gathered this source (replayable). */
+  replay_session_id?: string | null;
 };
 
 export type EvidenceClaim = {
@@ -82,6 +85,8 @@ export type CoachAnalysis = {
   concrete_moves: string[];
   likely_objections: string[];
   opening_strategy: string;
+  /** "If she says X → you say Y." Absent on briefs saved before this shipped. */
+  if_then?: Array<{ trigger: string; response: string }>;
   perspectives: PerspectiveResult[];
   disagreements: string[];
   consensus: string[];
