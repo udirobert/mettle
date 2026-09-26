@@ -1,0 +1,267 @@
+.wrap {
+  display: grid;
+  gap: 2.25rem;
+  margin: 0 auto;
+  max-width: 720px;
+  padding: 3.5rem 2rem 4rem;
+}
+
+.promise {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.kicker,
+.sceneTag,
+.sampleLabel,
+.caption,
+.modeWhen,
+.duration {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.kicker {
+  color: var(--cobalt);
+}
+
+.title {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5.5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.05;
+  margin: 0;
+  max-width: 20ch;
+  text-wrap: balance;
+}
+
+.sub {
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 42ch;
+  text-wrap: pretty;
+}
+
+/* The signature: a real walk-in card, dealt onto the table. */
+.sample {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  margin: 0;
+}
+
+.sampleCard {
+  animation: deal 560ms cubic-bezier(0.2, 0.9, 0.3, 1.15) 320ms both;
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  display: grid;
+  gap: 0.45rem;
+  max-width: 460px;
+  padding: 1.25rem 1.4rem;
+  transform: rotate(-1.2deg);
+  width: 100%;
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(26px) rotate(-5deg) scale(0.95);
+  }
+}
+
+.sampleLabel {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.sampleThey {
+  animation: lineIn 360ms ease-out 760ms both;
+  color: var(--tomato);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.sampleRule {
+  animation: ruleIn 420ms ease-out 1000ms both;
+  background: var(--line);
+  height: 1px;
+  margin: 0.35rem 0;
+  transform-origin: left;
+}
+
+.sampleYou {
+  animation: lineIn 360ms ease-out 1180ms both;
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+}
+
+@keyframes lineIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+@keyframes ruleIn {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.caption {
+  color: var(--ink-soft);
+  font-size: 10px;
+  padding-left: 0.2rem;
+}
+
+.scene {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1.75rem;
+}
+
+.sceneTag {
+  color: var(--cobalt);
+}
+
+.sceneText {
+  color: var(--ink);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 48ch;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+
+.primary {
+  align-items: center;
+  background: var(--cobalt);
+  border: 0;
+  color: var(--surface);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 700;
+  gap: 0.6rem;
+  padding: 0.95rem 1.25rem;
+}
+
+.primary:hover svg {
+  transform: translateX(3px);
+}
+
+.primary svg {
+  transition: transform 160ms ease;
+}
+
+.duration {
+  background: var(--lime);
+  color: var(--on-lime);
+  font-size: 10px;
+  padding: 0.2rem 0.4rem;
+}
+
+.secondary {
+  background: transparent;
+  border: 0;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.95rem 0.5rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.secondary:hover {
+  color: var(--ink);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.modes {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .modes {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.modes li {
+  align-content: start;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 0.9rem;
+}
+
+.modes li svg {
+  color: var(--cobalt);
+  margin-bottom: 0.2rem;
+}
+
+.modeWhen {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.modeWhat {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.step {
+  animation: stepIn 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sampleCard,
+  .sampleThey,
+  .sampleRule,
+  .sampleYou,
+  .step {
+    animation: none;
+  }
+}

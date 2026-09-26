@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUp, Flame, MessageCircleWarning } from 'lucide-react';
+import { ArrowRight, ArrowUp, Flame, MessageCircleWarning } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 
 const OPENING =
@@ -43,7 +43,7 @@ function counterpartRead(
 
 /** Rehearsal: their pushback and your reply. No soft-ball essay up front. */
 export function OpponentChat() {
-  const { state, runOpponentTurn, isAgentRunning } = useConversationState();
+  const { state, runOpponentTurn, isAgentRunning, setPhase } = useConversationState();
   const transcript = state.transcript ?? [];
   const counterpart =
     typeof state.counterpart_profile?.name === 'string'
@@ -66,9 +66,14 @@ export function OpponentChat() {
     <div className="mettle-phase">
       <header>
         <p className="mettle-kicker">
-          <Flame size={13} className="inline" aria-hidden="true" /> Spar · {counterpart} · private
+          <Flame size={13} className="inline" aria-hidden="true" /> Rehearse · {counterpart} · private
         </p>
         <h2 className="mettle-headline">Answer {firstName}. Don&apos;t pitch.</h2>
+        {transcript.length === 0 && state.stakes && (
+          <p className="mettle-copy">
+            You&apos;re the fund manager. At stake: {state.stakes.replace(/\.$/, '')}.
+          </p>
+        )}
       </header>
 
       {transcript.length === 0 ? (
@@ -113,6 +118,18 @@ export function OpponentChat() {
         <aside className="mettle-card mettle-card--accent" aria-label="Pattern to watch">
           <p className="mettle-kicker">Soft spot to protect</p>
           <strong>{watchFor}</strong>
+        </aside>
+      )}
+
+      {userTurns >= 3 && !feedback && !isAgentRunning && (
+        <aside className="mettle-card mettle-card--accent" aria-label="Use it for real">
+          <p className="mettle-kicker">That&apos;s the loop</p>
+          <strong>Now do it for a meeting you actually have.</strong>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button className="mettle-action" type="button" onClick={() => setPhase('prep')}>
+              Paste a real thread <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          </div>
         </aside>
       )}
 

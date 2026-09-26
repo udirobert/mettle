@@ -163,6 +163,21 @@ The answer is the product; the reasoning is there when asked for.
 - **Test:** a user should be able to say what they'd say first within 5
   seconds on any screen.
 
+### First run (from user testing: "what is this for?")
+
+A new visitor gets three answers, in order, in roughly 20 words each:
+
+1. **What is it?** Promise line + one sub-line, with a real walk-in card as the
+   hero artefact — show the output, don't describe it.
+2. **Can I feel it?** One-sentence scene ("You're raising a fund…"), labelled
+   sample data, and one primary action: a 60-second rehearsal.
+3. **Is it for me?** After three rehearsal turns, hand off to a real meeting
+   ("Paste a real thread").
+
+Terms are defined on first use (Card / Rehearse / Prep by time-to-meeting).
+The intro shows once (`mettle.intro.seen`) and is reopened via "What is
+Mettle?". Share previews carry the same promise (title, description, OG image).
+
 ## Product Language
 
 Preferred positioning:
