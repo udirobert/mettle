@@ -178,6 +178,33 @@ Terms are defined on first use (Card / Rehearse / Prep by time-to-meeting).
 The intro shows once (`mettle.intro.seen`) and is reopened via "What is
 Mettle?". Share previews carry the same promise (title, description, OG image).
 
+### Craft (one world, one kit)
+
+Mettle is a theatre. Each stage of the meeting is a place in it:
+
+| Screen   | Place             | The one thing on stage                 |
+| -------- | ----------------- | -------------------------------------- |
+| Intro    | The plan          | The room from above, card on the table |
+| Home     | Call sheet        | Upcoming meetings, pinned              |
+| Prep     | Writers' room     | Three adversaries around the table     |
+| Rehearse | Rehearsal floor   | Her seat, yours, the sightline between |
+| Live     | Backstage (dim)   | Your lines, within reach               |
+| Close    | Notes session     | What landed; the card filed            |
+
+Build from the kit in `globals.css` (Craft kit), never a one-off:
+
+- **Pieces:** `mettle-plan` (floor-plan grid), `mettle-spike` (tape mark —
+  "act here next"), `mettle-seat` (--them coral / --you cobalt), `mettle-note`
+  (taped director's note for feedback), `mettle-stamp` (step done),
+  `mettle-label` (the one mono label voice). Primary buttons press in.
+- **Motion — four moves, one job each:** `mettle-deal` (an artefact lands),
+  `mettle-line-in` with `--i` (lines read out in order), travel (a turn
+  crosses the sightline), tape pulse ("you're up"). Motion only shows order
+  or turn-taking — never decoration. One entrance sequence per screen.
+  Reduced motion switches it all off.
+- **Before building a screen, answer:** where in the theatre are we, and
+  what's the one thing on stage?
+
 ## Product Language
 
 Preferred positioning:

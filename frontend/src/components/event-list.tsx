@@ -82,7 +82,7 @@ export function EventList({
     <div className={styles.container}>
       <header className={`${styles.header} ${styles.reveal}`} style={reveal(0)}>
         <div className={styles.raiseLine}>
-          <span className={styles.kicker}>Sample · {FUND_III.name} raise</span>
+          <span className={styles.kicker}>Call sheet · Sample · {FUND_III.name} raise</span>
           <span className={styles.raiseAmount}>
             {FUND_III.committed} <span>/ {FUND_III.target}</span>
           </span>
@@ -146,6 +146,7 @@ export function EventList({
 
         <div className={styles.when} role="group" aria-labelledby="when-label">
           <p id="when-label" className={styles.whenLabel}>
+            <span className="mettle-spike mettle-spike--them" aria-hidden="true" />
             In the room in…
           </p>
           <div className={styles.whenOptions}>

@@ -163,13 +163,19 @@ export function DebriefView() {
 
   return (
     <div className="mettle-phase">
-      <header>
-        <p className="mettle-kicker">
-          {state.conversation_source === 'rehearsal'
-            ? 'From a rehearsal · commitments are intended lines, not promises'
-            : `From the live conversation · commitments are owed to ${counterpartName}`}
-        </p>
-        <h2 className="mettle-headline">Leave with the next move, not a transcript.</h2>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <p className="mettle-kicker">
+            Notes session ·{' '}
+            {state.conversation_source === 'rehearsal' ? 'from a rehearsal' : `owed to ${counterpartName}`}
+          </p>
+          <h2 className="mettle-headline">Leave with the next move.</h2>
+        </div>
+        {notes.length > 0 && (
+          <span className="mettle-stamp mettle-deal" aria-label="Scene closed">
+            Curtain
+          </span>
+        )}
       </header>
 
       {notes.length === 0 ? (
@@ -180,7 +186,7 @@ export function DebriefView() {
           <strong>
             {transcript.length} turns · {nudges.length} signal{nudges.length === 1 ? '' : 's'}
           </strong>
-          <p>Pull commitments, what stayed open, and one concrete follow-up.</p>
+          <p>What you promised, what stayed open, one follow-up.</p>
           <button
             className="mettle-action"
             disabled={isAgentRunning || transcript.length === 0}
@@ -225,15 +231,12 @@ export function DebriefView() {
 
       {notes.length > 0 && (
         <>
-          <section className="mettle-card mettle-card--signal" aria-label="Next move">
+          <section className="mettle-card mettle-card--signal mettle-deal" aria-label="Next move">
             <p className="mettle-kicker">
               <Flag size={13} /> Next move
             </p>
             <strong>{lead}</strong>
-            <p>
-              One memo for the firm with commitments, open items, and this move — never the
-              transcript.
-            </p>
+            <p>One memo: commitments, open items, this move. Never the transcript.</p>
             <div className="flex flex-wrap gap-2 mt-3">
               <button className="mettle-action" onClick={sendMemo} type="button">
                 <Mail size={14} aria-hidden="true" /> Send follow-up memo
