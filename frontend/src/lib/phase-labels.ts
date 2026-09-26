@@ -4,7 +4,7 @@
  */
 export const PHASE_LABELS = {
   prep: 'Brief',
-  rehearsal: 'Spar',
+  rehearsal: 'Rehearse',
   live: 'Live',
   debrief: 'Close',
 } as const;

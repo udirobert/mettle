@@ -8,7 +8,7 @@ import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 import { CoachPanel } from '@/components/coach-panel';
 import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
-import { replayWalkthrough } from '@/components/welcome-overlay';
+import { FirstRun, useIntro } from '@/components/first-run';
 import {
   isPhaseUnlocked,
   JourneyTracker,
@@ -16,7 +16,7 @@ import {
   type Phase,
 } from '@/components/journey-tracker';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
-import { findEvent } from '@/fixtures/lp-event';
+import { findEvent, LP_EVENT } from '@/fixtures/lp-event';
 import { PHASE_LABELS } from '@/lib/phase-labels';
 
 import styles from './page.module.css';
@@ -57,9 +57,9 @@ function getPhaseHint(phase: Phase, state: ConversationState): string {
   }
   switch (phase) {
     case 'rehearsal':
-      return 'Finish the brief before sparring';
+      return 'Finish the brief before rehearsing';
     case 'live':
-      return 'Spar a round before going live';
+      return 'Rehearse a round before going live';
     case 'debrief':
       return 'Hold a real conversation — live or sparred — before closing it out';
     default:
@@ -134,6 +134,7 @@ export default function HomePage() {
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
   const [showEventList, setShowEventList] = useState(!state.scenario_id);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const intro = useIntro();
 
   useEffect(() => {
     if (state.phase && state.phase !== localPhase) {
@@ -233,7 +234,6 @@ export default function HomePage() {
     setShowEventList(false);
     setLocalPhase('rehearsal');
     markEntry('rehearsal');
-    localStorage.setItem('mettle.walkthrough.seen', 'true');
   };
 
   const handleBackToEvents = () => {
@@ -254,8 +254,28 @@ export default function HomePage() {
               <span className={styles.wordmarkMark}>M</span>
               <span>Mettle</span>
             </div>
+            <span />
+            {intro.status === 'seen' && (
+              <div className={styles.confidential}>
+                <button className={styles.replayBtn} onClick={intro.reopen} type="button">
+                  <CircleHelp size={14} aria-hidden="true" />
+                  <span>What is Mettle?</span>
+                </button>
+              </div>
+            )}
           </header>
-          <EventList onSelectEvent={handleSelectEvent} onQuickSpar={handleQuickSpar} />
+          {intro.status === 'new' && (
+            <FirstRun
+              onTry={() => {
+                intro.dismiss();
+                handleQuickSpar(LP_EVENT.id);
+              }}
+              onSkip={intro.dismiss}
+            />
+          )}
+          {intro.status === 'seen' && (
+            <EventList onSelectEvent={handleSelectEvent} onQuickSpar={handleQuickSpar} />
+          )}
         </main>
       </CopilotChatConfigurationProvider>
     );
@@ -299,12 +319,14 @@ export default function HomePage() {
             </button>
             <button
               className={styles.replayBtn}
-              onClick={replayWalkthrough}
-              title="Replay the walkthrough (?)"
+              onClick={() => {
+                intro.reopen();
+                setShowEventList(true);
+              }}
               type="button"
             >
               <CircleHelp size={14} aria-hidden="true" />
-              <span>Replay tour</span>
+              <span>What is Mettle?</span>
             </button>
           </div>
         </header>
