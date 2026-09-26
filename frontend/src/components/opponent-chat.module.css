@@ -1,0 +1,201 @@
+/* Rehearse: the rehearsal floor. Her seat, yours, and the lines between. */
+
+.stage {
+  align-items: center;
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.seatGroup {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.seatGroupYou {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.seatName {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.seatName strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seatThem strong {
+  color: var(--tomato);
+}
+
+.seatYou strong {
+  color: var(--cobalt);
+}
+
+.sightline {
+  border-top: 1.5px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+  flex: 1;
+  min-width: 2.5rem;
+  position: relative;
+}
+
+.signal {
+  border-radius: 999px;
+  height: 9px;
+  position: absolute;
+  top: -5px;
+  width: 9px;
+}
+
+.signalToYou {
+  background: var(--tomato);
+}
+
+.signalToThem {
+  background: var(--cobalt);
+}
+
+/* She's weighing your answer: her chair breathes. */
+.thinking::after {
+  animation: breathe 1400ms ease-in-out infinite;
+  border: 1.5px solid var(--tomato);
+  border-radius: 999px;
+  content: '';
+  inset: -5px;
+  position: absolute;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Script: her lines are the scene, yours are your blocking. */
+.script {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.them {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  max-width: 38rem;
+}
+
+.them blockquote {
+  color: var(--tomato);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1.3;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.you {
+  border-right: 3px solid var(--cobalt);
+  display: grid;
+  gap: 0.35rem;
+  justify-self: end;
+  max-width: 34rem;
+  padding-right: 0.9rem;
+  text-align: right;
+}
+
+.you p {
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.opening {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.openingHint {
+  font-size: 0.85rem;
+}
+
+.openingHint summary {
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.openingHint p {
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0.4rem 0 0;
+}
+
+.handoff {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 1.1rem;
+}
+
+.handoff strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.handoffText {
+  align-items: center;
+  display: flex;
+  gap: 0.9rem;
+}
+
+/* Your mark: the reply box is where you stand. */
+.mark {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  margin-top: auto;
+}
+
+.markInput {
+  flex: 1;
+}
+
+@media (max-width: 560px) {
+  .seatName span {
+    display: none;
+  }
+
+  .them blockquote {
+    font-size: 1.15rem;
+  }
+
+  .you {
+    max-width: 90%;
+  }
+}
