@@ -1,7 +1,126 @@
 {
   "status": "draft",
-  "sources": [],
-  "claims": [],
+  "sources": [
+    {
+      "source_id": "solari-1",
+      "provider": "solari",
+      "title": "Principles & Best Practices | Institutional Limited Partners Association",
+      "author": "ilpa.org",
+      "timestamp": null,
+      "url": "https://ilpa.org/industry-guidance/principles/",
+      "replay_session_id": "sample-lp-renewal"
+    },
+    {
+      "source_id": "solari-2",
+      "provider": "solari",
+      "title": "Private-equity secondary market - Wikipedia",
+      "author": "en.wikipedia.org",
+      "timestamp": null,
+      "url": "https://en.wikipedia.org/wiki/Private_equity_secondary_market",
+      "replay_session_id": "sample-lp-renewal"
+    },
+    {
+      "source_id": "solari-3",
+      "provider": "solari",
+      "title": "Management fee - Wikipedia",
+      "author": "en.wikipedia.org",
+      "timestamp": null,
+      "url": "https://en.wikipedia.org/wiki/Management_fee",
+      "replay_session_id": "sample-lp-renewal"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "As issues emerge within the private equity industry, ILPA is committed to responding to requests for guidance to ensure that best practices are encouraged, adopted, and evolve in line with the best interests of all industry participants and their beneficiaries",
+      "source_ids": [
+        "solari-1"
+      ],
+      "confidence": "low",
+      "relevance": "commitment",
+      "decision": "pending"
+    },
+    {
+      "claim": "Continuation vehicles (CVs) have become a prominent feature of private markets, yet LPs face significant challenges in evaluating the process behind the transaction and the specifics of the deal",
+      "source_ids": [
+        "solari-1"
+      ],
+      "confidence": "low",
+      "relevance": "objection",
+      "decision": "pending"
+    },
+    {
+      "claim": "Global secondary transaction volume reached a record ~US$160 billion in 2024",
+      "source_ids": [
+        "solari-2"
+      ],
+      "confidence": "medium",
+      "relevance": "number",
+      "decision": "pending"
+    },
+    {
+      "claim": "For the year ended December 31, 2024, market participants estimate annual secondary market volume of roughly $160 billion",
+      "source_ids": [
+        "solari-2"
+      ],
+      "confidence": "medium",
+      "relevance": "number",
+      "decision": "pending"
+    },
+    {
+      "claim": "Leading secondary investment firms with current dedicated secondary capital in excess of circa $3 billion include: Blackstone Strategic Partners, AlpInvest Partners, Ardian (formerly AXA Private Equity), Capital Dynamics, Coller Capital, HarbourVest Partners, Lexington Partners, Pantheon Ventures, Partners Group and Neuberger Berman",
+      "source_ids": [
+        "solari-2"
+      ],
+      "confidence": "medium",
+      "relevance": "number",
+      "decision": "pending"
+    },
+    {
+      "claim": "Transactions through most of the 1990s were typically small, typified by Landmark’s 1992 acquisition of a $157 million portfolio of LBO fund interests from Westinghouse Credit Corporation and VCFA’s purchase of the Northrop Grumman Ventures portfolio of assets also in 1992",
+      "source_ids": [
+        "solari-2"
+      ],
+      "confidence": "medium",
+      "relevance": "number",
+      "decision": "pending"
+    },
+    {
+      "claim": "Secondary volume was estimated to exceed $1 billion for first time in 1997 as deal size began to increase",
+      "source_ids": [
+        "solari-2"
+      ],
+      "confidence": "medium",
+      "relevance": "number",
+      "decision": "pending"
+    },
+    {
+      "claim": "While 2% was long the standard, the average fell to an estimated 1.35% by 2022, the lowest level since 2008. Therefore, if a fund has $1 billion of assets at year-end and charges a 2% management fee, the management fee will be $20 million",
+      "source_ids": [
+        "solari-3"
+      ],
+      "confidence": "medium",
+      "relevance": "number",
+      "decision": "pending"
+    },
+    {
+      "claim": "After the end of the commitment period, ordinarily four–six years, the basis for calculating the fee will change to the cost basis of the fund, less any investments that have been realized or written-off",
+      "source_ids": [
+        "solari-3"
+      ],
+      "confidence": "low",
+      "relevance": "commitment",
+      "decision": "pending"
+    },
+    {
+      "claim": "Management fees rates will range from 1.0% to 2.0% per annum during the initial commitment period and will then often step down by 0.5–1.0% from the original rate through the termination of the fund",
+      "source_ids": [
+        "solari-3"
+      ],
+      "confidence": "low",
+      "relevance": "commitment",
+      "decision": "pending"
+    }
+  ],
   "counterpart_history": [],
   "open_commitments": [],
   "sensitive_redactions": [],

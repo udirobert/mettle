@@ -34,6 +34,26 @@ REPLAY_POLL_INTERVAL_S = 3
 _SESSION_ID = re.compile(r"^[\w-]{6,128}$")
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 _CLAIM_PRIORITY = {"number": 0, "commitment": 1, "objection": 2, "risk": 3, "timeline": 4}
+# UTF-8 bytes mis-decoded as Latin-1/cp1252 ("â€™" for "’"), which some pages ship.
+_MOJIBAKE = re.compile(r"[\u00c2-\u00f4][\u0080-\u00bf\u0152-\u2122]{1,3}")
+# Wikipedia-style footnote markers: [1], [12], [a], [citation needed].
+_FOOTNOTE = re.compile(r"\[(?:\d{1,3}|[a-z]|citation needed|note \d+)\]", re.IGNORECASE)
+
+
+def _repair_mojibake(match: re.Match[str]) -> str:
+    chunk = match.group(0)
+    for codec in ("cp1252", "latin-1"):
+        try:
+            return chunk.encode(codec).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            continue
+    return chunk
+
+
+def clean_claim_text(text: str) -> str:
+    text = _MOJIBAKE.sub(_repair_mojibake, text)
+    text = _FOOTNOTE.sub("", text)
+    return " ".join(text.split()).rstrip(".").strip()
 
 
 class ResearchUnavailable(RuntimeError):
@@ -97,7 +117,7 @@ def claims_from_page_text(text: str, source_id: str) -> list[EvidenceClaim]:
     for _, _, sentence, relevance in scored[:MAX_CLAIMS_PER_PAGE]:
         claims.append(
             {
-                "claim": sentence.rstrip("."),
+                "claim": clean_claim_text(sentence),
                 "source_ids": [source_id],
                 # Public pages are context, not correspondence: never "high".
                 "confidence": "medium" if relevance == "number" else "low",
