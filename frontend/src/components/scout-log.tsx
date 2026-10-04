@@ -1,6 +1,16 @@
 'use client';
 
-import { AtSign, Brain, Globe, Inbox, Link2, Sparkles, StickyNote } from 'lucide-react';
+import { useState } from 'react';
+import {
+  AtSign,
+  Brain,
+  ChevronDown,
+  Globe,
+  Inbox,
+  Link2,
+  Sparkles,
+  StickyNote,
+} from 'lucide-react';
 
 import type { EvidenceClaim, ScoutEvent } from '@/hooks/use-conversation-state';
 
@@ -59,18 +69,26 @@ function formatTime(ts: string): string {
 
 /**
  * The Scout's work log. The demo's point is that something happened before the
- * user opened the app, so the log is rendered as a quiet timeline of work that
- * already happened — not as a spinner waiting on the user's click.
+ * user opened the app.
+ *
+ * Collapsed by default with the step count visible: research on agentic
+ * transparency is clear that an always-visible activity log reads as
+ * overwhelming, while "3 steps before you arrived" still communicates that the
+ * agent was busy. Trust comes from knowing you can verify, not being forced to.
  */
 export function ScoutLog({
   events,
   title = 'Scout',
   emptyHint,
+  defaultOpen = false,
 }: {
   events: ScoutEvent[];
   title?: string;
   emptyHint?: string;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   if (events.length === 0) {
     if (!emptyHint) return null;
     return (
@@ -84,45 +102,59 @@ export function ScoutLog({
 
   return (
     <section className={styles.log} aria-label="Scout activity">
-      <div className={styles.logHead}>
-        <p className={styles.logTitle}>
+      <button
+        type="button"
+        className={styles.logToggle}
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <span className={styles.logTitle}>
           <Sparkles size={12} aria-hidden="true" /> {title}
-        </p>
+        </span>
         <span className={styles.logCount}>
           {events.length} step{events.length === 1 ? '' : 's'} before you arrived
         </span>
-      </div>
+        <ChevronDown
+          size={15}
+          aria-hidden="true"
+          className={`${styles.logToggleChevron} ${open ? styles.logToggleChevronOpen : ''}`}
+        />
+      </button>
 
-      <ol className={styles.logList}>
-        {events.map((event, index) => (
-          <li key={`${event.ts}-${index}`} className={styles.logRow}>
-            <span className={styles.logDot} aria-hidden="true" />
-            <div className={styles.logBody}>
-              <div className={styles.logRowTop}>
-                <strong>{event.action}</strong>
-                <time dateTime={event.ts}>{formatTime(event.ts)}</time>
-              </div>
-              <p>{event.detail}</p>
-              {(event.sources?.length ?? 0) > 0 && (
-                <div className={styles.logSources}>
-                  {event.sources?.map((source) => (
-                    <ProvenanceBadge
-                      key={source}
-                      compact
-                      provenance={source as EvidenceClaim['provenance']}
-                    />
-                  ))}
+      {open && (
+        <>
+          <ol className={styles.logList}>
+            {events.map((event, index) => (
+              <li key={`${event.ts}-${index}`} className={styles.logRow}>
+                <span className={styles.logDot} aria-hidden="true" />
+                <div className={styles.logBody}>
+                  <div className={styles.logRowTop}>
+                    <strong>{event.action}</strong>
+                    <time dateTime={event.ts}>{formatTime(event.ts)}</time>
+                  </div>
+                  <p>{event.detail}</p>
+                  {(event.sources?.length ?? 0) > 0 && (
+                    <div className={styles.logSources}>
+                      {event.sources?.map((source) => (
+                        <ProvenanceBadge
+                          key={source}
+                          compact
+                          provenance={source as EvidenceClaim['provenance']}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </li>
-        ))}
-      </ol>
+              </li>
+            ))}
+          </ol>
 
-      {sources.size > 0 && (
-        <p className={styles.logFoot}>
-          Read your thread · pulled public research · checked what it remembers
-        </p>
+          {sources.size > 0 && (
+            <p className={styles.logFoot}>
+              Read your thread · pulled public research · checked what it remembers
+            </p>
+          )}
+        </>
       )}
     </section>
   );

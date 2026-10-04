@@ -20,17 +20,60 @@
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
-  gap: 0.3rem;
-  letter-spacing: 0.1em;
+  gap: 0.35rem;
+  letter-spacing: 0.12em;
   margin: 0;
   text-transform: uppercase;
 }
 
-.logCount {
-  color: var(--ink-soft);
+/* Collapsed header doubles as the expand affordance: the count carries the
+   "something already happened" signal without forcing anyone to read it. */
+.logToggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.03em;
+  gap: 0.35rem;
+  padding: 0;
+  text-transform: inherit;
+}
+
+.logToggle:hover .logTitle {
+  color: var(--ink);
+}
+
+.logToggleChevron {
+  color: var(--ink-soft);
+  transition: transform 180ms ease;
+}
+
+.logToggleChevronOpen {
+  transform: rotate(180deg);
+}
+
+.logHead {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.logCount {
+  align-items: center;
+  background: var(--tint-signal);
+  border: 1px solid var(--tint-signal-line);
+  color: var(--signal-strong-ink);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
 }
 
 .logEmpty {
@@ -89,21 +132,21 @@
 
 .logRowTop strong {
   color: var(--ink);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .logRowTop time {
   color: var(--ink-soft);
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .logBody p {
   color: var(--ink-soft);
-  font-size: 0.8rem;
-  line-height: 1.45;
-  margin: 0.15rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0.2rem 0 0;
 }
 
 .logSources {
@@ -123,48 +166,56 @@
   padding-top: 0.55rem;
 }
 
-/* Provenance badges */
+/* Provenance badges — the trust mechanism, so sized to be read at a glance
+   across a room rather than scanned for. Tinted fills over hairline borders:
+   an inbox claim and a web claim must be distinguishable in peripheral vision. */
 .badge {
   align-items: center;
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
+  border: 1px solid transparent;
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  gap: 0.22rem;
-  letter-spacing: 0.04em;
-  padding: 0.1rem 0.4rem;
+  gap: 0.3rem;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .badge_inbox {
-  border-color: var(--cobalt);
+  background: var(--tint-accent);
+  border-color: var(--tint-accent-line);
   color: var(--cobalt);
 }
 
 .badge_web {
-  border-color: var(--tomato);
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
   color: var(--tomato);
 }
 
 .badge_memory {
-  border-color: var(--signal-strong-ink);
+  background: var(--tint-signal);
+  border-color: var(--tint-signal-line);
   color: var(--signal-strong-ink);
 }
 
 .badge_paste {
-  border-color: var(--cobalt);
+  background: var(--surface-alt);
+  border-color: var(--line);
   color: var(--ink-soft);
 }
 
 .badge_stated {
-  border-color: var(--ink-soft);
+  background: var(--surface-alt);
+  border-color: var(--line-strong, var(--line));
   color: var(--ink-soft);
 }
 
 .badgeUnknown {
+  background: var(--surface-alt);
+  border-color: var(--line);
   border-style: dashed;
-  opacity: 0.7;
+  opacity: 0.75;
 }

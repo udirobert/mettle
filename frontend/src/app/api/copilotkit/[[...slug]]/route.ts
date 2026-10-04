@@ -5,6 +5,8 @@ import {
   InMemoryAgentRunner,
 } from "@copilotkit/runtime/v2";
 import { HttpAgent } from "@ag-ui/client";
+import { MastraClient } from "@mastra/client-js";
+import { MastraAgent } from "@ag-ui/mastra";
 import { handle } from "hono/vercel";
 
 const agentUrl =
@@ -19,8 +21,25 @@ const defaultAgent = new HttpAgent({
   url: `${agentUrl.replace(/\/$/, "")}/`,
 });
 
+// The Mastra server's /copilotkit route is a full CopilotKit runtime, so a
+// second HttpAgent cannot target it — register its agents as remote agents
+// instead. Missing scout server → omit it; /context/import is the fallback.
+const scoutUrl = process.env.SCOUT_URL || "http://localhost:4111";
+let scoutAgents: Record<string, HttpAgent> = {};
+try {
+  // @ag-ui/mastra@1.x uses the newer @ag-ui/client 1.x type lineage; the
+  // CopilotKit runtime here is on the 0.0.57 lineage. Same AG-UI wire
+  // protocol — the cast bridges the type-version fork only.
+  scoutAgents = (await MastraAgent.getRemoteAgents({
+    mastraClient: new MastraClient({ baseUrl: scoutUrl }),
+    resourceId: "scout",
+  })) as unknown as Record<string, HttpAgent>;
+} catch {
+  scoutAgents = {};
+}
+
 const runtime = new CopilotRuntime({
-  agents: { default: defaultAgent },
+  agents: { default: defaultAgent, ...scoutAgents },
   // --- copilotkit:intelligence (remove this block to opt out) ---
   ...(process.env.COPILOTKIT_LICENSE_TOKEN
     ? {
