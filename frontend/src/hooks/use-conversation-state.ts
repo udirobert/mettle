@@ -1,7 +1,11 @@
 'use client';
 
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
-import { findEvent } from '@/fixtures/lp-event';
+import { findEvent, registerEvent } from '@/fixtures/lp-event';
+import { SALARY_EVENT } from '@/fixtures/salary-event';
+
+// Dana is the featured event; register her before any lookup can miss.
+registerEvent(SALARY_EVENT);
 
 /**
  * Shared conversation state contract — mirrors backend/graph/state.py.

@@ -175,6 +175,10 @@
   padding: 0.55rem 0.75rem;
 }
 
+.scoutWrap {
+  margin-top: 1.25rem;
+}
+
 .eventCards {
   display: grid;
   gap: 0.85rem;

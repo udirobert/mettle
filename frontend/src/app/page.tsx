@@ -8,7 +8,7 @@ import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 import { CoachPanel } from '@/components/coach-panel';
 import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
-import { replayWalkthrough } from '@/components/welcome-overlay';
+import { WelcomeOverlay, replayWalkthrough } from '@/components/welcome-overlay';
 import {
   isPhaseUnlocked,
   JourneyTracker,
@@ -56,11 +56,11 @@ function getPhaseHint(phase: Phase, state: ConversationState): string {
   }
   switch (phase) {
     case 'rehearsal':
-      return 'Finish the Coach brief before rehearsing';
+      return 'Finish the Coach brief before you rehearse';
     case 'live':
-      return 'Run a rehearsal before going live';
+      return 'Rehearse once first — that is where the reps come from';
     case 'debrief':
-      return 'Hold a real conversation — live or rehearsed — before debriefing';
+      return 'Hold the conversation — live or rehearsed — before you debrief';
     default:
       return '';
   }
@@ -119,8 +119,8 @@ function SignalStack({ phase }: { phase: Phase }) {
       ) : (
         <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
           <span className={styles.cardEyebrow}>Watch for</span>
-          <strong>The concession trap</strong>
-          <p>Do not offer terms before the renewal standard is clear.</p>
+          <strong>The title-for-cash trade</strong>
+          <p>Title is cheap for her right now. Don&apos;t let it stand in for the number.</p>
         </section>
       )}
     </aside>
@@ -207,7 +207,7 @@ export default function HomePage() {
   // then jumps straight in.
   const handleQuickRehearsal = () => {
     if (isAgentRunning) return;
-    const event = findEvent('lp_renewal');
+    const event = findEvent('salary_review');
     if (!event) return;
     setPartial({
       scenario_id: event.id,
@@ -216,13 +216,20 @@ export default function HomePage() {
       counterpart_profile: event.counterpartProfile,
       user_weak_points: event.userWeakPoints,
       coach_analysis: {
-        blind_spots: ['Your liquidity story is a promise, not yet a track record.'],
-        concrete_moves: ['Name the distribution date before she asks for it.'],
-        likely_objections: ['"Why should this cycle be different from the last one?"'],
-        opening_strategy: 'Lead with the memo date, not the ask.',
+        blind_spots: [
+          'Your anchor is still the number you asked for in writing — which is now her floor, not your ceiling.',
+        ],
+        concrete_moves: [
+          'Trade the reorg scope for a dated comp commitment before you accept either.',
+        ],
+        likely_objections: [
+          '"$185k is above band. Walk me through the scope case."',
+          '"You promised me March metrics and they never came."',
+        ],
+        opening_strategy: 'Open with the scope case she asked for, not with the number.',
         perspectives: [],
-        disagreements: ['Whether to open with liquidity or governance.'],
-        consensus: ['The fee step-up needs to be justified by realized DPI.'],
+        disagreements: ['Whether title is a real concession or a way to defer the cash.'],
+        consensus: ['Title is cheap for her right now. Cash is the actual ask.'],
       },
       coach_stage: 'ready',
       context_brief: undefined,
@@ -259,6 +266,7 @@ export default function HomePage() {
             </div>
           </header>
           <EventList onSelectEvent={handleSelectEvent} onQuickRehearsal={handleQuickRehearsal} />
+          <WelcomeOverlay />
         </main>
       </CopilotChatConfigurationProvider>
     );

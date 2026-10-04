@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { ArrowRight, Clock, Repeat, Shield, User, Zap } from 'lucide-react';
 
 import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
+import { SALARY_EVENT, SALARY_SCOUT_LOG } from '@/fixtures/salary-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { ScoutLog } from '@/components/scout-log';
 
 import styles from './event-list.module.css';
 
@@ -30,29 +32,32 @@ export function EventList({
   onQuickRehearsal?: () => void;
 }) {
   const { state } = useConversationState();
-  const [carryCount] = useState(() => readCarryCount(LP_EVENT.counterpart));
+  const [carryCount] = useState(() => readCarryCount(SALARY_EVENT.counterpart));
 
-  const isElena = state.scenario_id === LP_EVENT.id;
-  const hasBrief = isElena && !!state.coach_analysis;
+  const isDana = state.scenario_id === SALARY_EVENT.id;
+  const hasBrief = isDana && !!state.coach_analysis;
   const hasEvidence =
-    isElena &&
+    isDana &&
     state.context_brief?.status === 'approved' &&
     (state.context_brief.claims?.length ?? 0) > 0;
-  const prepIncomplete = !hasBrief;
+
+  // Real Scout events once the backend emits them; the seed log stands in for
+  // them so the "it was already working" beat survives when the scout is stubbed.
+  const scoutEvents = isDana ? (state.scout_log ?? SALARY_SCOUT_LOG) : [];
 
   const nextMove = !hasEvidence
-    ? 'Paste the thread with Elena, then run Coach.'
+    ? 'Forward the thread to Mettle, then run Coach.'
     : !hasBrief
       ? 'Evidence is approved. Run Coach.'
-      : 'Open Coach — then rehearse with Elena.';
+      : 'Open Coach — then rehearse with Dana.';
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <p className={styles.kicker}>Your consequential conversation</p>
-        <h1 className={styles.title}>The one you cannot afford to wing.</h1>
+        <p className={styles.kicker}>Your docket</p>
+        <h1 className={styles.title}>The conversations that matter.</h1>
         <p className={styles.subtitle}>
-          Not every meeting. This one. {LP_EVENT.stakes.replace(/\.$/, '')}, two days out.
+          Not every meeting. {SALARY_EVENT.stakes.replace(/\.$/, '')} — and it lands Thursday.
         </p>
       </header>
 
@@ -73,32 +78,32 @@ export function EventList({
 
       <button
         className={styles.hero}
-        onClick={() => onSelectEvent(LP_EVENT.id)}
-        aria-label={`Open ${LP_EVENT.name} with ${LP_EVENT.counterpart}`}
+        onClick={() => onSelectEvent(SALARY_EVENT.id)}
+        aria-label={`Open ${SALARY_EVENT.name} with ${SALARY_EVENT.counterpart}`}
         type="button"
       >
         <div className={styles.heroTop}>
           <span className={styles.heroTime}>
             <Clock size={14} aria-hidden="true" />
-            {LP_EVENT.timeUntil}
+            {SALARY_EVENT.timeUntil}
           </span>
           <span className={styles.heroRisk}>
             <Shield size={13} aria-hidden="true" />
-            {LP_EVENT.risk} risk
+            {SALARY_EVENT.risk} risk
           </span>
         </div>
 
-        <p className={styles.heroStakes}>{LP_EVENT.stakes.replace(/\.$/, '')}</p>
-        <h2 className={styles.heroName}>{LP_EVENT.counterpart}</h2>
-        <p className={styles.heroRole}>{LP_EVENT.counterpartRole}</p>
+        <p className={styles.heroStakes}>{SALARY_EVENT.stakes.replace(/\.$/, '')}</p>
+        <h2 className={styles.heroName}>{SALARY_EVENT.counterpart}</h2>
+        <p className={styles.heroRole}>{SALARY_EVENT.counterpartRole}</p>
 
         <div className={styles.heroMeta}>
           <span className={styles.heroCounterpart}>
             <User size={14} aria-hidden="true" />
-            {LP_EVENT.name}
+            {SALARY_EVENT.name}
           </span>
-          <span className={prepIncomplete ? styles.prepIncomplete : styles.prepReady}>
-            {prepIncomplete ? 'Prep incomplete' : 'Brief ready'}
+          <span className={hasBrief ? styles.prepReady : styles.prepIncomplete}>
+            {hasBrief ? 'Brief ready' : 'Prep incomplete'}
           </span>
         </div>
 
@@ -107,7 +112,7 @@ export function EventList({
             <Repeat size={13} aria-hidden="true" />
             <span>
               {carryCount} open item{carryCount === 1 ? '' : 's'} carried from your last debrief
-              with {LP_EVENT.counterpart.split(' ')[0]}
+              with {SALARY_EVENT.counterpart.split(' ')[0]}
             </span>
           </div>
         )}
@@ -118,9 +123,41 @@ export function EventList({
         </div>
       </button>
 
+      {scoutEvents.length > 0 && (
+        <div className={styles.scoutWrap}>
+          <ScoutLog events={scoutEvents} title="Scout" />
+        </div>
+      )}
+
       <div className={styles.contrast}>
-        <p className={styles.kicker}>Also on the calendar</p>
+        <p className={styles.kicker}>Everything else on the calendar</p>
         <ul className={styles.eventCards}>
+          <li>
+            <button
+              className={styles.eventCard}
+              onClick={() => onSelectEvent(LP_EVENT.id)}
+              aria-label={`Open ${LP_EVENT.name} with ${LP_EVENT.counterpart}`}
+              type="button"
+            >
+              <div className={styles.heroTop}>
+                <span className={styles.heroTime}>
+                  <Clock size={13} aria-hidden="true" />
+                  {LP_EVENT.timeUntil}
+                </span>
+                <span className={styles.heroRisk}>
+                  <Shield size={12} aria-hidden="true" />
+                  {LP_EVENT.risk} risk
+                </span>
+              </div>
+              <span className={styles.eventCardName}>{LP_EVENT.name}</span>
+              <span className={styles.contrastDetail}>
+                {LP_EVENT.counterpart} · {LP_EVENT.stakes}
+              </span>
+              <span className={styles.eventCardCta}>
+                <ArrowRight size={13} aria-hidden="true" /> Prep this
+              </span>
+            </button>
+          </li>
           {SECONDARY_EVENTS.map((event) => (
             <li key={event.id}>
               <button

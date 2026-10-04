@@ -1,0 +1,170 @@
+.log {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 0.9rem 1rem;
+}
+
+.logHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.logTitle {
+  align-items: center;
+  color: var(--cobalt);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  gap: 0.3rem;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.logCount {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+.logEmpty {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.logList {
+  list-style: none;
+  margin: 0;
+  padding: 0.7rem 0 0;
+}
+
+.logRow {
+  display: flex;
+  gap: 0.65rem;
+  padding-bottom: 0.7rem;
+  position: relative;
+}
+
+.logRow:last-child {
+  padding-bottom: 0;
+}
+
+/* The connecting rail makes the log read as work in sequence. */
+.logRow:not(:last-child)::before {
+  background: var(--line);
+  content: '';
+  height: 100%;
+  left: 3px;
+  position: absolute;
+  top: 12px;
+  width: 1px;
+}
+
+.logDot {
+  background: var(--cobalt);
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 7px;
+  margin-top: 4px;
+  width: 7px;
+}
+
+.logBody {
+  min-width: 0;
+}
+
+.logRowTop {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.logRowTop strong {
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.logRowTop time {
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.logBody p {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0.15rem 0 0;
+}
+
+.logSources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.logFoot {
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  margin: 0.2rem 0 0;
+  padding-top: 0.55rem;
+}
+
+/* Provenance badges */
+.badge {
+  align-items: center;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 0.22rem;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge_inbox {
+  border-color: var(--cobalt);
+  color: var(--cobalt);
+}
+
+.badge_web {
+  border-color: var(--tomato);
+  color: var(--tomato);
+}
+
+.badge_memory {
+  border-color: var(--signal-strong-ink);
+  color: var(--signal-strong-ink);
+}
+
+.badge_paste {
+  border-color: var(--cobalt);
+  color: var(--ink-soft);
+}
+
+.badge_stated {
+  border-color: var(--ink-soft);
+  color: var(--ink-soft);
+}
+
+.badgeUnknown {
+  border-style: dashed;
+  opacity: 0.7;
+}

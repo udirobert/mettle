@@ -58,6 +58,7 @@ export function DebriefView() {
   const { state, runDebrief, isAgentRunning } = useConversationState();
   const [showRecord, setShowRecord] = useState(false);
   const [memoStatus, setMemoStatus] = useState<string | null>(null);
+  const [memoTo, setMemoTo] = useState('');
   const notes = state.debrief_notes ?? [];
 
   const carryForward = () => {
@@ -74,6 +75,7 @@ export function DebriefView() {
     setCarried(true);
   };
   const [carried, setCarried] = useState(false);
+  const [sending, setSending] = useState(false);
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
   const counterpartFull =
@@ -81,6 +83,11 @@ export function DebriefView() {
       ? state.counterpart_profile.name
       : 'Counterpart';
   const counterpartName = counterpartFull.split(' ')[0] || 'Counterpart';
+
+  // The memo comes back to the user, not to the agent's own inbox — but the
+  // agent can only send to an address it knows, so the user's forward-path
+  // address (the From of the thread they forwarded) is the right destination.
+  const memoRecipient = memoTo ?? '';
 
   // Persist every generated debrief keyed by counterpart so the next event can carry it forward.
   useEffect(() => {
@@ -124,6 +131,50 @@ export function DebriefView() {
 
   const sendMemo = () => {
     window.location.href = buildMailtoHref(memo.subject, memo.body);
+  };
+
+  /**
+   * The agent emails the memo itself — the point is that the follow-up does not
+   * depend on the user remembering to send it. The backend answers 200 with
+   * `degraded: true` when AgentMail is unconfigured, so fall back to the mailto
+   * handoff rather than showing a failure the user has to interpret.
+   */
+  const sendViaAgent = async () => {
+    if (sending) return;
+    setSending(true);
+    setMemoStatus('Sending…');
+    try {
+      const response = await fetch('/api/agent/debrief/memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: memoRecipient,
+          subject: memo.subject,
+          body: memo.body,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        sent?: boolean;
+        degraded?: boolean;
+        message_id?: string;
+      };
+
+      if (result.sent) {
+        setMemoStatus('Memo sent — check your inbox');
+      } else if (result.degraded) {
+        setMemoStatus('Email not configured — opening your mail client instead');
+        sendMemo();
+      } else {
+        setMemoStatus('Send failed — opening your mail client instead');
+        sendMemo();
+      }
+    } catch {
+      setMemoStatus('Agent unreachable — opening your mail client instead');
+      sendMemo();
+    } finally {
+      setSending(false);
+      window.setTimeout(() => setMemoStatus(null), 3200);
+    }
   };
 
   const copyMemo = async () => {
@@ -253,16 +304,44 @@ export function DebriefView() {
 
           <section className="mettle-card" aria-label="Follow-up memo">
             <p className="mettle-kicker">
-              <Mail size={13} /> Send the follow-up
+              <Mail size={13} /> The memo
             </p>
-            <strong>One memo for the firm — not the transcript.</strong>
+            <strong>
+              It emails you the follow-up — you don&apos;t have to remember to send it.
+            </strong>
             <p className="mt-2">
-              Opens your email with commitments, open items, and the next move. No live record
-              attached.
+              Commitments, what stayed open, and the next move. No live record attached.
             </p>
+
+            <label className="mt-3 block text-xs font-mono font-bold uppercase tracking-wide text-[var(--ink-soft)]">
+              Send it to
+              <input
+                className="mettle-input mt-1 w-full"
+                type="email"
+                value={memoTo}
+                onChange={(event) => setMemoTo(event.target.value)}
+                placeholder="you@company.com"
+                aria-label="Email address to send the memo to"
+              />
+            </label>
+
             <div className="flex flex-wrap gap-2 mt-3">
-              <button className="mettle-action" onClick={sendMemo} type="button">
-                <Mail size={14} aria-hidden="true" /> Send follow-up memo
+              <button
+                className="mettle-action"
+                disabled={sending || !memoTo.trim()}
+                onClick={() => void sendViaAgent()}
+                type="button"
+                title={
+                  memoTo.trim()
+                    ? 'Mettle emails this memo from its own inbox'
+                    : 'Add the address to send the memo to'
+                }
+              >
+                <Mail size={14} aria-hidden="true" />
+                {sending ? 'Sending…' : 'Send me the memo'}
+              </button>
+              <button className="mettle-icon-action" onClick={sendMemo} type="button">
+                Open in my mail app
               </button>
               <button className="mettle-icon-action" onClick={() => void copyMemo()} type="button">
                 <Copy size={14} aria-hidden="true" /> Copy memo

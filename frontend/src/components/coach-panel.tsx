@@ -21,8 +21,9 @@ import {
   X,
 } from 'lucide-react';
 
-import { SAMPLE_ELENA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
+import { SAMPLE_DANA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
+import { ProvenanceBadge, ScoutLog } from '@/components/scout-log';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type {
   CoachAnalysis,
@@ -69,12 +70,23 @@ export function CoachPanel() {
   return (
     <div className="mettle-phase">
       <header>
-        <p className="mettle-kicker">2 days out · you decide what Mettle sees</p>
+        <p className="mettle-kicker">Before the room · you decide what Mettle sees</p>
         <h2 className="mettle-headline">Walk in with a point of view.</h2>
         <p className="mettle-copy">
-          Paste the email thread, keep the claims you trust, and watch three adversaries attack your
-          position — so {name} can&apos;t surprise you with anything they haven&apos;t already
-          tried.
+          {state.agent_inbox_address ? (
+            <>
+              Forward the thread to your agent&apos;s own inbox at{' '}
+              <strong>{state.agent_inbox_address}</strong>. Keep the claims you trust, and watch
+              three adversaries attack your position — so {name} can&apos;t surprise you with
+              anything they haven&apos;t already tried.
+            </>
+          ) : (
+            <>
+              Forward the thread with {name}, keep the claims you trust, and watch three adversaries
+              attack your position — so {name} can&apos;t surprise you with anything they
+              haven&apos;t already tried.
+            </>
+          )}
         </p>
         <div className="mettle-coach-steps" aria-label="Coach progress">
           {steps.map((step, index) => (
@@ -94,6 +106,12 @@ export function CoachPanel() {
           ))}
         </div>
       </header>
+
+      {(state.scout_log?.length ?? 0) > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <ScoutLog events={state.scout_log ?? []} title="Scout — before you arrived" />
+        </div>
+      )}
 
       {needsPaste && !showCouncil && <PasteEvidencePanel />}
       {needsApproval && <ClaimApprovalPanel brief={brief} />}
@@ -119,7 +137,7 @@ export function CoachPanel() {
           </p>
           <button
             className="mettle-action"
-            onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
+            onClick={() => void runCoach(state.scenario_id || 'salary_review')}
             type="button"
             style={{ marginTop: 12 }}
           >
@@ -141,7 +159,7 @@ export function CoachPanel() {
       {approved && (
         <EvidenceRecap
           brief={brief}
-          onReDebate={() => void runCoach(state.scenario_id || 'lp_renewal')}
+          onReDebate={() => void runCoach(state.scenario_id || 'salary_review')}
           isAgentRunning={isAgentRunning}
         />
       )}
@@ -213,9 +231,14 @@ function PasteEvidencePanel() {
       <p className="mettle-kicker">
         <Inbox size={13} /> Evidence
       </p>
-      <strong>Forward or paste the thread with {name}.</strong>
+      <strong>
+        {state.agent_inbox_address
+          ? `Forward the thread to ${state.agent_inbox_address} — or paste it here.`
+          : `Forward the thread with ${name} — or paste it here.`}
+      </strong>
       <p className="mt-2">
-        The agent will propose claims. You keep or reject each one before the council runs.
+        The agent will propose claims, each labelled with where it came from. You keep or reject
+        each one before the council runs.
         {privacy === 'private' && (
           <>
             {' '}
@@ -229,7 +252,7 @@ function PasteEvidencePanel() {
         className="mettle-textarea"
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder={`From: ${name}\nSubject: Re: Q3…\n\nPaste the emails here.`}
+        placeholder={`From: ${name}\nSubject: Re: …\n\nPaste the emails here.`}
         rows={10}
         aria-label={`Paste correspondence with ${name}`}
       />
@@ -246,7 +269,7 @@ function PasteEvidencePanel() {
         <button
           className="mettle-icon-action"
           disabled={extracting}
-          onClick={() => setText(SAMPLE_ELENA_THREAD)}
+          onClick={() => setText(SAMPLE_DANA_THREAD)}
           type="button"
         >
           Use sample thread
@@ -254,10 +277,10 @@ function PasteEvidencePanel() {
         <button
           className={styles.skipBtn}
           disabled={isAgentRunning}
-          onClick={() => void runCoach(state.scenario_id || 'lp_renewal')}
+          onClick={() => void runCoach(state.scenario_id || 'salary_review')}
           type="button"
         >
-          Skip paste — use the scenario file
+          Skip — use the scenario file
         </button>
       </div>
     </section>
@@ -332,7 +355,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
       claims: kept,
       user_approved_at: new Date().toISOString(),
     };
-    await runCoach(state.scenario_id || 'lp_renewal', { contextBrief: approved });
+    await runCoach(state.scenario_id || 'salary_review', { contextBrief: approved });
   };
 
   const discard = () => {
@@ -390,6 +413,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                 ) : (
                   <>
                     <span>{claim.claim}</span>
+                    <ProvenanceBadge provenance={claim.provenance} />
                     <button
                       aria-label="Edit claim"
                       className={styles.claimEditBtn}
@@ -743,7 +767,10 @@ function EvidenceRecap({
             key={index}
             className="border-l-2 border-[var(--lime)] bg-white px-3 py-2 text-xs leading-relaxed"
           >
-            <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
+              <ProvenanceBadge provenance={claim.provenance} compact />
+            </div>
             <div className="mt-1 font-mono text-[10px] uppercase text-[var(--ink-soft)]">
               {claim.relevance} · {claim.confidence} confidence
             </div>

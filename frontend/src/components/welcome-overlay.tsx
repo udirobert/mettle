@@ -10,19 +10,20 @@ const WALKTHROUGH_KEY = 'mettle.walkthrough.seen';
 const PHASES = [
   {
     label: 'Coach',
-    description: 'Stress-test your position with adversarial analysis before the room does.',
+    description:
+      'It reads the thread you forwarded, does its own homework, and three adversaries attack your position.',
   },
   {
     label: 'Rehearse',
-    description: 'Role-play the conversation against a skeptical counterpart.',
+    description: 'Role-play the conversation against your counterpart, in character.',
   },
   {
     label: 'Live',
-    description: 'Get real-time tactical support during the actual conversation.',
+    description: 'Get a tactical nudge in the moment, before you concede something.',
   },
   {
     label: 'Debrief',
-    description: 'Capture commitments and open items before they evaporate.',
+    description: 'It emails you the memo — commitments, open items, the next move.',
   },
 ];
 
@@ -118,8 +119,11 @@ function PanelIntro() {
         you can't afford to get wrong.
       </h1>
       <p className={styles.body}>
-        Mettle is a stakes-aware preparation layer. It stress-tests your position, rehearses the
-        hard parts, and supports you in the moment.
+        Mettle is a personal agent, not a meeting assistant. It has its own inbox, does its own
+        homework, and remembers your last hard conversation — so you are not walking in cold.
+      </p>
+      <p className={styles.hint}>
+        Some things you can&apos;t delegate. For the rest, you get counsel.
       </p>
     </div>
   );
@@ -156,16 +160,16 @@ function PanelStart() {
         <span>You're ready</span>
       </div>
       <h1 className={styles.headline}>
-        Pick your first conversation
+        Pick the one
         <br />
-        to begin.
+        you keep putting off.
       </h1>
       <p className={styles.body}>
-        Start with your most urgent high-stakes conversation. Mettle will load the pressure points
-        and walk you through each phase.
+        Start with your most urgent high-stakes conversation. Mettle loads the pressure points, then
+        walks you through each phase.
       </p>
       <div className={styles.hint}>
-        You can always come back to the event list using the "Back" button in the sidebar.
+        Back in the docket any time with the &ldquo;Back&rdquo; button in the sidebar.
       </div>
     </div>
   );
