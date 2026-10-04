@@ -20,6 +20,8 @@ dependencies = [
   "pip>=26.0.1",
   "langchain-anthropic==1.4.1",
   "psycopg[binary,pool]>=3.2,<4.0",
+  "exa-py>=2.25.0",
+  "agentmail>=2.0.8",
 ]
 
 [dependency-groups]
