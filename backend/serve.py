@@ -15,6 +15,7 @@ from copilotkit import LangGraphAGUIAgent
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from context.ingestion import import_from_inbox
@@ -30,6 +31,9 @@ from graph.state import ConversationState
 from graph.wingman_reactive import answer_reactive_query
 from server_config import allowed_origins
 
+# Load the repo-root .env before anything reads os.environ — without this
+# every service (Neon, Exa, AgentMail) silently degrades in local dev.
+load_dotenv()
 
 checkpointer, close_checkpointer = create_checkpointer()
 graph = build_graph(checkpointer=checkpointer)
