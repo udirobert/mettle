@@ -150,7 +150,14 @@ export function DebriefView() {
         body: JSON.stringify({
           to: memoRecipient,
           subject: memo.subject,
-          body: memo.body,
+          // MemoRequest carries notes, not a rendered body — the backend joins
+          // them into the email body itself.
+          notes: [
+            ...(lead ? [lead] : []),
+            ...commitmentNotes,
+            ...assumptionNotes,
+            ...nextNotes.slice(1),
+          ],
         }),
       });
       const result = (await response.json().catch(() => ({}))) as {

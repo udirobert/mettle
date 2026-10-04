@@ -20,7 +20,9 @@ export async function POST(
 ) {
   const { path } = await params;
   const endpoint = path.join('/');
-  if (!/^[\w-]+$/.test(endpoint)) {
+  // Validate each segment, not the joined string — the backend routes are
+  // nested ("context/import"), so the slash must survive validation.
+  if (path.length === 0 || path.length > 2 || !path.every((s) => /^[\w-]+$/.test(s))) {
     return NextResponse.json({ error: 'Unknown route' }, { status: 404 });
   }
 

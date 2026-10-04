@@ -30,6 +30,7 @@ import type {
   ContextBrief,
   EvidenceClaim,
   PerspectiveResult,
+  ScoutEvent,
 } from '@/hooks/use-conversation-state';
 import styles from './coach-disclosure.module.css';
 
@@ -172,9 +173,56 @@ function PasteEvidencePanel() {
   const { state, setPartial, runCoach, isAgentRunning } = useConversationState();
   const [text, setText] = useState('');
   const [extracting, setExtracting] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const name = counterpartName(state);
   const privacy = state.privacy_mode ?? 'private';
+
+  /**
+   * Pull the agent's own inbox. This is the demo's opening beat — the thread
+   * arrives by email and the agent has already read it. Degrades to the bundled
+   * seed thread server-side, so this never dead-ends without an inbox.
+   */
+  const fetchFromInbox = async () => {
+    if (fetching) return;
+    setFetching(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/agent/context/import', { method: 'POST' });
+      const result = (await response.json().catch(() => ({}))) as {
+        brief?: ContextBrief;
+        scout_log?: ScoutEvent[];
+        agent_inbox_address?: string;
+        degraded?: boolean;
+        reason?: string;
+      };
+
+      if (!result.brief?.claims?.length) {
+        setError(result.reason ?? 'No thread in the agent inbox yet. Forward one, or paste below.');
+        return;
+      }
+
+      setPartial({
+        context_brief: {
+          ...result.brief,
+          status: 'draft',
+          user_approved_at: null,
+          claims: result.brief.claims.map((claim) => ({
+            ...claim,
+            decision: claim.decision ?? 'pending',
+          })),
+        },
+        ...(result.scout_log ? { scout_log: result.scout_log } : {}),
+        ...(result.agent_inbox_address ? { agent_inbox_address: result.agent_inbox_address } : {}),
+        coach_analysis: undefined,
+        coach_stage: 'idle',
+      });
+    } catch {
+      setError('Could not reach the agent inbox. Paste the thread below instead.');
+    } finally {
+      setFetching(false);
+    }
+  };
 
   const extract = async (source: string) => {
     const cleaned = source.trim();
@@ -258,6 +306,18 @@ function PasteEvidencePanel() {
       />
       {error && <p className={styles.pasteError}>{error}</p>}
       <div className={styles.pasteActions}>
+        {state.agent_inbox_address && (
+          <button
+            className="mettle-action"
+            disabled={fetching}
+            onClick={() => void fetchFromInbox()}
+            type="button"
+            title="Read the thread from Mettle's own inbox"
+          >
+            <Inbox size={14} aria-hidden="true" />
+            {fetching ? 'Reading your inbox…' : 'Check my inbox'}
+          </button>
+        )}
         <button
           className="mettle-action"
           disabled={extracting || !text.trim()}
