@@ -86,8 +86,10 @@ def research(
     sources: list[dict] = []
     items = getattr(results, "results", None) or []
     for index, item in enumerate(items):
-        source_id = f"exa-{index + 1}"
         url = getattr(item, "url", None)
+        # source_id is the result URL per the pinned contract; exa-N only
+        # when a result somehow has no URL.
+        source_id = url or f"exa-{index + 1}"
         title = getattr(item, "title", None) or url or f"Result {index + 1}"
         sources.append(
             {

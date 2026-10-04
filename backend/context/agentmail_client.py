@@ -75,10 +75,15 @@ def list_messages(limit: int = 10) -> list[dict]:
 
     normalized = []
     for msg in items:
+        sender = str(_msg_attr(msg, "from_", "from_addr", "sender") or "")
+        # Skip the agent's own outbound (e.g. debrief memos) so a sent memo
+        # is never re-ingested as conversation evidence.
+        if inbox_id and sender and inbox_id.lower() in sender.lower():
+            continue
         normalized.append(
             {
                 "message_id": str(_msg_attr(msg, "message_id", "id") or ""),
-                "from": str(_msg_attr(msg, "from_", "from_addr", "sender") or ""),
+                "from": sender,
                 "to": str(_msg_attr(msg, "to") or ""),
                 "subject": str(_msg_attr(msg, "subject") or ""),
                 "text": str(_msg_attr(msg, "extracted_text", "text", "preview") or ""),
