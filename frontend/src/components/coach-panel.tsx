@@ -14,6 +14,7 @@ import {
   Pencil,
   RefreshCw,
   Scale,
+  Search,
   Share2,
   ShieldCheck,
   Swords,
@@ -21,6 +22,11 @@ import {
   X,
 } from 'lucide-react';
 
+import {
+  mergeResearchIntoBrief,
+  researchQueryFor,
+  type ResearchResult,
+} from '@/lib/merge-research';
 import { SAMPLE_DANA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
 import { ProvenanceBadge, ScoutLog } from '@/components/scout-log';
@@ -174,9 +180,57 @@ function PasteEvidencePanel() {
   const [text, setText] = useState('');
   const [extracting, setExtracting] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [researching, setResearching] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const name = counterpartName(state);
+  const role =
+    typeof state.counterpart_profile?.role === 'string'
+      ? state.counterpart_profile.role
+      : undefined;
   const privacy = state.privacy_mode ?? 'private';
+  const brief = state.context_brief;
+
+  /**
+   * The agent doing its own homework — scoped public research that lands in the
+   * same keep/reject gate as the private thread, badged `web` so it is never
+   * confused with something the counterpart actually said.
+   */
+  const runHomework = async () => {
+    if (researching) return;
+    setResearching(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch('/api/agent/context/research', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: researchQueryFor(name, role),
+          counterpart_name: name,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as ResearchResult;
+
+      if (result.degraded || !result.claims?.length) {
+        setError(result.reason ?? 'Public research is unavailable right now.');
+        return;
+      }
+
+      const merged = mergeResearchIntoBrief(brief, result);
+      const added = merged.claims.length - (brief?.claims.length ?? 0);
+      setPartial({ context_brief: merged, coach_analysis: undefined, coach_stage: 'idle' });
+      setNotice(
+        added > 0
+          ? `${added} public claim${added === 1 ? '' : 's'} added — keep the ones that hold up.`
+          : 'Nothing new — the research matches what you already have.',
+      );
+    } catch {
+      setError('Could not reach the research service.');
+    } finally {
+      setResearching(false);
+    }
+  };
 
   /**
    * Pull the agent's own inbox. This is the demo's opening beat — the thread
@@ -285,8 +339,8 @@ function PasteEvidencePanel() {
           : `Forward the thread with ${name} — or paste it here.`}
       </strong>
       <p className="mt-2">
-        The agent will propose claims, each labelled with where it came from. You keep or reject
-        each one before the council runs.
+        The agent proposes claims from your thread and from public research, each labelled with
+        where it came from. You keep or reject every one before the council runs.
         {privacy === 'private' && (
           <>
             {' '}
@@ -305,6 +359,7 @@ function PasteEvidencePanel() {
         aria-label={`Paste correspondence with ${name}`}
       />
       {error && <p className={styles.pasteError}>{error}</p>}
+      {notice && <p className={styles.pasteNotice}>{notice}</p>}
       <div className={styles.pasteActions}>
         {state.agent_inbox_address && (
           <button
@@ -318,6 +373,16 @@ function PasteEvidencePanel() {
             {fetching ? 'Reading your inbox…' : 'Check my inbox'}
           </button>
         )}
+        <button
+          className="mettle-action"
+          disabled={researching}
+          onClick={() => void runHomework()}
+          type="button"
+          title="Let Mettle research the public comp band for this role"
+        >
+          <Search size={14} aria-hidden="true" />
+          {researching ? 'Doing homework…' : 'Do homework'}
+        </button>
         <button
           className="mettle-action"
           disabled={extracting || !text.trim()}

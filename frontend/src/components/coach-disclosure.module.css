@@ -447,6 +447,12 @@
   margin: 8px 0 0;
 }
 
+.pasteNotice {
+  color: var(--signal-strong-ink);
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
 .claimList {
   display: grid;
   gap: 8px;
