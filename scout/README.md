@@ -32,10 +32,15 @@ OPENAI_API_KEY=... npm run dev             # Studio + API on :4111
 configured, in order: `SCOUT_MODEL` or Neon (`neon/claude-sonnet-4-6`) →
 Featherless → OpenAI direct. Mastra falls through to the next entry when a
 model errors. Neon + Featherless both set = Neon primary, Featherless fallback.
-Verified: a broken primary falls through to the next model; Featherless's
-endpoint is reachable with our config (a fake key gets a 401). **Not yet
-verified:** a real Featherless run (needs `FEATHERLESS_API_KEY`) — check that
-the chosen open model completes multi-step tool calls before relying on it.
+Verified: a broken primary falls through to the next model; with Neon and
+Featherless both set the agent resolves `neon/claude-sonnet-4-6` then
+`featherless-ai/moonshotai/Kimi-K2-Instruct-0905`; with Featherless alone a full
+AG-UI run completes both tool calls and streams a correct 3-entry `scout_log`.
+Not yet observed: an actual Neon→Featherless failover during a live run.
+
+Dev note: the first `mastra dev` boot can sit on "Preparing development
+environment" for 1-2 minutes. If a second instance refuses to start, kill the
+old one and `rm -rf scout/.mastra`.
 
 ## LLM: Neon AI Gateway
 
