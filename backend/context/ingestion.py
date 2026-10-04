@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from graph.context import extract_brief_from_paste
 from graph.state import ContextBrief, ContextSource, ScoutEvent
 
-from . import agentmail_client
+from . import agentmail_client, memory
 from .fixtures import SEED_DANA_MESSAGES
 from .safety import sanitize_thread_text
 
@@ -134,6 +134,27 @@ def import_from_inbox(limit: int = 10) -> dict:
         )
     )
 
+    # Counterpart memory: remembered commitments/assumptions join the same
+    # keep/reject gate as provenance="memory" claims. None/[] when no DB.
+    counterpart_history_ref = None
+    history = memory.get_history(counterpart)
+    if history:
+        counterpart_history_ref = history["ref"]
+        mem_claims = memory.history_to_claims(history)
+        brief["claims"] = list(brief.get("claims") or []) + mem_claims
+        remembered = history.get("commitments") or []
+        if remembered:
+            brief["open_commitments"] = list(brief.get("open_commitments") or []) + [
+                f"remembered: {c}" for c in remembered
+            ]
+        scout_log.append(
+            _scout(
+                "remembered",
+                f"Recalled {len(remembered)} commitment(s) and "
+                f"{len(history.get('assumptions') or [])} assumption(s) about {counterpart}.",
+            )
+        )
+
     event = {
         "scenario_id": "inbox_thread",
         "stakes": _guess_stakes(messages),
@@ -153,6 +174,7 @@ def import_from_inbox(limit: int = 10) -> dict:
         "degraded": degraded,
         "source": source,
         "agent_inbox_address": agentmail_client.ensure_inbox(),
+        "counterpart_history_ref": counterpart_history_ref,
     }
     if degraded:
         result["reason"] = "AGENTMAIL_API_KEY not set or inbox empty"

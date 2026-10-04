@@ -173,7 +173,24 @@ def run_debrief(state: ConversationState) -> dict:
         except Exception:
             notes = _build_deterministic_notes(state)
 
-    return {
-        "phase": "debrief",
-        "debrief_notes": notes,
-    }
+    result: dict = {"phase": "debrief", "debrief_notes": notes}
+
+    # Counterpart memory: debrief notes persist so the next conversation with
+    # this person starts from history, not zero. No-op without a database.
+    profile = state.get("counterpart_profile", {})
+    counterpart_name = str(profile.get("name") or "")
+    if counterpart_name:
+        try:
+            from context.memory import record_debrief
+
+            ref = record_debrief(
+                counterpart_name,
+                notes=notes,
+                source_event=state.get("conversation_source"),
+            )
+            if ref:
+                result["counterpart_history_ref"] = ref
+        except Exception:
+            pass
+
+    return result

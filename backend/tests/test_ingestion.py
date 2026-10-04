@@ -66,6 +66,35 @@ class IngestionTest(unittest.TestCase):
     def test_memo_degrades_without_key(self) -> None:
         self.assertIsNone(agentmail_client.send_memo("user@example.com", "s", "body"))
 
+    def test_memory_claims_merge_with_memory_provenance(self) -> None:
+        """Remembered commitments join the same keep/reject gate."""
+        import context.ingestion as ingestion
+
+        original = ingestion.memory.get_history
+        ingestion.memory.get_history = lambda name, limit=20: {
+            "ref": "dana-whitfield",
+            "counterpart_name": "Dana Whitfield",
+            "commitments": ["You promised a promotion case review in Q1."],
+            "assumptions": ["Dana prefers scope-based arguments."],
+            "notes": [],
+        }
+        try:
+            result = ingestion.import_from_inbox()
+        finally:
+            ingestion.memory.get_history = original
+
+        self.assertEqual(result["counterpart_history_ref"], "dana-whitfield")
+        mem_claims = [
+            c for c in result["brief"]["claims"] if c.get("provenance") == "memory"
+        ]
+        self.assertEqual(len(mem_claims), 1)
+        self.assertEqual(mem_claims[0]["decision"], "pending")
+        actions = [e["action"] for e in result["scout_log"]]
+        self.assertIn("remembered", actions)
+        self.assertTrue(
+            any("remembered:" in c for c in result["brief"]["open_commitments"])
+        )
+
     def test_sanitize_quarantines_injection_lines(self) -> None:
         text = (
             "See you Thursday.\n"
