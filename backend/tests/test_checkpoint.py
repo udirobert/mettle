@@ -48,3 +48,16 @@ class CheckpointerTests(unittest.TestCase):
         checkpointer.setup.assert_called_once()
         cleanup()
         context.__exit__.assert_called_once_with(None, None, None)
+
+    @patch("graph.checkpoint.PostgresSaver")
+    def test_unreachable_database_fails_with_a_clear_message_and_no_secrets(
+        self, mock_saver: MagicMock
+    ) -> None:
+        os.environ["DATABASE_URL"] = "postgresql://user:hunter2@example/db"
+        mock_saver.from_conn_string.return_value.__enter__.side_effect = OSError("down")
+
+        with self.assertRaises(RuntimeError) as raised:
+            create_checkpointer()
+
+        self.assertIn("DATABASE_URL", str(raised.exception))
+        self.assertNotIn("hunter2", str(raised.exception))

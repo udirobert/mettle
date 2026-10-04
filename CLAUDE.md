@@ -62,12 +62,13 @@ main agent in the CopilotKit runtime.
     debrief.py            # post-conversation node (+ memo, memory write)
     graph.py              # top-level phase router wiring all nodes
     checkpoint.py         # PostgresSaver via DATABASE_URL (Neon) + memory fallback
-  /context                # ingestion stack (planned)
+  /context                # ingestion stack
     agentmail_client.py   # agent inbox: fetch threads, send debrief memo
     research_client.py    # Exa scoped search → research claims
     ingestion.py          # forwarded thread → normalized sources
     memory.py             # counterpart history via Neon Postgres
     safety.py             # prompt-injection filtering + redaction
+    fixtures.py           # bundled sample thread (degraded-mode fallback)
   /triggers
     rules.py              # deterministic proactive nudge rules
   /voice
@@ -77,7 +78,7 @@ main agent in the CopilotKit runtime.
   serve.py                # local FastAPI AG-UI endpoint + /extract-context + /context/*
   server_config.py        # CORS / environment guards
   langgraph.json
-/scout                    # Mastra agent (planned) — inbox watch + triage, AG-UI
+/scout                    # Mastra agent — inbox watch + triage, AG-UI via @ag-ui/mastra
 /frontend
   /src
     /app
@@ -117,10 +118,11 @@ main agent in the CopilotKit runtime.
 cd backend && uv run python -m pytest tests/ -q
 ```
 
-90 tests pass. `test_coach.py` covers scenario loading, debate fields, and the
+107 tests pass. `test_coach.py` covers scenario loading, debate fields, and the
 perspectives→synthesize stage; `test_context.py` covers paste extract, claim
 decisions, and evidence grounding; `test_proactive.py` covers trigger rules,
-ingestion, enrichment fallback, and A2UI emit.
+ingestion, enrichment fallback, and A2UI emit; `test_ingestion.py` and
+`test_memory.py` cover the context stack and counterpart memory.
 
 Frontend type-check and build:
 
@@ -153,9 +155,9 @@ class ConversationState(TypedDict):
     coach_analysis: NotRequired[CoachAnalysis]
     coach_stage: NotRequired[Literal["idle", "debating", "perspectives", "ready"]]
     context_brief: NotRequired[ContextBrief]
-    # Scout additions (planned)
     scout_log: NotRequired[list[ScoutEvent]]
     agent_inbox_address: NotRequired[str]
+    counterpart_history_ref: NotRequired[str]
 ```
 
 `EvidenceClaim` includes `decision: pending | approved | rejected` and gains
@@ -236,13 +238,19 @@ the same keep/reject gate. Never an always-on scanner or free-roaming browser.
 
 ## Team Split
 
-- **Person A (reactive + opponent + live UX)**: `wingman_reactive.py`,
-  `opponent.py`, `wingman-side-panel.tsx`, pocket-wingman live surface.
-- **Person B (scout + coach + context + memory)**: `coach.py`, `context/`,
-  `wingman_proactive.py`, `triggers/rules.py`, `/scout` Mastra agent,
-  AgentMail + Exa integration, Neon memory, Coach/evidence UI, scout log UI.
+Three parallel lanes for the hackathon — see `docs/HACKATHON_SPLIT.md` for
+ownership and merge windows.
 
-Both work against the same `state.py` contract and `scenarios/salary_review.md`.
+- **Dev A (backend ingestion)**: `context/` (AgentMail, Exa, ingestion, safety,
+  memory wiring), context/debrief routes on `serve.py`, `scenarios/`.
+- **Dev B (frontend + product)**: docket hero, scout log + provenance UI,
+  `/context/import` + `/context/research` + `/debrief/memo` UI wiring,
+  demo script and submission docs.
+- **Dev C (Scout + persistence)**: `scout/` Mastra agent, Neon Postgres
+  checkpointer hardening, `context/memory.py` counterpart memory.
+
+All lanes work against the same `state.py` contract and
+`scenarios/salary_review.md`.
 
 ## Development
 
@@ -255,12 +263,14 @@ npm run dev             # Next.js (3000) + AG-UI endpoint via serve.py (8123)
 
 `npm run dev:agent` now runs `backend/serve.py` (uvicorn + FastAPI + LangGraphAGUIAgent)
 instead of `langgraph-cli dev`. The `HttpAgent` in `api/copilotkit/[[...slug]]/route.ts`
-points at `http://localhost:8123/`. When the Scout ships, a second `HttpAgent`
-(or Mastra's own AG-UI endpoint) registers beside it.
+points at `http://localhost:8123/`. The Scout registers beside it via
+`MastraAgent.getRemoteAgents({ mastraClient })` (needs `@mastra/client-js` +
+`@ag-ui/mastra`; snippet in `scout/README.md`) — a second raw `HttpAgent`
+does not work because Mastra's `/copilotkit` route is a full runtime.
 
-Backend deps to add for the new stack: `exa-py`, `agentmail`. Credentials in
+Backend deps for the new stack: `exa-py`, `agentmail`. Credentials in
 `.env` (gitignored): `NEON_AI_GATEWAY_*`→`OPENAI_*`, `DATABASE_URL`,
-`EXA_API_KEY`, `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX_ID`, `TAVILY_API_KEY`.
+`EXA_API_KEY`, `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX_ID`, `MASTRA_API_KEY`.
 
 ## Tech Stack
 
@@ -324,10 +334,9 @@ they agreed / they split / the move.
 
 ## Known Gaps
 
-- **Scout agent (Mastra)** — inbox watch currently planned as a FastAPI poll
-  in `serve.py` first; the Mastra AG-UI agent takes over when it lands.
-- **Counterpart memory** — schema for persisted commitments/history in Neon
-  not yet defined.
+- **Scout streaming** — the Mastra agent typechecks and registers, but a
+  streamed run emitting `scout_log` state events is not yet verified live.
+  The `/context/import` poll path is the working fallback.
 - **A2UI action forwarding** — "Get a reframe" is handled locally in the UI;
   not yet forwarded to the agent as an `a2uiAction`.
 - **LiveKit voice** — not wired; typed turns are the supported input path.

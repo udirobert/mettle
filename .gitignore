@@ -54,3 +54,4 @@ next-env.d.ts
 # Tools
 .claude
 .scratch/
+.commandcode/
