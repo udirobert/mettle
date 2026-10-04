@@ -58,6 +58,24 @@ mode or one integration boundary.
    it enters shared state; Coach debates only with kept claims. ✅
 8. Coach council stages perspectives then synthesis (agreed / split / move). ✅
 
+## Current Phase: Personal-Agent Reposition
+
+New north star (`docs/NORTH_STAR.md`): Mettle is the personal agent for
+conversations you can't afford to get wrong. Hero demo event: `salary_review`
+(a raise negotiation with the user's manager); `lp_renewal` stays as contrast.
+
+New surfaces and owners:
+
+| Owner    | Scope                                                                       |
+| -------- | --------------------------------------------------------------------------- |
+| Person A | Reactive + opponent + live UX; pocket-wingman live surface; salary persona  |
+| Person B | Scout + coach + context + memory: `/scout` Mastra agent, `backend/context/` |
+|          | (AgentMail, Exa, memory), Neon wiring, scout log + provenance UI            |
+
+New shared-state fields (`scout_log`, `agent_inbox_address`,
+`EvidenceClaim.provenance`) follow the same protocol: propose in `state.py`,
+one small commit, both branches absorb before relying on it.
+
 ## Avoid These Conflicts
 
 - Do not both edit `graph.py` for node-local behavior. Keep node logic within

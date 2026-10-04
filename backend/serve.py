@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel, Field
 
+from context.ingestion import import_from_inbox
+from context import agentmail_client, research_client
 from graph.checkpoint import create_checkpointer
 from graph.coach import run_coach
 from graph.context import extract_brief_from_paste
@@ -81,6 +83,53 @@ async def extract_context(body: ExtractContextRequest) -> dict:
         body.text,
         counterpart_name=body.counterpart_name,
     )
+
+
+class ResearchRequest(BaseModel):
+    topic: str
+    counterpart_name: str | None = Field(default=None)
+    organization: str | None = Field(default=None)
+
+
+class MemoRequest(BaseModel):
+    to: str
+    subject: str = Field(default="Your Mettle debrief")
+    notes: list[str] = Field(default_factory=list)
+
+
+@app.post("/context/import")
+async def context_import() -> dict:
+    """Pull the agent's own inbox → draft event + evidence brief.
+
+    All claims arrive decision=pending with provenance labels; the HITL
+    keep/reject gate decides what reaches Coach. Degrades to the bundled
+    seed thread when the inbox is unconfigured — never 500s.
+    """
+    return import_from_inbox()
+
+
+@app.post("/context/research")
+async def context_research(body: ResearchRequest) -> dict:
+    """Scoped Exa research → provenance="web" claims for the same gate."""
+    return research_client.research(
+        body.topic,
+        counterpart_name=body.counterpart_name,
+        organization=body.organization,
+    )
+
+
+@app.post("/debrief/memo")
+async def debrief_memo(body: MemoRequest) -> dict:
+    """Email the debrief memo to the user from the agent's own address."""
+    text = "\n".join(f"• {note}" for note in body.notes) or "Debrief complete."
+    sent = agentmail_client.send_memo(to=body.to, subject=body.subject, text=text)
+    if sent is None:
+        return {
+            "sent": False,
+            "degraded": True,
+            "reason": "AGENTMAIL_API_KEY not set or send failed",
+        }
+    return {"sent": True, **sent}
 
 
 def _build_state(req: WebMCPStateRequest) -> ConversationState:
