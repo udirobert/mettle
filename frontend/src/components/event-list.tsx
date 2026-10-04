@@ -94,8 +94,10 @@ export function EventList({
         </div>
 
         <p className={styles.heroStakes}>{SALARY_EVENT.stakes.replace(/\.$/, '')}</p>
-        <h2 className={styles.heroName}>{SALARY_EVENT.counterpart}</h2>
-        <p className={styles.heroRole}>{SALARY_EVENT.counterpartRole}</p>
+        <div className={styles.heroWho}>
+          <h2 className={styles.heroName}>{SALARY_EVENT.counterpart}</h2>
+          <p className={styles.heroRole}>{SALARY_EVENT.counterpartRole}</p>
+        </div>
 
         <div className={styles.heroMeta}>
           <span className={styles.heroCounterpart}>
