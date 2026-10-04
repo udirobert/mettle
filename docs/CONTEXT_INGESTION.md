@@ -38,7 +38,7 @@ checkbox.
 ## The Scout Agent
 
 The Scout is a separate, lightweight agent (Mastra, exposed over AG-UI
-`@mastra/agui`) that owns pre-arrival work:
+`@ag-ui/mastra`) that owns pre-arrival work:
 
 - Watches the AgentMail inbox for forwarded threads.
 - Detects the counterpart, stakes, and conversation type; creates or updates

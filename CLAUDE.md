@@ -27,7 +27,7 @@ The agent operates in five modes:
 - **Scout** — watches the agent's own AgentMail inbox for forwarded threads,
   triages them into docket events, extracts evidence claims, and runs scoped
   Exa research. Implemented as a separate Mastra agent (AG-UI via
-  `@mastra/agui`) alongside the main graph. Drafts only — the user approves
+  `@ag-ui/mastra`) alongside the main graph. Drafts only — the user approves
   every claim.
 - **Coach** — adversarial council (Skeptic, Counterpart, Negotiator) then
   synthesis that surfaces disagreement; grounded only in human-kept claims.

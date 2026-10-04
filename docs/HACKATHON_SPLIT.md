@@ -103,11 +103,16 @@ checkpoint.py`, `backend/context/memory.py`.
 - Verify `DATABASE_URL` → `PostgresSaver` boots; write `memory.py` —
   counterpart-history table (commitments, changed assumptions, counterpart
   name) + read helpers for ingest / write helpers for debrief
-- `scout/` — Mastra agent over `@mastra/agui`: watches AgentMail, triages,
+- `scout/` — Mastra agent over `@ag-ui/mastra` (verified in-tree): watches
+  AgentMail, triages,
   calls Lane A's `/context/import` + `/context/research`, writes `scout_log`
   events into shared state
-- Register second `HttpAgent` in `api/copilotkit/[[...slug]]/route.ts` —
-  the only shared-file touch; coordinate at merge window 2
+- Register the scout in the CopilotKit runtime — **not** a second
+  `HttpAgent`: Mastra's `/copilotkit` route is a full CopilotKit runtime, so
+  use `MastraAgent.getRemoteAgents({ mastraClient })` (needs
+  `@mastra/client-js` + `@ag-ui/mastra`; snippet in `scout/README.md`).
+  Shared-file touch on `route.ts`; coordinate at merge window 2. Dev B uses
+  `scout` as the agent key when rendering the log.
 - **Hard checkpoint at 90 min**: Mastra AG-UI streaming or cut. Fallback =
   Lane A's FastAPI poll endpoint _is_ the scout; the log says "Scout" either
   way. A stalled Mastra port costs the demo nothing.
