@@ -43,6 +43,7 @@ export const SALARY_EVENT: MettleEvent = {
   },
   counterpartProfile: {
     name: 'Dana Whitfield',
+    organization: 'Meridian Labs',
     role: 'VP Product, Meridian Labs',
     style: ['pragmatic', 'data-driven', 'budget-guarded', 'fair but firm'],
     leverage: 'Controls the comp recommendation; anything above band needs VP sign-off and the cycle closes this quarter.',

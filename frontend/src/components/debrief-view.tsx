@@ -13,6 +13,7 @@ import {
   Link2,
 } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { localMemoryKeys, memoryRef } from '@/lib/counterpart-identity';
 import { buildFollowUpMemo, buildMailtoHref, copyText } from '@/lib/share-artifacts';
 import { encodeShareLink } from '@/lib/share-link';
 import { withDemoParam } from '@/lib/demo';
@@ -23,12 +24,14 @@ type PersistedDebrief = {
   savedAt: string;
 };
 
-function debriefKey(counterpart: string) {
-  return `mettle.debrief.${counterpart.toLowerCase().replace(/\s+/g, '-')}`;
+// Keyed by the counterpart's identity (name + organisation), not the bare name,
+// so two different people with the same name do not share a record.
+function debriefKey(ref: string) {
+  return localMemoryKeys(ref).debrief;
 }
 
-function carryKey(counterpart: string) {
-  return `mettle.carry.${counterpart.toLowerCase().replace(/\s+/g, '-')}`;
+function carryKey(ref: string) {
+  return localMemoryKeys(ref).carry;
 }
 
 function classifyNote(note: string): 'commitment' | 'assumption' | 'next' {
@@ -67,7 +70,7 @@ export function DebriefView() {
     const open = priorDebrief.notes.filter((note) => classifyNote(note) !== 'commitment');
     try {
       window.localStorage.setItem(
-        carryKey(counterpartFull),
+        carryKey(counterpartRef),
         JSON.stringify({ items: open, from: priorDebrief.savedAt }),
       );
     } catch {
@@ -84,6 +87,11 @@ export function DebriefView() {
       ? state.counterpart_profile.name
       : 'Counterpart';
   const counterpartName = counterpartFull.split(' ')[0] || 'Counterpart';
+  const counterpartOrg =
+    typeof state.counterpart_profile?.organization === 'string'
+      ? state.counterpart_profile.organization
+      : '';
+  const counterpartRef = memoryRef(counterpartFull, counterpartOrg);
 
   // The memo comes back to the user, not to the agent's own inbox — but the
   // agent can only send to an address it knows, so the user's forward-path
@@ -99,22 +107,21 @@ export function DebriefView() {
       savedAt: new Date().toISOString(),
     };
     try {
-      window.localStorage.setItem(debriefKey(counterpartFull), JSON.stringify(payload));
+      window.localStorage.setItem(debriefKey(counterpartRef), JSON.stringify(payload));
     } catch {
       /* storage unavailable — debrief stays in-session only */
     }
-  }, [notes, counterpartFull]);
+  }, [notes, counterpartFull, counterpartRef]);
 
   const priorDebrief = useMemo<PersistedDebrief | null>(() => {
     try {
-      const raw = window.localStorage.getItem(debriefKey(counterpartFull));
+      const raw = window.localStorage.getItem(debriefKey(counterpartRef));
       return raw ? (JSON.parse(raw) as PersistedDebrief) : null;
     } catch {
       return null;
     }
     // Read once per counterpart change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counterpartFull]);
+  }, [counterpartRef]);
 
   // Quote-backed commitments: when the debrief node ran, only notes with a
   // verbatim transcript line count as commitments. Commitment-shaped notes

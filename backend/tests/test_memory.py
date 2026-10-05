@@ -119,3 +119,147 @@ class ForgetTests(unittest.TestCase):
         conn.execute.return_value.rowcount = 0
         with patch("psycopg.connect", return_value=conn):
             self.assertEqual(memory.forget("nobody"), 0)
+
+
+class IdentityTests(unittest.TestCase):
+    """Shared vectors: frontend/src/lib/counterpart-identity.test.ts asserts the
+    same table, so the two implementations cannot drift apart."""
+
+    ORGANIZATION_VECTORS = [
+        ("Meridian Labs", "meridianlabs"),
+        ("Meridian Labs, Inc.", "meridianlabs"),
+        ("meridianlabs.com", "meridianlabs"),
+        ("mail.meridianlabs.co.uk", "meridianlabs"),
+        ("@meridianlabs.com", "meridianlabs"),
+        ("dana.whitfield@meridianlabs.com", "meridianlabs"),
+        ("dana@gmail.com", ""),
+        ("Acme Co", "acme"),
+        ("gmail.com", ""),
+        ("", ""),
+    ]
+    KEY_VECTORS = [
+        (("Dana Whitfield", None), "dana-whitfield"),
+        (("Dana Whitfield", "Meridian Labs"), "dana-whitfield--meridianlabs"),
+        (("Dana Whitfield", "dana@gmail.com"), "dana-whitfield"),
+        (("Dana Whitfield", "meridianlabs.com"), "dana-whitfield--meridianlabs"),
+        ((" Dana  Reyes! ", "Reyes & Co"), "dana-reyes--reyes"),
+    ]
+
+    def test_organization_key_vectors(self) -> None:
+        for raw, expected in self.ORGANIZATION_VECTORS:
+            self.assertEqual(memory.organization_key(raw), expected, raw)
+        self.assertEqual(memory.organization_key(None), "")
+
+    def test_counterpart_key_vectors(self) -> None:
+        for (name, org), expected in self.KEY_VECTORS:
+            self.assertEqual(memory.counterpart_key(name, org), expected, (name, org))
+
+    def test_company_name_and_email_domain_identify_the_same_place(self) -> None:
+        self.assertEqual(
+            memory.counterpart_key("Dana Whitfield", "Meridian Labs"),
+            memory.counterpart_key("Dana Whitfield", "meridianlabs.com"),
+        )
+
+    def test_two_people_with_one_name_get_different_keys(self) -> None:
+        self.assertNotEqual(
+            memory.counterpart_key("Dana Whitfield", "meridianlabs.com"),
+            memory.counterpart_key("Dana Whitfield", "acme.io"),
+        )
+
+    def test_resolve_key_accepts_keys_and_display_names(self) -> None:
+        self.assertEqual(
+            memory.resolve_key("dana-whitfield--meridianlabs"),
+            "dana-whitfield--meridianlabs",
+        )
+        self.assertEqual(memory.resolve_key("dana-whitfield"), "dana-whitfield")
+        self.assertEqual(memory.resolve_key("Dana Whitfield"), "dana-whitfield")
+
+
+class OrganizationLookupTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.original_environment = os.environ.copy()
+        os.environ["DATABASE_URL"] = "postgresql://example"
+        memory._schema_ready = False
+
+    def tearDown(self) -> None:
+        os.environ.clear()
+        os.environ.update(self.original_environment)
+
+    def _stored(self, mapping):
+        """Patch _history_for_key with a dict of key -> history."""
+        return patch.object(
+            memory,
+            "_history_for_key",
+            side_effect=lambda key, limit=20: mapping.get(key),
+        )
+
+    def test_qualified_record_is_an_exact_match(self) -> None:
+        rec = {
+            "ref": "dana-whitfield--meridianlabs",
+            "commitments": ["a"],
+            "assumptions": [],
+            "notes": [],
+        }
+        with self._stored({"dana-whitfield--meridianlabs": rec}):
+            got = memory.get_history("Dana Whitfield", organization="meridianlabs.com")
+        self.assertEqual(got["match"], "exact")
+        self.assertEqual(got["ref"], "dana-whitfield--meridianlabs")
+
+    def test_a_different_organization_does_not_see_the_other_persons_record(
+        self,
+    ) -> None:
+        rec = {
+            "ref": "dana-whitfield--meridianlabs",
+            "commitments": ["a"],
+            "assumptions": [],
+            "notes": [],
+        }
+        with self._stored({"dana-whitfield--meridianlabs": rec}):
+            self.assertIsNone(
+                memory.get_history("Dana Whitfield", organization="acme.io")
+            )
+
+    def test_legacy_name_only_record_is_returned_but_marked_unconfirmed(self) -> None:
+        legacy = {
+            "ref": "dana-whitfield",
+            "commitments": ["old"],
+            "assumptions": [],
+            "notes": [],
+        }
+        with self._stored({"dana-whitfield": legacy}):
+            got = memory.get_history("Dana Whitfield", organization="meridianlabs.com")
+        self.assertEqual(got["match"], "name_only")
+        claims = memory.history_to_claims(got)
+        self.assertIn("matched by name only", claims[0]["claim"])
+
+    def test_exact_match_claims_carry_no_caveat(self) -> None:
+        rec = {
+            "ref": "k",
+            "commitments": ["a"],
+            "assumptions": [],
+            "notes": [],
+            "match": "exact",
+        }
+        self.assertNotIn("name only", memory.history_to_claims(rec)[0]["claim"])
+
+    def test_record_debrief_writes_under_the_qualified_key(self) -> None:
+        conn = _fake_conn()
+        with patch("psycopg.connect", return_value=conn):
+            ref = memory.record_debrief(
+                "Dana Whitfield", notes=["x"], organization="Meridian Labs"
+            )
+        self.assertEqual(ref, "dana-whitfield--meridianlabs")
+        insert = [c for c in conn.execute.call_args_list if "INSERT" in str(c.args[0])][
+            0
+        ]
+        self.assertEqual(insert.args[1][0], "dana-whitfield--meridianlabs")
+
+    def test_forget_deletes_the_exact_qualified_key(self) -> None:
+        conn = _fake_conn()
+        conn.execute.return_value.rowcount = 1
+        with patch("psycopg.connect", return_value=conn):
+            self.assertEqual(memory.forget("dana-whitfield--meridianlabs"), 1)
+        delete = [c for c in conn.execute.call_args_list if "DELETE" in str(c.args[0])][
+            0
+        ]
+        self.assertEqual(delete.args[1], ("dana-whitfield--meridianlabs",))

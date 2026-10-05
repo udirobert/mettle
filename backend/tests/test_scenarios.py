@@ -198,3 +198,34 @@ class ScenarioForStateTests(unittest.TestCase):
         )
         self.assertEqual(result["coach_stage"], "ready")
         self.assertTrue(result["coach_analysis"]["perspectives"])
+
+
+class ScenarioOrganizationTests(unittest.TestCase):
+    def test_salary_review_declares_its_organization(self) -> None:
+        from graph.scenarios import load_scenario
+
+        profile = load_scenario("salary_review")["counterpart_profile"]
+        self.assertEqual(profile["organization"], "Meridian Labs")
+
+    def test_scenarios_without_an_organization_default_to_empty(self) -> None:
+        from graph.scenarios import load_scenario
+
+        self.assertEqual(
+            load_scenario("lp_renewal")["counterpart_profile"]["organization"], ""
+        )
+
+    def test_inbox_drafted_event_keeps_its_organization(self) -> None:
+        from graph.scenarios import scenario_for_state
+
+        scenario = scenario_for_state(
+            {
+                "scenario_id": "inbox_thread",
+                "counterpart_profile": {
+                    "name": "Dana",
+                    "organization": "meridianlabs.com",
+                },
+            }
+        )
+        self.assertEqual(
+            scenario["counterpart_profile"]["organization"], "meridianlabs.com"
+        )

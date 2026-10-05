@@ -1,6 +1,7 @@
 ---
 stakes: "A long-deferred raise: $185k base and the senior title, after two cycles of 'next time.'"
 counterpart_name: Dana Whitfield
+counterpart_organization: Meridian Labs
 counterpart_role: VP of Product, your direct manager at Meridian Labs
 counterpart_style: pragmatic, data-driven, budget-guarded, fair but firm
 counterpart_leverage: Controls the comp recommendation; anything above band needs VP sign-off and the cycle closes this quarter.

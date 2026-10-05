@@ -83,6 +83,7 @@ def _parse_counterpart_profile(frontmatter: dict) -> dict:
 
     return {
         "name": frontmatter.get("counterpart_name", "The counterpart"),
+        "organization": frontmatter.get("counterpart_organization", ""),
         "role": frontmatter.get("counterpart_role", ""),
         "style": style,
         "leverage": frontmatter.get("counterpart_leverage", ""),
@@ -136,6 +137,7 @@ def scenario_for_state(state: dict) -> dict[str, object]:
             "stakes": str(state.get("stakes") or ""),
             "counterpart_profile": {
                 "name": name,
+                "organization": str(profile.get("organization") or ""),
                 "role": str(profile.get("role") or ""),
                 "style": list(style),
                 "leverage": str(profile.get("leverage") or ""),

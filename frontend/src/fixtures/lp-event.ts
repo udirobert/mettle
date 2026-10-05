@@ -20,6 +20,8 @@ export type MettleEvent = {
   timeUntil: string;
   counterpartProfile: {
     name: string;
+    /** Where they work. Qualifies memory so two people with one name stay apart. */
+    organization?: string;
     role: string;
     style: string[];
     leverage: string;
