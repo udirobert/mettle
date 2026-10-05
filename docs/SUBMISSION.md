@@ -112,6 +112,18 @@ Each sponsor does a job Mettle cannot do without. File paths point to the code.
 - **Honest notes:** without a key, research returns empty with `degraded: true`
   and Scout logs the step as `skipped` rather than inventing sources.
 
+### Treating the inbox as hostile
+
+- **Why it's necessary:** an agent that reads your email and the open web will
+  meet text written to manipulate it. Mettle never lets that text act.
+- **How:** forwarded threads are stripped of instruction-like lines before
+  extraction (`backend/context/safety.py`). Scout cleans every tool result the
+  same way, keeps only clean source URLs, and logs a `quarantined` event so you
+  can see what was withheld (`scout/src/untrusted.ts`). Nothing reaches the
+  Coach until you approve it claim by claim.
+- **Honest status:** `GET /scout/status` reports what is really connected, and
+  every skipped step says why ("EXA_API_KEY not set" vs "backend unreachable").
+
 ### Featherless — the fallback model
 
 - **Why it's necessary:** a demo should not die with one provider. Scout lists
@@ -122,11 +134,12 @@ Each sponsor does a job Mettle cannot do without. File paths point to the code.
 
 ### What a judge can check in two minutes
 
-1. `curl :4111/scout/status` → `{"storage":"neon"}`.
+1. `curl :4111/scout/status` → storage, model order, and whether the backend is reachable.
 2. `curl -X POST :4111/scout/brief` → `awaiting_approval` with the draft.
 3. Restart the Scout server, then
    `curl -X POST :4111/scout/brief/<runId>/decision -d '{"approved":true}'` →
-   `released`. The decision survived the restart.
+   `released`. The decision survived the restart. (`npm run smoke:briefing` in
+   `scout/` does this with a real second process and checks both outcomes.)
 
 ## Graceful degradation is a feature
 

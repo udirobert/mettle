@@ -45,6 +45,37 @@ spans and the workflow snapshot land in `mastra_ai_spans` /
 `mastra_workflow_snapshot`. Mastra creates its own `mastra_*` tables on first
 boot (about 45), separate from Mettle's `counterpart_memory`.
 
+## Untrusted input and honest status
+
+Email and web results are hostile input. Before any tool result reaches a model,
+`src/untrusted.ts` strips control/bidi characters, drops whole lines that look
+like instructions to an agent (the same rule as `backend/context/safety.py`),
+caps length, and keeps only clean `http(s)` source URLs without query strings or
+credentials. Withheld lines are counted and logged as a `quarantined` event, and
+the agent's instructions say tool output is data, never instructions.
+
+Skipped steps say _why_: `Inbox unavailable (… EXA_API_KEY not set)` or
+`(backend unreachable)`, so "integration off" is never confused with "no
+results". `GET /scout/status` reports what is actually connected (storage,
+model fallback order, backend reachable) with no secrets:
+
+```json
+{
+  "storage": "neon",
+  "models": ["primary", "featherless"],
+  "backend": { "reachable": true, "url": "http://localhost:8123" },
+  "summary": "State in Neon Postgres · models: primary → featherless · backend reachable"
+}
+```
+
+## Tests
+
+- `npm test` — 35 unit tests (fallback order, tool mapping, injection cases,
+  capability report, no secret leakage).
+- `npm run smoke:briefing` — starts a briefing, then decides it from a **new
+  Node process** (approve and reject), against whatever storage is configured
+  (Neon when `DATABASE_URL` is set). Proves the approval survives a restart.
+
 ## Model selection and fallback
 
 `src/mastra/models.ts` builds the agent's model list from whatever is

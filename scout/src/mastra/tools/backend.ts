@@ -1,6 +1,6 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
-import { cleanUntrusted, safeUrl } from "../../untrusted";
+import { cleanUntrusted, safeSourceId } from "../../untrusted";
 
 const BACKEND_URL = (process.env.BACKEND_URL ?? "http://localhost:8123").replace(
   /\/$/,
@@ -102,7 +102,7 @@ export async function researchFn(input: ResearchInput): Promise<ResearchResult> 
       ...new Set(
         claims
           .flatMap((c) => c.source_ids ?? [])
-          .map((id) => (/^https?:/i.test(id) ? safeUrl(id) : id))
+          .map(safeSourceId)
           .filter((id): id is string => Boolean(id)),
       ),
     ];

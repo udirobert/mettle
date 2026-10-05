@@ -156,6 +156,29 @@ Findings other lanes should know:
   `record_debrief(commitments=…)`, so remembered commitments surface as
   `provenance="memory"` claims on the next import (3d7ea45).
 
+Hardening backlog for other lanes (found by reviewing how comparable agents
+handle the same problems; ordered by value for effort):
+
+1. **Web research is not sanitized** (Dev A, `context/research_client.py`). Email
+   goes through `sanitize_thread_text`; Exa highlights become claims unfiltered.
+   A hostile page could plant instruction-like text that a user later approves
+   into Coach. One-line fix: run each highlight through `sanitize_thread_text`
+   and drop/flag quarantined ones.
+2. **Inbox idempotency** (Dev A). Store AgentMail `message_id` under a unique
+   constraint so webhook and poll paths converge and re-imports don't duplicate
+   claims. Verify any webhook with Svix on the raw body before parsing.
+3. **LLM timeouts and error classes** (`graph/llm.py`). Add an abort deadline,
+   and separate network/provider errors from invalid-output retries, so a slow
+   gateway can't hang a turn.
+4. **"Visible" vs "in context"** (Dev B). Approved claims should be individually
+   includable in Coach context, with the count shown, so context never silently
+   grows.
+5. **Redacted "copy debug report"** (Dev B). Job/run state, last event, error
+   class; strip message bodies, URL queries and tokens. Scout's `redact()` in
+   `scout/src/untrusted.ts` is reusable.
+6. **Durable scout jobs** (later). Lease + heartbeat + stale recovery in Neon so
+   a forwarded thread is processed even if a deploy lands mid-run.
+
 Credentials: `neon env pull --project-id billowing-hill-98356084 -s ai-gateway`
 (from `infra/neon/`) for the gateway; `FEATHERLESS_API_KEY` in `scout/.env`.
 

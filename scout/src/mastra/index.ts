@@ -4,8 +4,9 @@ import { registerCopilotKit } from "@ag-ui/mastra/copilotkit";
 import { MastraStorageExporter, Observability, SensitiveDataFilter } from "@mastra/observability";
 import { scoutAgent } from "./agents/scout-agent";
 import { briefingWorkflow } from "./workflows/briefing";
-import { createScoutStorage, storageKind } from "./storage";
+import { createScoutStorage } from "./storage";
 import { runScout } from "../run-scout";
+import { describeCapabilities } from "../capabilities";
 
 export const mastra = new Mastra({
   agents: { scout: scoutAgent },
@@ -39,10 +40,10 @@ export const mastra = new Mastra({
         handler: async (c) => c.json({ scout_log: await runScout() }),
       }),
 
-      // Where the state lives — lets the UI/demo say so honestly.
+      // What is actually connected — lets the UI/demo say so honestly.
       registerApiRoute("/scout/status", {
         method: "GET",
-        handler: async (c) => c.json({ storage: storageKind() }),
+        handler: async (c) => c.json(await describeCapabilities()),
       }),
 
       // Durable approval gate. Start a briefing: Scout gathers, then the run

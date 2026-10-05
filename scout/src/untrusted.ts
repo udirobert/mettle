@@ -53,10 +53,18 @@ export function safeUrl(input: unknown): string | null {
     const u = new URL(input.trim());
     if (u.protocol !== "https:" && u.protocol !== "http:") return null;
     if (u.username || u.password) return null;
-    return `${u.origin}${u.pathname}`;
+    return u.pathname === "/" ? u.origin : `${u.origin}${u.pathname}`;
   } catch {
     return null;
   }
+}
+
+/** A source id is either a clean http(s) URL or a short opaque id like "exa-2". */
+export function safeSourceId(input: unknown): string | null {
+  if (typeof input !== "string") return null;
+  const id = input.trim();
+  if (/^https?:/i.test(id)) return safeUrl(id);
+  return /^[\w.-]{1,64}$/.test(id) ? id : null;
 }
 
 /** Redact secrets and URL query strings from text that may be logged or shown
