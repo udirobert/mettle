@@ -83,12 +83,33 @@ Known limits of Slice A:
 
 - The docket's inbox card calls `POST /context/import` on load, so it shows the
   bundled sample thread until AgentMail is configured. It says so.
-- "Forget" removes what the backend stores; the older browser-local carry-over
-  marker in `localStorage` (written by the debrief) is not cleared by it.
-- Memory is matched by name only; the panel says so. A collision-proof key
-  needs a contract change (name + organisation).
 - Opening an inbox draft uses `scenario_id: "inbox_thread"`; the Coach falls
   back to the stakes/profile already in state (`scenario_for_state`).
+
+### Memory identity (follow-up to Slice A)
+
+A counterpart is a **name plus an organisation**, so two different "Dana"s no
+longer share a memory.
+
+- Key: `dana-whitfield--meridianlabs`. The organisation part normalises a
+  company name _or_ an email domain to one token: "Meridian Labs, Inc." and
+  `dana@meridianlabs.com` both give `meridianlabs`. Free-mail domains identify
+  nobody. Logic lives in `backend/context/memory.py` and
+  `frontend/src/lib/counterpart-identity.ts`, tested against one shared table.
+- Where the organisation comes from: the sender's email domain at inbox import;
+  `counterpart_organization` in a scenario file; `counterpartProfile.organization`
+  in a frontend fixture. It travels in `counterpart_profile.organization`.
+- Lookup at ingest and in the panel tries the qualified record first. Older
+  name-only records (written before this) are still found but are marked
+  _unconfirmed_ — the panel and the "you previously committed" claim both say
+  "matched by name only". Nothing is migrated or deleted automatically.
+- `GET/DELETE /memory/{ref}` is unchanged in shape; `ref` may now be qualified.
+  It is exact-match: no fallback happens server-side.
+- **Forget** removes the record on screen and the browser-local copies for that
+  person (saved debrief + carried-over open items), and says how many of each.
+  It leaves other people's local data alone.
+- Still open: a counterpart with no known organisation can only be matched by
+  name (that is what the caveat is for).
 
 ## Rules
 

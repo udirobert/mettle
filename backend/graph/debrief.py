@@ -327,6 +327,7 @@ def run_debrief(state: ConversationState) -> dict:
 
             ref = record_debrief(
                 counterpart_name,
+                organization=str(profile.get("organization") or "") or None,
                 commitments=[item["text"] for item in verified],
                 notes=other_notes + unverified,
                 source_event=state.get("conversation_source"),

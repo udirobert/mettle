@@ -266,9 +266,9 @@ async def memory_get(ref: str) -> dict:
             "degraded": True,
             "reason": "DATABASE_URL not set",
         }
-    history = memory.get_history(ref)
+    history = memory.get_history_by_ref(ref)
     if history is None:
-        return {"ref": memory.counterpart_key(ref), "found": False}
+        return {"ref": memory.resolve_key(ref), "found": False}
     return {"ref": history["ref"], "found": True, "history": history}
 
 
@@ -285,12 +285,12 @@ async def memory_forget(ref: str) -> dict:
     deleted = memory.forget(ref)
     if deleted is None:
         return {
-            "ref": memory.counterpart_key(ref),
+            "ref": memory.resolve_key(ref),
             "deleted": 0,
             "degraded": True,
             "reason": "memory unavailable",
         }
-    return {"ref": memory.counterpart_key(ref), "deleted": deleted}
+    return {"ref": memory.resolve_key(ref), "deleted": deleted}
 
 
 add_langgraph_fastapi_endpoint(

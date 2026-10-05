@@ -121,7 +121,7 @@ class IngestionTest(unittest.TestCase):
         import context.ingestion as ingestion
 
         original = ingestion.memory.get_history
-        ingestion.memory.get_history = lambda name, limit=20: {
+        ingestion.memory.get_history = lambda name, limit=20, organization=None: {
             "ref": "dana-whitfield",
             "counterpart_name": "Dana Whitfield",
             "commitments": ["You promised a promotion case review in Q1."],
@@ -184,3 +184,45 @@ class IngestionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_organization_comes_from_the_senders_email_domain(self):
+        """The counterpart's domain qualifies the memory lookup and the profile."""
+        import context.ingestion as ingestion
+
+        seen = {}
+        original = ingestion.memory.get_history
+
+        def spy(name, limit=20, organization=None):
+            seen["name"], seen["organization"] = name, organization
+            return None
+
+        ingestion.memory.get_history = spy
+        try:
+            result = ingestion.import_from_inbox()
+        finally:
+            ingestion.memory.get_history = original
+
+        self.assertEqual(seen["organization"], "meridianlabs.com")
+        self.assertEqual(
+            result["event"]["counterpart_profile"]["organization"], "meridianlabs.com"
+        )
+
+    def test_free_mail_sender_identifies_no_organization(self):
+        import context.ingestion as ingestion
+
+        messages = [
+            {"from": "Dana Whitfield <dana@gmail.com>", "subject": "s", "text": "hi"},
+            {
+                "from": "Dana Whitfield <dana.w@meridianlabs.com>",
+                "subject": "s",
+                "text": "hi",
+            },
+        ]
+        # A free-mail address is skipped; the next real domain is used.
+        self.assertEqual(
+            ingestion._counterpart_organization(messages, "Dana Whitfield"),
+            "meridianlabs.com",
+        )
+        self.assertEqual(
+            ingestion._counterpart_organization(messages[:1], "Dana Whitfield"), ""
+        )

@@ -45,16 +45,30 @@ class MemoryRouteTests(unittest.TestCase):
             "assumptions": [],
             "notes": [],
         }
-        with patch.object(serve.memory, "get_history", return_value=history):
+        with patch.object(serve.memory, "get_history_by_ref", return_value=history):
             body = self.client.get("/memory/Dana Reyes").json()
         self.assertEqual(body["found"], True)
         self.assertEqual(body["history"]["commitments"], ["Q3 review"])
 
     def test_get_unknown_counterpart_is_found_false_not_degraded(self) -> None:
         os.environ["DATABASE_URL"] = "postgresql://example"
-        with patch.object(serve.memory, "get_history", return_value=None):
+        with patch.object(serve.memory, "get_history_by_ref", return_value=None):
             body = self.client.get("/memory/nobody").json()
         self.assertEqual(body, {"ref": "nobody", "found": False})
+
+    def test_qualified_refs_pass_through_untouched(self) -> None:
+        os.environ["DATABASE_URL"] = "postgresql://example"
+        with patch.object(serve.memory, "get_history_by_ref", return_value=None) as get:
+            body = self.client.get("/memory/dana-whitfield--meridianlabs").json()
+        get.assert_called_once_with("dana-whitfield--meridianlabs")
+        self.assertEqual(body["ref"], "dana-whitfield--meridianlabs")
+
+    def test_delete_targets_the_exact_qualified_record(self) -> None:
+        os.environ["DATABASE_URL"] = "postgresql://example"
+        with patch.object(serve.memory, "forget", return_value=2) as forget:
+            body = self.client.delete("/memory/dana-whitfield--meridianlabs").json()
+        forget.assert_called_once_with("dana-whitfield--meridianlabs")
+        self.assertEqual(body, {"ref": "dana-whitfield--meridianlabs", "deleted": 2})
 
     def test_delete_reports_count_and_unavailable(self) -> None:
         os.environ["DATABASE_URL"] = "postgresql://example"

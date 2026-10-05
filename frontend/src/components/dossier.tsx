@@ -6,6 +6,7 @@ import styles from './dossier.module.css';
 
 export type CounterpartProfile = {
   name?: string;
+  organization?: string;
   role?: string;
   style?: string[];
   leverage?: string;

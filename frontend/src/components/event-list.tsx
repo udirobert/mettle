@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, Clock, Repeat, Shield, User, Zap } from 'lucide-react';
 
 import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
@@ -12,19 +12,15 @@ import { AgentStatusChip } from '@/components/source-chip';
 import { InboxDraftCard } from '@/components/inbox-draft-card';
 import { MemoryPanel } from '@/components/memory-panel';
 import { ScoutBriefing } from '@/components/scout-briefing';
+import { memoryRef, readCarryCount } from '@/lib/counterpart-identity';
 import { describeScoutSource } from '@/lib/scout-status';
 
 import styles from './event-list.module.css';
 
 /** Carry-forward marker: open items persisted by a previous debrief with this counterpart. */
-function readCarryCount(counterpart: string): number {
+function carryCountFor(name: string, organization?: string): number {
   try {
-    const raw = window.localStorage.getItem(
-      `mettle.carry.${counterpart.toLowerCase().replace(/\s+/g, '-')}`,
-    );
-    if (!raw) return 0;
-    const parsed = JSON.parse(raw) as { items?: string[] };
-    return parsed.items?.length ?? 0;
+    return readCarryCount(window.localStorage, memoryRef(name, organization));
   } catch {
     return 0;
   }
@@ -41,7 +37,13 @@ export function EventList({
   onOpenDraft?: () => void;
 }) {
   const { state, setPartial } = useConversationState();
-  const [carryCount] = useState(() => readCarryCount(SALARY_EVENT.counterpart));
+  const danaOrganization = SALARY_EVENT.counterpartProfile.organization;
+  // localStorage only exists in the browser, so read it after mount — reading it
+  // during render makes the server and client HTML differ (a hydration error).
+  const [carryCount, setCarryCount] = useState(0);
+  useEffect(() => {
+    setCarryCount(carryCountFor(SALARY_EVENT.counterpart, danaOrganization));
+  }, [danaOrganization]);
 
   const isDana = state.scenario_id === SALARY_EVENT.id;
   const hasBrief = isDana && !!state.coach_analysis;
@@ -171,7 +173,11 @@ export function EventList({
       </div>
 
       <div className={styles.scoutWrap}>
-        <MemoryPanel counterpart={SALARY_EVENT.counterpart} />
+        <MemoryPanel
+          counterpart={SALARY_EVENT.counterpart}
+          organization={danaOrganization}
+          onForgotten={() => setCarryCount(0)}
+        />
       </div>
 
       <div className={styles.contrast}>

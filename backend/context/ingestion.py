@@ -61,6 +61,20 @@ def _guess_counterpart(messages: list[dict]) -> str:
     return max(counts, key=counts.get)
 
 
+def _counterpart_organization(messages: list[dict], counterpart: str) -> str:
+    """The counterpart's email domain, e.g. "meridianlabs.com" — "" when their
+    address is missing or a free-mail provider (which identifies nobody)."""
+    for msg in messages:
+        sender = (msg.get("from") or "").strip()
+        name = re.sub(r"<[^>]+>", "", sender).strip().strip('"')
+        if name != counterpart:
+            continue
+        match = re.search(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)", sender)
+        if match and memory.organization_key(match.group(1)):
+            return match.group(1).lower()
+    return ""
+
+
 def _guess_stakes(messages: list[dict]) -> str:
     for msg in messages:
         if msg.get("subject"):
@@ -170,7 +184,8 @@ def import_from_inbox(limit: int = 10) -> dict:
     # Counterpart memory: remembered commitments/assumptions join the same
     # keep/reject gate as provenance="memory" claims. None/[] when no DB.
     counterpart_history_ref = None
-    history = memory.get_history(counterpart)
+    organization = _counterpart_organization(messages, counterpart)
+    history = memory.get_history(counterpart, organization=organization or None)
     if history:
         counterpart_history_ref = history["ref"]
         mem_claims = memory.history_to_claims(history)
@@ -193,6 +208,7 @@ def import_from_inbox(limit: int = 10) -> dict:
         "stakes": _guess_stakes(messages),
         "counterpart_profile": {
             "name": counterpart,
+            "organization": organization,
             "role": "",
             "style": [],
             "leverage": "",

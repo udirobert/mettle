@@ -10,7 +10,8 @@ const AGENT_URL = (process.env.AGENT_URL || 'http://localhost:8123').replace(/\/
  * `ref` is the normalized counterpart name. Unreachable backend degrades to
  * 200 `{ degraded: true }` and never leaks the underlying error.
  */
-const REF = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// "dana-whitfield" (name only) or "dana-whitfield--meridianlabs" (name + organisation).
+const REF = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+)?$/;
 
 async function forward(
   method: 'GET' | 'DELETE',
