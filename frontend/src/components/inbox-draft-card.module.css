@@ -1,0 +1,135 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.4rem;
+}
+
+.cardLive {
+  border-left: 4px solid var(--signal-strong);
+}
+
+.cardSample {
+  border-style: dashed;
+  border-color: var(--line);
+}
+
+.top {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.kicker {
+  color: var(--cobalt);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.who {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.role {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin: 0.15rem 0 0;
+}
+
+.stakes {
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.meta {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin: 0;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.primary,
+.secondary {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  gap: 0.4rem;
+  letter-spacing: 0.04em;
+  padding: 0.55rem 0.9rem;
+  text-transform: uppercase;
+}
+
+.primary {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--surface);
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.address {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  padding: 0.4rem 0.6rem;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-alt), var(--surface), var(--surface-alt));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  height: 1rem;
+  width: 60%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

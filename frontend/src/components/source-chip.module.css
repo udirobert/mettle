@@ -1,0 +1,70 @@
+.chip {
+  align-items: center;
+  border: 1px solid var(--line);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dot {
+  background: currentColor;
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+}
+
+.live,
+.connected {
+  background: var(--tint-signal);
+  border-color: var(--tint-signal-line);
+  color: var(--signal-strong-ink);
+}
+
+.degraded,
+.limited {
+  background: color-mix(in srgb, var(--sun) 22%, var(--surface));
+  border-color: color-mix(in srgb, var(--sun) 70%, var(--line));
+  color: #7a5200;
+}
+
+.sample {
+  background: var(--surface-alt);
+  border-style: dashed;
+  color: var(--ink-soft);
+}
+
+.none,
+.offline {
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
+  color: var(--tomato);
+}
+
+.none {
+  background: var(--surface-alt);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}

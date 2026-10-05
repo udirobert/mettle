@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 
 import type { EvidenceClaim, ScoutEvent } from '@/hooks/use-conversation-state';
+import type { SourceDescription } from '@/lib/scout-status';
+import { SourceChip } from '@/components/source-chip';
 
 import styles from './scout-log.module.css';
 
@@ -81,11 +83,14 @@ export function ScoutLog({
   title = 'Scout',
   emptyHint,
   defaultOpen = false,
+  source,
 }: {
   events: ScoutEvent[];
   title?: string;
   emptyHint?: string;
   defaultOpen?: boolean;
+  /** Where these events came from (live / sample / degraded). Shown as a chip. */
+  source?: SourceDescription;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -111,8 +116,10 @@ export function ScoutLog({
         <span className={styles.logTitle}>
           <Sparkles size={12} aria-hidden="true" /> {title}
         </span>
+        {source && <SourceChip source={source} />}
         <span className={styles.logCount}>
-          {events.length} step{events.length === 1 ? '' : 's'} before you arrived
+          {events.length} step{events.length === 1 ? '' : 's'}
+          {source?.kind === 'sample' ? '' : ' before you arrived'}
         </span>
         <ChevronDown
           size={15}

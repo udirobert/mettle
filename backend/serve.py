@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from context.ingestion import import_from_inbox
-from context import agentmail_client, research_client
+from context import agentmail_client, memory, research_client
 from graph.checkpoint import create_checkpointer
 from graph.coach import run_coach
 from graph.context import extract_brief_from_paste
@@ -248,6 +248,37 @@ async def webmcp_debrief(body: WebMCPStateRequest) -> dict:
     state["nudges_sent"] = body.nudges_sent
     result = run_debrief(state)
     return {"notes": result.get("debrief_notes", [])}
+
+
+# --- Counterpart memory (pinned contract) -----------------------------------
+# GET    /memory/{ref} -> { ref, found, degraded?, history? }
+# DELETE /memory/{ref} -> { ref, deleted, degraded? }
+# Always 200: an unconfigured database is `degraded: true`, never a 500.
+
+
+@app.get("/memory/{ref}")
+async def memory_get(ref: str) -> dict:
+    """What the agent remembers about a counterpart (ref = normalized name)."""
+    if not memory._database_url():
+        return {"ref": ref, "found": False, "degraded": True,
+                "reason": "DATABASE_URL not set"}
+    history = memory.get_history(ref)
+    if history is None:
+        return {"ref": memory.counterpart_key(ref), "found": False}
+    return {"ref": history["ref"], "found": True, "history": history}
+
+
+@app.delete("/memory/{ref}")
+async def memory_forget(ref: str) -> dict:
+    """Forget everything remembered about a counterpart."""
+    if not memory._database_url():
+        return {"ref": ref, "deleted": 0, "degraded": True,
+                "reason": "DATABASE_URL not set"}
+    deleted = memory.forget(ref)
+    if deleted is None:
+        return {"ref": memory.counterpart_key(ref), "deleted": 0, "degraded": True,
+                "reason": "memory unavailable"}
+    return {"ref": memory.counterpart_key(ref), "deleted": deleted}
 
 
 add_langgraph_fastapi_endpoint(
