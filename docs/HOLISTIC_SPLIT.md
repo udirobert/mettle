@@ -9,22 +9,22 @@ work). Strengthen the trust story that is already Mettle's best asset.
 
 ## Slice A — Scout and the docket (agent work becomes visible)
 
-| # | Work | Files |
-| - | ---- | ----- |
-| 1 | Live / degraded / sample status chips on the docket and Scout log, driven by `GET /scout/status`. The fixture `SALARY_SCOUT_LOG` stops passing as real work. | `event-list.tsx`, `scout-log.tsx` |
-| 2 | Inbox-driven docket: a forwarded thread becomes a draft event card ("From your inbox · Dana") that opens into prep. | `event-list.tsx`, `app/api/scout/*` |
-| 5 | Memory panel: "What I remember about Dana" + Forget. Moves the browser-local carry-forward into backend memory. | `dossier.tsx`, `context/memory.py`, `app/api/memory/*` |
-| 8 | Scout release UI: approval card for the briefing gate (`alertdialog`), states what happens before and after the decision. | new component, `app/api/scout/*` |
+| #   | Work                                                                                                                                                         | Files                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| 1   | Live / degraded / sample status chips on the docket and Scout log, driven by `GET /scout/status`. The fixture `SALARY_SCOUT_LOG` stops passing as real work. | `event-list.tsx`, `scout-log.tsx`                      |
+| 2   | Inbox-driven docket: a forwarded thread becomes a draft event card ("From your inbox · Dana") that opens into prep.                                          | `event-list.tsx`, `app/api/scout/*`                    |
+| 5   | Memory panel: "What I remember about Dana" + Forget. Moves the browser-local carry-forward into backend memory.                                              | `dossier.tsx`, `context/memory.py`, `app/api/memory/*` |
+| 8   | Scout release UI: approval card for the briefing gate (`alertdialog`), states what happens before and after the decision.                                    | new component, `app/api/scout/*`                       |
 
 ## Slice B — Trust and evidence (the user decides what to believe)
 
-| # | Work | Files |
-| - | ---- | ----- |
-| 4 | Claim citations: quoted snippet, highlighted phrase, link, fetch time. Ingestion and research write the fields below. | `coach-panel.tsx`, `context/ingestion.py`, `context/research_client.py` |
-| 6 | "Council is using 7 of 12 claims" + per-claim include toggles. Replaces blind "approve all". | `coach-panel.tsx` |
-| 3 | Quote-backed commitments: a debrief commitment must carry a verbatim transcript line, string-matched; fail closed if absent. | `graph/debrief.py`, `debrief-view.tsx` |
-| 7 | Push-to-talk for live turns via browser speech recognition; "them / me" toggle; disclose that audio goes to the browser vendor. | `wingman-side-panel.tsx`, `opponent-chat.tsx` |
-| — | Hardening: redact `String(err)` in `/api/agent` degraded responses; "copy debug report"; focus traps and claim-specific labels; first frontend tests (share-link round trip, pending claims never reach Coach); `?demo=fail`. | `app/api/agent/[...path]/route.ts`, `welcome-overlay.tsx`, `journey-tracker.tsx` |
+| #   | Work                                                                                                                                                                                                                          | Files                                                                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 4   | Claim citations: quoted snippet, highlighted phrase, link, fetch time. Ingestion and research write the fields below.                                                                                                         | `coach-panel.tsx`, `context/ingestion.py`, `context/research_client.py`          |
+| 6   | "Council is using 7 of 12 claims" + per-claim include toggles. Replaces blind "approve all".                                                                                                                                  | `coach-panel.tsx`                                                                |
+| 3   | Quote-backed commitments: a debrief commitment must carry a verbatim transcript line, string-matched; fail closed if absent.                                                                                                  | `graph/debrief.py`, `debrief-view.tsx`                                           |
+| 7   | Push-to-talk for live turns via browser speech recognition; "them / me" toggle; disclose that audio goes to the browser vendor.                                                                                               | `wingman-side-panel.tsx`, `opponent-chat.tsx`                                    |
+| —   | Hardening: redact `String(err)` in `/api/agent` degraded responses; "copy debug report"; focus traps and claim-specific labels; first frontend tests (share-link round trip, pending claims never reach Coach); `?demo=fail`. | `app/api/agent/[...path]/route.ts`, `welcome-overlay.tsx`, `journey-tracker.tsx` |
 
 Not doing: social preview cards for share links. The link is URL-fragment-only
 so the server cannot read it; a preview would mean storing content server-side,
@@ -71,7 +71,32 @@ POST /scout/brief/:runId/decision {approved:boolean}
 `ScoutEvent.action` values: `read_thread | flagged_commitment | researched |
 skipped | quarantined | released_brief | discarded_brief`.
 
+## Status (updated 2026-10-05)
+
+**Slice A: done, committed `f31f011` on `feat/holistic-pass`.** Verified in an
+isolated checkout: typecheck clean, 14 frontend + 119 backend tests, production
+build passes, and the flow was exercised in a real browser (status chip,
+sample-thread card, Scout approval card with focus moving into it, release
+adding the log). Dry-run merge against `feat/trust-pass`: no conflicts.
+
+Known limits of Slice A:
+
+- The docket's inbox card calls `POST /context/import` on load, so it shows the
+  bundled sample thread until AgentMail is configured. It says so.
+- "Forget" removes what the backend stores; the older browser-local carry-over
+  marker in `localStorage` (written by the debrief) is not cleared by it.
+- Memory is matched by name only; the panel says so. A collision-proof key
+  needs a contract change (name + organisation).
+- Opening an inbox draft uses `scenario_id: "inbox_thread"`; the Coach falls
+  back to the stakes/profile already in state (`scenario_for_state`).
+
 ## Rules
+
+- **One checkout per dev.** Two devs editing the same working directory
+  tangle each other's staging and can commit each other's half-finished work.
+  Use `git worktree add .agents/worktrees/<name> <branch>` (exclude it locally
+  with `echo .agents/worktrees/ >> .git/info/exclude`), run installs there, and
+  commit only from your own worktree.
 
 - File ownership above is strict. Need a change in the other slice's file? Post
   the signature in chat; don't edit it.
@@ -79,5 +104,5 @@ skipped | quarantined | released_brief | discarded_brief`.
   never reorder or rename. Rebase before you push.
 - Degrade, never 500. Label anything simulated as simulated.
 - Tests ship with the change. Backend: `cd backend && uv run python -m unittest
-  discover tests`. Scout: `cd scout && npm test`.
+discover tests`. Scout: `cd scout && npm test`.
 - Merge order: A, then B. Whoever merges second resolves conflicts.
