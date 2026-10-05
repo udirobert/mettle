@@ -7,6 +7,7 @@ import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
 import { SALARY_EVENT, SALARY_SCOUT_LOG } from '@/fixtures/salary-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { ScoutLog } from '@/components/scout-log';
+import { CounterpartDossier } from '@/components/dossier';
 
 import styles from './event-list.module.css';
 
@@ -125,11 +126,18 @@ export function EventList({
         </div>
       </button>
 
+      {/* The briefing must not depend on the Scout log existing — the
+          degraded inbox path renders no scout events, and the counterpart
+          dossier is exactly what you want most in that case. */}
       {scoutEvents.length > 0 && (
         <div className={styles.scoutWrap}>
           <ScoutLog events={scoutEvents} title="Scout" />
         </div>
       )}
+
+      <div className={styles.scoutWrap}>
+        <CounterpartDossier profile={SALARY_EVENT.counterpartProfile} />
+      </div>
 
       <div className={styles.contrast}>
         <p className={styles.kicker}>Everything else on the calendar</p>

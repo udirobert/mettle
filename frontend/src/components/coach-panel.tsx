@@ -30,6 +30,7 @@ import {
 import { SAMPLE_DANA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
 import { ProvenanceBadge, ScoutLog } from '@/components/scout-log';
+import { CounterpartDossier, type CounterpartProfile } from '@/components/dossier';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import type {
   CoachAnalysis,
@@ -119,6 +120,8 @@ export function CoachPanel() {
           <ScoutLog events={state.scout_log ?? []} title="Scout — before you arrived" />
         </div>
       )}
+
+      <CounterpartDossier profile={state.counterpart_profile as CounterpartProfile | undefined} />
 
       {needsPaste && !showCouncil && <PasteEvidencePanel />}
       {needsApproval && <ClaimApprovalPanel brief={brief} />}
