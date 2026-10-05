@@ -9,7 +9,7 @@ const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 
 const title = 'Mettle — rehearse your hardest conversation';
 const description =
-  'Mettle plays the other side, finds your weak spot, and hands you the line to say. Built for fund managers heading into LP meetings.';
+  'Mettle plays the other side, finds your weak spot, and hands you the line to say. The personal agent for the conversations you cannot afford to get wrong.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(productionHost ? `https://${productionHost}` : 'http://localhost:3000'),
