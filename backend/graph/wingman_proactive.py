@@ -71,7 +71,7 @@ def _enrich_nudge(
     Falls back to the rules-based message on any error — the nudge must
     still fire even if the LLM is unavailable.
     """
-    llm = get_llm()
+    llm = get_llm(max_tokens=80)
     if llm is None:
         return candidate
 

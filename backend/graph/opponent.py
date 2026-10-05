@@ -116,7 +116,7 @@ def run_opponent(state: ConversationState) -> dict:
     concerns = profile.get("concerns", [])
     first_name = _first_name(counterpart_name)
 
-    llm = get_llm()
+    llm = get_llm(max_tokens=250)
     if llm is None:
         response_text = _build_fallback_response(state)
     else:

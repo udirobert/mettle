@@ -326,7 +326,7 @@ def run_coach_perspectives(state: ConversationState) -> dict:
     weak_points = state.get("user_weak_points") or scenario["user_weak_points"]
     context_brief = state.get("context_brief")
 
-    llm = get_llm()
+    llm = get_llm(max_tokens=400)
     profile = scenario["counterpart_profile"]
 
     perspectives: list[PerspectiveResult] = []
@@ -359,7 +359,7 @@ def run_coach_synthesize(state: ConversationState) -> dict:
     perspectives = existing.get("perspectives") or []
     context_brief = state.get("context_brief")
 
-    llm = get_llm()
+    llm = get_llm(max_tokens=900)
     if llm is None or not perspectives:
         analysis = _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
         if perspectives:

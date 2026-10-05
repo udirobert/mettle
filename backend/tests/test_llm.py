@@ -32,4 +32,13 @@ class LlmFactoryTests(unittest.TestCase):
             model="provider-model",
             api_key="test-key",
             base_url="https://provider.example/v1",
+            max_tokens=None,
         )
+
+    @patch("graph.llm.ChatOpenAI")
+    def test_passes_max_tokens_budget(self, chat_model) -> None:
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        get_llm(max_tokens=400)
+
+        self.assertEqual(chat_model.call_args.kwargs["max_tokens"], 400)

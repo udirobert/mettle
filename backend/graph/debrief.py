@@ -56,6 +56,13 @@ FALLBACK_NOTES = [
 ]
 
 
+# Prompt budget: the tail of a long transcript is what matters for "what was
+# just decided" — cap it rather than letting the prompt grow with conversation
+# length. Commitment verification reads the full transcript from state, not
+# this prompt, so nothing is lost to the check.
+_TRANSCRIPT_PROMPT_MAX_CHARS = 6000
+
+
 def _format_transcript(transcript: list) -> str:
     if not transcript:
         return "(no turns captured)"
@@ -65,7 +72,10 @@ def _format_transcript(transcript: list) -> str:
             "You" if turn["speaker"] == "user" else turn.get("speaker", "Counterpart")
         )
         lines.append(f"  {speaker}: {turn['text']}")
-    return "\n".join(lines)
+    text = "\n".join(lines)
+    if len(text) > _TRANSCRIPT_PROMPT_MAX_CHARS:
+        text = "(earlier turns omitted)\n" + text[-_TRANSCRIPT_PROMPT_MAX_CHARS:]
+    return text
 
 
 def _format_nudges(nudges: list) -> str:
@@ -273,7 +283,7 @@ def run_debrief(state: ConversationState) -> dict:
             ],
         }
 
-    llm = get_llm()
+    llm = get_llm(max_tokens=600)
     if llm is None:
         notes = _build_deterministic_notes(state)
     else:

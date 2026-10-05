@@ -181,7 +181,7 @@ def answer_reactive_query(state: ConversationState) -> dict:
     """
     query = state.get("open_reactive_query") or ""
 
-    llm = get_llm()
+    llm = get_llm(max_tokens=250)
     if llm is None:
         reply = _build_fallback_reply(state)
     else:
