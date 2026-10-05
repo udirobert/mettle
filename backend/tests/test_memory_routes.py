@@ -38,8 +38,13 @@ class MemoryRouteTests(unittest.TestCase):
 
     def test_get_returns_history_when_known(self) -> None:
         os.environ["DATABASE_URL"] = "postgresql://example"
-        history = {"ref": "dana-reyes", "counterpart_name": "Dana Reyes",
-                   "commitments": ["Q3 review"], "assumptions": [], "notes": []}
+        history = {
+            "ref": "dana-reyes",
+            "counterpart_name": "Dana Reyes",
+            "commitments": ["Q3 review"],
+            "assumptions": [],
+            "notes": [],
+        }
         with patch.object(serve.memory, "get_history", return_value=history):
             body = self.client.get("/memory/Dana Reyes").json()
         self.assertEqual(body["found"], True)
@@ -54,9 +59,13 @@ class MemoryRouteTests(unittest.TestCase):
     def test_delete_reports_count_and_unavailable(self) -> None:
         os.environ["DATABASE_URL"] = "postgresql://example"
         with patch.object(serve.memory, "forget", return_value=4):
-            self.assertEqual(self.client.delete("/memory/dana-reyes").json()["deleted"], 4)
+            self.assertEqual(
+                self.client.delete("/memory/dana-reyes").json()["deleted"], 4
+            )
         with patch.object(serve.memory, "forget", return_value=None):
-            self.assertEqual(self.client.delete("/memory/dana-reyes").json()["degraded"], True)
+            self.assertEqual(
+                self.client.delete("/memory/dana-reyes").json()["degraded"], True
+            )
 
 
 if __name__ == "__main__":

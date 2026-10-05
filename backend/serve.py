@@ -260,8 +260,12 @@ async def webmcp_debrief(body: WebMCPStateRequest) -> dict:
 async def memory_get(ref: str) -> dict:
     """What the agent remembers about a counterpart (ref = normalized name)."""
     if not memory._database_url():
-        return {"ref": ref, "found": False, "degraded": True,
-                "reason": "DATABASE_URL not set"}
+        return {
+            "ref": ref,
+            "found": False,
+            "degraded": True,
+            "reason": "DATABASE_URL not set",
+        }
     history = memory.get_history(ref)
     if history is None:
         return {"ref": memory.counterpart_key(ref), "found": False}
@@ -272,12 +276,20 @@ async def memory_get(ref: str) -> dict:
 async def memory_forget(ref: str) -> dict:
     """Forget everything remembered about a counterpart."""
     if not memory._database_url():
-        return {"ref": ref, "deleted": 0, "degraded": True,
-                "reason": "DATABASE_URL not set"}
+        return {
+            "ref": ref,
+            "deleted": 0,
+            "degraded": True,
+            "reason": "DATABASE_URL not set",
+        }
     deleted = memory.forget(ref)
     if deleted is None:
-        return {"ref": memory.counterpart_key(ref), "deleted": 0, "degraded": True,
-                "reason": "memory unavailable"}
+        return {
+            "ref": memory.counterpart_key(ref),
+            "deleted": 0,
+            "degraded": True,
+            "reason": "memory unavailable",
+        }
     return {"ref": memory.counterpart_key(ref), "deleted": deleted}
 
 

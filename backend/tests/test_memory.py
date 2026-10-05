@@ -108,7 +108,9 @@ class ForgetTests(unittest.TestCase):
         conn.execute.return_value.rowcount = 3
         with patch("psycopg.connect", return_value=conn):
             self.assertEqual(memory.forget("Dana Reyes"), 3)
-        delete = [c for c in conn.execute.call_args_list if "DELETE" in str(c.args[0])][0]
+        delete = [c for c in conn.execute.call_args_list if "DELETE" in str(c.args[0])][
+            0
+        ]
         self.assertEqual(delete.args[1], ("dana-reyes",))
 
     def test_forget_zero_is_distinct_from_unavailable(self) -> None:
