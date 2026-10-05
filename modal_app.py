@@ -13,7 +13,7 @@ image = (
 app = modal.App("mettle-agent", image=image)
 
 
-@app.function()
+@app.function(secrets=[modal.Secret.from_name("mettle-env")])
 @modal.asgi_app(label="mettle-agent")
 def web_app():
     os.environ["METTLE_ENV"] = "development"
