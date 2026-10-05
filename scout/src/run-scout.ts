@@ -19,14 +19,18 @@ export type ScoutDeps = {
   importInbox: () => Promise<InboxResult>;
   research: (input: ResearchInput) => Promise<ResearchResult>;
   now?: () => string;
-  /** Topic used for the public-research step. */
-  topic?: (counterpart: string | null) => string;
+  /** Topic used for the public-research step. Role-led, never name-led. */
+  topic?: (counterpart: string | null, role?: string | null) => string;
 };
 
-const defaultTopic = (who: string | null) =>
-  who
-    ? `compensation band and negotiation context for a review with ${who}`
-    : "compensation band for the user's role";
+// Role-led, never name-led: searching comp data for a named person returns
+// author pages, not salary bands (and is the wrong instinct anyway).
+const defaultTopic = (who: string | null, role?: string | null) => {
+  const r = role?.trim();
+  return r
+    ? `${r} compensation band public salary data`
+    : "compensation band and negotiation context for the role under review";
+};
 
 /**
  * Deterministic, LLM-free Scout: the fallback the demo can always rely on.
@@ -65,7 +69,7 @@ export async function runScout(deps?: Partial<ScoutDeps>): Promise<ScoutEvent[]>
   }
 
   const found = await d.research({
-    topic: (d.topic ?? defaultTopic)(who),
+    topic: (d.topic ?? defaultTopic)(who, inbox.counterpart_role),
     ...(who ? { counterpart_name: who } : {}),
   });
   if (found.degraded) {

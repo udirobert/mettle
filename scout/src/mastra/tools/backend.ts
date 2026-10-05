@@ -22,6 +22,7 @@ type Claim = { claim?: string; relevance?: string; source_ids?: string[] };
 export type InboxResult = {
   degraded: boolean;
   counterpart_name: string | null;
+  counterpart_role?: string | null;
   claim_count: number;
   commitments: string[];
 };
@@ -43,20 +44,28 @@ export async function importInboxFn(): Promise<InboxResult> {
   try {
     const data = await post<{
       degraded?: boolean;
-      event?: { counterpart_profile?: { name?: string } } | null;
+      event?: { counterpart_profile?: { name?: string; role?: string } } | null;
       brief?: { claims?: Claim[] } | null;
     }>("/context/import");
     const claims = data.brief?.claims ?? [];
+    const profile = data.event?.counterpart_profile;
     return {
       degraded: Boolean(data.degraded),
-      counterpart_name: data.event?.counterpart_profile?.name ?? null,
+      counterpart_name: profile?.name ?? null,
+      counterpart_role: profile?.role?.trim() || null,
       claim_count: claims.length,
       commitments: claims
         .filter((c) => c.relevance === "commitment" && c.claim)
         .map((c) => c.claim as string),
     };
   } catch {
-    return { degraded: true, counterpart_name: null, claim_count: 0, commitments: [] };
+    return {
+      degraded: true,
+      counterpart_name: null,
+      counterpart_role: null,
+      claim_count: 0,
+      commitments: [],
+    };
   }
 }
 
@@ -86,6 +95,7 @@ export const importInbox = createTool({
   outputSchema: z.object({
     degraded: z.boolean(),
     counterpart_name: z.string().nullable(),
+    counterpart_role: z.string().nullable().optional(),
     claim_count: z.number(),
     commitments: z.array(z.string()),
   }),
@@ -95,7 +105,7 @@ export const importInbox = createTool({
 export const research = createTool({
   id: "research",
   description:
-    "Research a topic on the public web (e.g. comp bands for a role) and return claims with source URLs. Returns degraded=true if research is not configured or unreachable.",
+    "Research a topic on the public web (e.g. comp bands for a role) and return claims with source URLs. Query by role or topic, never by a person's name. Returns degraded=true if research is not configured or unreachable.",
   inputSchema: z.object({
     topic: z.string(),
     counterpart_name: z.string().optional(),

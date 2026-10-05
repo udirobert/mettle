@@ -54,9 +54,9 @@ def research(
             "reason": "EXA_API_KEY not set or exa-py unavailable",
         }
 
+    # Query is role-/topic-led only: appending counterpart_name turns a comp
+    # search into a named-person lookup — worse results and the wrong instinct.
     query_parts = [topic.strip()]
-    if counterpart_name:
-        query_parts.append(counterpart_name)
     if organization:
         query_parts.append(organization)
     query = " ".join(p for p in query_parts if p)[:400]

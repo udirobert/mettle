@@ -104,6 +104,7 @@ describe("backend tool mapping", () => {
     expect(await importInboxFn()).toEqual({
       degraded: false,
       counterpart_name: "Dana",
+      counterpart_role: null,
       claim_count: 2,
       commitments: ["Promised a Q3 review"],
     });
