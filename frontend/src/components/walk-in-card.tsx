@@ -76,14 +76,22 @@ export function WalkInCard({
           </button>
         </header>
 
-        <section className={`${styles.opening} ${styles.step}`} style={step(0)} aria-label="Your opening">
+        <section
+          className={`${styles.opening} ${styles.step}`}
+          style={step(0)}
+          aria-label="Your opening"
+        >
           <p className={styles.label}>Open</p>
           <p className={styles.openingText}>{card.opening}</p>
         </section>
 
         <dl className={styles.lines} aria-label={`If ${firstName} pushes back`}>
           {card.ifThen.map((line, index) => (
-            <div key={`${line.trigger}-${index}`} className={`${styles.line} ${styles.step}`} style={step(index + 1)}>
+            <div
+              key={`${line.trigger}-${index}`}
+              className={`${styles.line} ${styles.step}`}
+              style={step(index + 1)}
+            >
               <dt>If {line.trigger.replace(/\.$/, '')}</dt>
               <dd>{line.response}</dd>
             </div>

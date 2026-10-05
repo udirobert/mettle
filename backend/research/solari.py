@@ -33,7 +33,13 @@ REPLAY_POLL_INTERVAL_S = 3
 
 _SESSION_ID = re.compile(r"^[\w-]{6,128}$")
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
-_CLAIM_PRIORITY = {"number": 0, "commitment": 1, "objection": 2, "risk": 3, "timeline": 4}
+_CLAIM_PRIORITY = {
+    "number": 0,
+    "commitment": 1,
+    "objection": 2,
+    "risk": 3,
+    "timeline": 4,
+}
 
 
 class ResearchUnavailable(RuntimeError):
@@ -79,7 +85,9 @@ def claims_from_page_text(text: str, source_id: str) -> list[EvidenceClaim]:
         if len(paragraph) < 24:
             continue
         sentences.extend(
-            part.strip() for part in _SENTENCE_SPLIT.split(paragraph) if 24 <= len(part) <= 400
+            part.strip()
+            for part in _SENTENCE_SPLIT.split(paragraph)
+            if 24 <= len(part) <= 400
         )
 
     scored: list[tuple[int, int, str, str]] = []
@@ -134,7 +142,9 @@ async def research_public_pages(urls: list[str]) -> ContextBrief:
                 title = urlsplit(url).netloc
                 text = ""
                 try:
-                    await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
+                    await page.goto(
+                        url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS
+                    )
                     title = (await page.title()).strip() or title
                     text = await page.locator("body").inner_text(timeout=NAV_TIMEOUT_MS)
                 except Exception:  # noqa: BLE001 — one bad page must not sink the batch

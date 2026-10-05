@@ -83,7 +83,9 @@ export function OpponentChat() {
 
       <div className={`mettle-plan ${styles.stage}`} aria-hidden="true">
         <div className={`${styles.seatGroup} ${styles.seatThem}`}>
-          <span className={`mettle-seat mettle-seat--them ${isAgentRunning ? styles.thinking : ''}`}>
+          <span
+            className={`mettle-seat mettle-seat--them ${isAgentRunning ? styles.thinking : ''}`}
+          >
             {firstName.charAt(0)}
           </span>
           <span className={styles.seatName}>
@@ -127,10 +129,7 @@ export function OpponentChat() {
         <section className={styles.script} aria-label="Rehearsal transcript" aria-live="polite">
           {transcript.map((turn, index) =>
             turn.speaker === 'user' ? (
-              <div
-                key={`${turn.timestamp}-${index}`}
-                className={`${styles.you} mettle-line-in`}
-              >
+              <div key={`${turn.timestamp}-${index}`} className={`${styles.you} mettle-line-in`}>
                 <span className="mettle-label">You</span>
                 <p>{turn.text}</p>
               </div>

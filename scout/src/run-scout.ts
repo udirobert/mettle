@@ -53,7 +53,10 @@ export async function runScout(deps?: Partial<ScoutDeps>): Promise<ScoutEvent[]>
   const inbox = await d.importInbox();
   const who = inbox.counterpart_name;
   if (inbox.degraded && inbox.claim_count === 0) {
-    push("skipped", "Inbox unavailable — no forwarded thread to read");
+    push(
+      "skipped",
+      `Inbox unavailable — no forwarded thread to read${inbox.reason ? ` (${inbox.reason})` : ""}`,
+    );
   } else {
     // Degraded-with-claims means the backend served its bundled sample thread.
     const sample = inbox.degraded ? " (sample thread)" : "";
@@ -66,6 +69,12 @@ export async function runScout(deps?: Partial<ScoutDeps>): Promise<ScoutEvent[]>
     for (const c of inbox.commitments) {
       push("flagged_commitment", `Commitment on record: ${c}`);
     }
+    if (inbox.quarantined) {
+      push(
+        "quarantined",
+        `Withheld ${inbox.quarantined} line(s) from the thread that looked like instructions to an agent`,
+      );
+    }
   }
 
   const found = await d.research({
@@ -73,7 +82,10 @@ export async function runScout(deps?: Partial<ScoutDeps>): Promise<ScoutEvent[]>
     ...(who ? { counterpart_name: who } : {}),
   });
   if (found.degraded) {
-    push("skipped", "Public research unavailable — continuing without web sources");
+    push(
+      "skipped",
+      `Public research unavailable — continuing without web sources${found.reason ? ` (${found.reason})` : ""}`,
+    );
   } else {
     push(
       "researched",

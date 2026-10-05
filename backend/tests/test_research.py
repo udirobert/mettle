@@ -35,8 +35,14 @@ def test_claims_from_page_text_prioritizes_numbers_and_stays_pending():
 
 
 def test_claims_from_page_text_caps_per_page():
-    text = "\n".join(f"The fund committed ${i} million to the new strategy in Q{i % 4 + 1}." for i in range(20))
-    assert len(solari.claims_from_page_text(text, "solari-1")) == solari.MAX_CLAIMS_PER_PAGE
+    text = "\n".join(
+        f"The fund committed ${i} million to the new strategy in Q{i % 4 + 1}."
+        for i in range(20)
+    )
+    assert (
+        len(solari.claims_from_page_text(text, "solari-1"))
+        == solari.MAX_CLAIMS_PER_PAGE
+    )
 
 
 def test_session_id_validation():
