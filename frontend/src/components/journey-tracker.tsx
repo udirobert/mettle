@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Lock } from 'lucide-react';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 import { PHASE_LABELS } from '@/lib/phase-labels';
+import { demoFailEnabled } from '@/lib/demo';
 
 /**
  * Journey visibility layer.
@@ -53,9 +54,19 @@ const UNLOCK_ANNOUNCEMENTS: Record<Phase, string> = {
 export function JourneyTracker({ current }: { current: Phase }) {
   const { state } = useConversationState();
   const activeIndex = JOURNEY.findIndex((p) => p.id === current);
+  const demoFail = demoFailEnabled();
 
   return (
     <div className="mettle-journey" aria-label="Conversation journey" role="img">
+      {demoFail && (
+        <span
+          className="mettle-label"
+          role="status"
+          style={{ color: 'var(--tomato)', marginRight: 12 }}
+        >
+          Demo: failures simulated
+        </span>
+      )}
       {JOURNEY.map((phase, index) => {
         const unlocked = isPhaseUnlocked(phase.id, state);
         const done = unlocked && index < activeIndex;

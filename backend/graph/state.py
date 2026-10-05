@@ -83,6 +83,19 @@ class EvidenceClaim(TypedDict):
     decision: NotRequired[Literal["pending", "approved", "rejected"]]
 
 
+class DebriefCommitment(TypedDict):
+    """A commitment surfaced in debrief, backed by a verbatim transcript line.
+
+    `quote` must string-match text actually said in the conversation — a
+    commitment with no verbatim support fails closed and is not listed here
+    or written to counterpart memory.
+    """
+
+    text: str  # the debrief note (may be a summary)
+    quote: str  # verbatim transcript line the commitment rests on
+    speaker: str  # "You" or the counterpart label
+
+
 class ScoutEvent(TypedDict):
     """One auditable action by the Scout agent, surfaced in the UI scout log."""
 
@@ -153,6 +166,8 @@ class ConversationState(TypedDict):
     awaiting_reactive_query: NotRequired[bool]
     reactive_reply: NotRequired[str | None]
     debrief_notes: NotRequired[list[str]]
+    # Quote-backed commitments: only notes with a verbatim transcript line.
+    debrief_commitments: NotRequired[list[DebriefCommitment]]
 
     # Coach analysis output — set during prep, read by Wingman for sensitivity.
     coach_analysis: NotRequired[CoachAnalysis]

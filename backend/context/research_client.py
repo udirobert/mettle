@@ -8,7 +8,10 @@ same keep/reject gate as private evidence.
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from typing import Any
+
+from .safety import sanitize_thread_text
 
 _client = None
 _client_tried = False
@@ -84,6 +87,7 @@ def research(
 
     claims: list[dict] = []
     sources: list[dict] = []
+    fetched_at = datetime.now(timezone.utc).isoformat()
     items = getattr(results, "results", None) or []
     for index, item in enumerate(items):
         url = getattr(item, "url", None)
@@ -103,18 +107,26 @@ def research(
         )
         highlights = getattr(item, "highlights", None) or []
         for highlight in highlights[:2]:
-            text = str(highlight).strip()
+            # Web text is untrusted like inbox text: a page can try to instruct
+            # the agent. Quarantined highlights are dropped, not reworded.
+            clean, quarantined = sanitize_thread_text(str(highlight))
+            if quarantined:
+                continue
+            text = clean.strip()
             if len(text) < 24:
                 continue
-            claims.append(
-                {
-                    "claim": text.rstrip("."),
-                    "source_ids": [source_id],
-                    "confidence": "medium",
-                    "relevance": "market",
-                    "provenance": "web",
-                    "decision": "pending",
-                }
-            )
+            claim: dict = {
+                "claim": text.rstrip("."),
+                "quote": text,
+                "source_ids": [source_id],
+                "confidence": "medium",
+                "relevance": "market",
+                "provenance": "web",
+                "decision": "pending",
+                "fetched_at": fetched_at,
+            }
+            if isinstance(url, str) and url.startswith(("http://", "https://")):
+                claim["source_url"] = url
+            claims.append(claim)
 
     return {"claims": claims, "sources": sources, "degraded": False}

@@ -15,6 +15,7 @@ import {
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { buildFollowUpMemo, buildMailtoHref, copyText } from '@/lib/share-artifacts';
 import { encodeShareLink } from '@/lib/share-link';
+import { withDemoParam } from '@/lib/demo';
 
 type PersistedDebrief = {
   notes: string[];
@@ -115,9 +116,21 @@ export function DebriefView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [counterpartFull]);
 
+  // Quote-backed commitments: when the debrief node ran, only notes with a
+  // verbatim transcript line count as commitments. Commitment-shaped notes
+  // without one are still open, not locked in. Older runs have no field —
+  // fall back to keyword classification.
+  const verified = state.debrief_commitments;
+  const verifiedTexts = new Set((verified ?? []).map((c) => c.text));
   const nextNotes = notes.filter((note) => classifyNote(note) === 'next');
-  const commitmentNotes = notes.filter((note) => classifyNote(note) === 'commitment');
-  const assumptionNotes = notes.filter((note) => classifyNote(note) === 'assumption');
+  const commitmentNotes = verified
+    ? verified.map((c) => c.text)
+    : notes.filter((note) => classifyNote(note) === 'commitment');
+  const assumptionNotes = notes.filter((note) => {
+    const kind = classifyNote(note);
+    if (kind === 'assumption') return true;
+    return verified ? kind === 'commitment' && !verifiedTexts.has(note) : false;
+  });
   const lead = nextNotes[0] ?? commitmentNotes[0] ?? notes[0];
 
   const memo = buildFollowUpMemo({
@@ -144,7 +157,7 @@ export function DebriefView() {
     setSending(true);
     setMemoStatus('Sending…');
     try {
-      const response = await fetch('/api/agent/debrief/memo', {
+      const response = await fetch(withDemoParam('/api/agent/debrief/memo'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -378,14 +391,22 @@ export function DebriefView() {
             <section>
               <p className="mettle-kicker">Commitments</p>
               <div className="grid gap-2 mt-2">
-                {commitmentNotes.map((note, index) => (
-                  <div className="mettle-card" key={`commit-${index}`}>
-                    <p className="mettle-kicker">
-                      <CheckCircle2 size={13} /> Locked in
-                    </p>
-                    <strong>{note}</strong>
-                  </div>
-                ))}
+                {commitmentNotes.map((note, index) => {
+                  const backing = verified?.find((c) => c.text === note);
+                  return (
+                    <div className="mettle-card" key={`commit-${index}`}>
+                      <p className="mettle-kicker">
+                        <CheckCircle2 size={13} /> Locked in
+                      </p>
+                      <strong>{note}</strong>
+                      {backing && (
+                        <p className="mt-2 text-xs italic text-[var(--ink-soft)]">
+                          &ldquo;{backing.quote}&rdquo; — {backing.speaker}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           )}

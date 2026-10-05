@@ -29,6 +29,9 @@ import {
 } from '@/lib/merge-research';
 import { SAMPLE_DANA_THREAD, extractBriefFromPaste } from '@/lib/extract-evidence';
 import { buildCouncilSplitText, copyText } from '@/lib/share-artifacts';
+import { claimsForCouncil, councilUsage } from '@/lib/claim-gate';
+import { buildDebugReport } from '@/lib/debug-report';
+import { withDemoParam } from '@/lib/demo';
 import { ProvenanceBadge, ScoutLog } from '@/components/scout-log';
 import { CounterpartDossier, type CounterpartProfile } from '@/components/dossier';
 import { useConversationState } from '@/hooks/use-conversation-state';
@@ -153,6 +156,14 @@ export function CoachPanel() {
           >
             <RefreshCw size={14} aria-hidden="true" /> Restart the debate
           </button>
+          <button
+            className="mettle-icon-action"
+            onClick={() => void copyText(buildDebugReport(state))}
+            type="button"
+            title="Copies run state only — no message text"
+          >
+            <Copy size={13} aria-hidden="true" /> Copy debug report
+          </button>
         </section>
       )}
 
@@ -205,7 +216,7 @@ function PasteEvidencePanel() {
     setError(null);
     setNotice(null);
     try {
-      const response = await fetch('/api/agent/context/research', {
+      const response = await fetch(withDemoParam('/api/agent/context/research'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -245,7 +256,7 @@ function PasteEvidencePanel() {
     setFetching(true);
     setError(null);
     try {
-      const response = await fetch('/api/agent/context/import', { method: 'POST' });
+      const response = await fetch(withDemoParam('/api/agent/context/import'), { method: 'POST' });
       const result = (await response.json().catch(() => ({}))) as {
         brief?: ContextBrief;
         scout_log?: ScoutEvent[];
@@ -361,7 +372,22 @@ function PasteEvidencePanel() {
         rows={10}
         aria-label={`Paste correspondence with ${name}`}
       />
-      {error && <p className={styles.pasteError}>{error}</p>}
+      {error && (
+        <p className={styles.pasteError}>
+          {error}{' '}
+          <button
+            className={styles.claimEditBtn}
+            onClick={() => {
+              void copyText(buildDebugReport(state)).then((ok) =>
+                setNotice(ok ? 'Debug report copied — no message text included.' : 'Copy failed.'),
+              );
+            }}
+            type="button"
+          >
+            Copy debug report
+          </button>
+        </p>
+      )}
       {notice && <p className={styles.pasteNotice}>{notice}</p>}
       <div className={styles.pasteActions}>
         {state.agent_inbox_address && (
@@ -415,15 +441,48 @@ function PasteEvidencePanel() {
   );
 }
 
+/**
+ * Pinned citation contract: the verbatim passage a claim rests on, where it
+ * lives, and when it was read. Renders nothing when absent — pasted and stated
+ * claims carry no citation, and the UI should show nothing, not a blank.
+ */
+function ClaimCitation({ claim }: { claim: EvidenceClaim }) {
+  if (!claim.quote) return null;
+  const url = claim.source_url;
+  const linked = typeof url === 'string' && /^https?:\/\//.test(url);
+  const host = linked ? url.replace(/^https?:\/\//, '').split('/')[0] : null;
+  const fetched = claim.fetched_at ? new Date(claim.fetched_at) : null;
+  const fetchedLabel =
+    fetched && !Number.isNaN(fetched.getTime())
+      ? fetched.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+      : claim.fetched_at || null;
+
+  return (
+    <blockquote className={styles.claimQuote}>
+      <span className={styles.claimQuoteText}>&ldquo;{claim.quote}&rdquo;</span>
+      <span className={styles.claimQuoteMeta}>
+        {host && (
+          <a href={url} target="_blank" rel="noreferrer noopener">
+            {host}
+          </a>
+        )}
+        {fetchedLabel && (
+          <>
+            {host ? ' · ' : ''}read {fetchedLabel}
+          </>
+        )}
+      </span>
+    </blockquote>
+  );
+}
+
 function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
   const { state, setPartial, runCoach, isAgentRunning } = useConversationState();
   const name = counterpartName(state);
   const privacy = state.privacy_mode ?? 'private';
   const claims = brief.claims ?? [];
-  const approvedCount = claims.filter((claim) => claim.decision === 'approved').length;
-  const pendingCount = claims.filter(
-    (claim) => !claim.decision || claim.decision === 'pending',
-  ).length;
+  const usage = councilUsage(claims);
+  const pendingCount = usage.pending;
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState('');
@@ -441,6 +500,13 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
       setPartial({ context_brief: { ...brief, claims: nextClaims } });
     }
     setEditingIndex(null);
+  };
+
+  const setIncluded = (index: number, included: boolean) => {
+    const nextClaims = claims.map((claim, i) =>
+      i === index ? { ...claim, include_in_coach: included } : claim,
+    );
+    setPartial({ context_brief: { ...brief, claims: nextClaims } });
   };
 
   const setDecision = (index: number, decision: EvidenceClaim['decision']) => {
@@ -475,7 +541,9 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
   };
 
   const debate = async () => {
-    const kept = claims.filter((claim) => claim.decision === 'approved');
+    // Only included claims reach the council — kept-but-withheld claims never
+    // enter the brief the model sees.
+    const kept = claimsForCouncil(claims);
     if (kept.length === 0) return;
     const approved: ContextBrief = {
       ...brief,
@@ -497,7 +565,8 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
       </p>
       <strong>Keep the claims that are true. Reject the rest. Then re-debate.</strong>
       <p className="mt-2">
-        {approvedCount} kept · {pendingCount} pending · Coach only sees what you approve.
+        Council is using {usage.included} of {usage.approved} kept claim
+        {usage.approved === 1 ? '' : 's'} · {pendingCount} pending.
       </p>
       <ul className={styles.claimList}>
         {claims.map((claim, index) => {
@@ -513,7 +582,7 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                 {editing ? (
                   <span className={styles.claimEditRow}>
                     <input
-                      aria-label="Edit claim"
+                      aria-label={`Edit claim ${index + 1} text`}
                       autoFocus
                       className="mettle-input"
                       onChange={(event) => setEditDraft(event.target.value)}
@@ -541,9 +610,10 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                 ) : (
                   <>
                     <span>{claim.claim}</span>
+                    <ClaimCitation claim={claim} />
                     <ProvenanceBadge provenance={claim.provenance} />
                     <button
-                      aria-label="Edit claim"
+                      aria-label={`Edit claim ${index + 1}`}
                       className={styles.claimEditBtn}
                       onClick={() => {
                         setEditDraft(claim.claim);
@@ -557,12 +627,17 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                   </>
                 )}
               </div>
-              <div className={styles.claimActions} role="group" aria-label="Claim decision">
+              <div
+                className={styles.claimActions}
+                role="group"
+                aria-label={`Decision for claim ${index + 1}: ${claim.claim.slice(0, 60)}`}
+              >
                 <button
                   className={`${styles.claimBtn} ${decision === 'approved' ? styles.claimBtnOn : ''}`}
                   onClick={() => setDecision(index, 'approved')}
                   type="button"
-                  title="Keep for Coach"
+                  title={`Keep claim ${index + 1} for Coach`}
+                  aria-label={`Keep claim ${index + 1}`}
                 >
                   <Check size={14} aria-hidden="true" />
                   Keep
@@ -571,11 +646,29 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
                   className={`${styles.claimBtn} ${styles.claimBtnReject} ${decision === 'rejected' ? styles.claimBtnOnReject : ''}`}
                   onClick={() => setDecision(index, 'rejected')}
                   type="button"
-                  title="Reject claim"
+                  title={`Reject claim ${index + 1}`}
+                  aria-label={`Reject claim ${index + 1}`}
                 >
                   <X size={14} aria-hidden="true" />
                   Reject
                 </button>
+                {decision === 'approved' && (
+                  <button
+                    className={`${styles.claimBtn} ${claim.include_in_coach === false ? styles.claimBtnReject : styles.claimBtnOn}`}
+                    aria-pressed={claim.include_in_coach !== false}
+                    aria-label={
+                      claim.include_in_coach === false
+                        ? `Include claim ${index + 1} in the council`
+                        : `Withhold claim ${index + 1} from the council`
+                    }
+                    onClick={() => setIncluded(index, claim.include_in_coach === false)}
+                    type="button"
+                    title="Whether the council sees this claim"
+                  >
+                    <Eye size={13} aria-hidden="true" />
+                    {claim.include_in_coach === false ? 'Withheld' : 'In council'}
+                  </button>
+                )}
               </div>
             </li>
           );
@@ -584,12 +677,12 @@ function ClaimApprovalPanel({ brief }: { brief: ContextBrief }) {
       <div className={styles.pasteActions}>
         <button
           className="mettle-action"
-          disabled={isAgentRunning || approvedCount === 0}
+          disabled={isAgentRunning || usage.included === 0}
           onClick={() => void debate()}
           type="button"
         >
-          <Swords size={14} aria-hidden="true" /> Debate with {approvedCount} claim
-          {approvedCount === 1 ? '' : 's'}
+          <Swords size={14} aria-hidden="true" /> Debate with {usage.included} claim
+          {usage.included === 1 ? '' : 's'}
         </button>
         {pendingCount > 0 && (
           <button className="mettle-icon-action" onClick={approveAllPending} type="button">
@@ -899,6 +992,7 @@ function EvidenceRecap({
               <div className="font-semibold text-[var(--ink)]">{claim.claim}</div>
               <ProvenanceBadge provenance={claim.provenance} compact />
             </div>
+            <ClaimCitation claim={claim} />
             <div className="mt-1 font-mono text-[10px] uppercase text-[var(--ink-soft)]">
               {claim.relevance} · {claim.confidence} confidence
             </div>

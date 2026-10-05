@@ -80,7 +80,18 @@ export type EvidenceClaim = {
   source_url?: string;
   /** Citation: ISO-8601 time the source was read. */
   fetched_at?: string;
+  /** Council inclusion — approved claims can still be individually withheld. */
+  include_in_coach?: boolean;
   decision?: 'pending' | 'approved' | 'rejected';
+};
+
+/** A debrief commitment plus the verbatim transcript line backing it.
+ * Written by the debrief node; notes without a verbatim match fail closed
+ * and never appear here. */
+export type DebriefCommitment = {
+  text: string;
+  quote: string;
+  speaker: string;
 };
 
 export type ScoutEvent = {
@@ -131,6 +142,7 @@ export type ConversationState = {
   phase: 'prep' | 'rehearsal' | 'live' | 'debrief';
   reactive_reply?: string | null;
   debrief_notes?: string[];
+  debrief_commitments?: DebriefCommitment[];
   coach_analysis?: CoachAnalysis;
   coach_stage?: 'idle' | 'debating' | 'perspectives' | 'ready';
   context_brief?: ContextBrief;

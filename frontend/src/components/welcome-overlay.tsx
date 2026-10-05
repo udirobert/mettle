@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, Shield, X, Zap } from 'lucide-react';
 
 import styles from './welcome-overlay.module.css';
@@ -37,6 +37,8 @@ export function replayWalkthrough() {
 export function WelcomeOverlay({ onDismiss }: { onDismiss?: () => void }) {
   const [visible, setVisible] = useState(false);
   const [panel, setPanel] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const seen = localStorage.getItem(WALKTHROUGH_KEY);
@@ -52,10 +54,42 @@ export function WelcomeOverlay({ onDismiss }: { onDismiss?: () => void }) {
     return () => window.removeEventListener(REPLAY_EVENT, replay);
   }, []);
 
+  // Modal focus management: trap Tab inside the card, move focus in on open,
+  // and hand it back to whatever had it when the walkthrough closes.
+  useEffect(() => {
+    if (!visible) return;
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    const firstFocusable = cardRef.current?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    firstFocusable?.focus();
+    return () => restoreFocusRef.current?.focus();
+  }, [visible]);
+
   useEffect(() => {
     if (!visible) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dismiss();
+      if (e.key === 'Escape') {
+        dismiss();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const focusables = Array.from(
+        cardRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !cardRef.current?.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !cardRef.current?.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
@@ -76,7 +110,7 @@ export function WelcomeOverlay({ onDismiss }: { onDismiss?: () => void }) {
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Welcome to Mettle">
-      <div className={styles.card}>
+      <div className={styles.card} ref={cardRef}>
         <button
           className={styles.closeBtn}
           onClick={dismiss}

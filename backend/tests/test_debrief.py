@@ -113,6 +113,41 @@ class DebriefDeterministicTests(unittest.TestCase):
         self.assertEqual(notes, list(FALLBACK_NOTES))
 
 
+class DebriefCommitmentQuoteTests(unittest.TestCase):
+    def test_verified_commitment_carries_verbatim_quote(self):
+        """A commitment only counts when a transcript line string-matches it."""
+        state = {
+            **LP_STATE,
+            "transcript": [
+                user_turn("We expect distributions to land on track."),
+                counterpart_turn("I will follow up with the committee by Monday."),
+            ],
+            "nudges_sent": [],
+        }
+        result = run_debrief(state)
+        verified = result.get("debrief_commitments") or []
+        self.assertTrue(verified)
+        transcript_text = " ".join(t["text"] for t in state["transcript"])
+        for item in verified:
+            self.assertIn(item["quote"], transcript_text)
+            self.assertTrue(item["speaker"])
+
+    def test_unverifiable_commitment_fails_closed(self):
+        """Commitment-shaped notes with no verbatim line never land as commitments."""
+        state = {
+            **LP_STATE,
+            "transcript": [
+                user_turn("Distributions look fine."),
+                counterpart_turn("Tell me about DPI."),
+            ],
+            "nudges_sent": [],
+        }
+        result = run_debrief(state)
+        self.assertEqual(result.get("debrief_commitments"), [])
+        # The note itself still surfaces — it just isn't a provable commitment.
+        self.assertGreaterEqual(len(result["debrief_notes"]), 1)
+
+
 class DebriefRunTests(unittest.TestCase):
     def test_run_debrief_sets_phase(self):
         result = run_debrief(LP_STATE)

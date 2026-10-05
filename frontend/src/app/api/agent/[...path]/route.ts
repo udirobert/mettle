@@ -6,6 +6,22 @@ const AGENT_URL = (process.env.AGENT_URL || 'http://localhost:8123').replace(/\/
 // memo body is a few KB, so this is pure abuse protection.
 const MAX_BODY_BYTES = 128 * 1024;
 
+/** Error classes, not raw messages — String(err) can carry URLs and bodies. */
+function errorClass(err: unknown): string {
+  if (err instanceof Error) {
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') return 'timeout';
+    if (err instanceof TypeError) return 'network_error';
+  }
+  return 'agent_unreachable';
+}
+
+function degraded(reason: string, errorClassName?: string) {
+  return NextResponse.json(
+    { degraded: true, reason, ...(errorClassName ? { error_class: errorClassName } : {}) },
+    { status: 200 },
+  );
+}
+
 /**
  * Bridge to the backend's context/debrief routes.
  *
@@ -26,6 +42,12 @@ export async function POST(
     return NextResponse.json({ error: 'Unknown route' }, { status: 404 });
   }
 
+  // Rehearse the no-credentials path on purpose: `?demo=fail` degrades every
+  // call without touching a real service.
+  if (request.nextUrl.searchParams.get('demo') === 'fail') {
+    return degraded('demo=fail — simulated outage');
+  }
+
   const raw = await request.text();
   if (raw.length > MAX_BODY_BYTES) {
     return NextResponse.json({ error: 'Request body too large' }, { status: 413 });
@@ -44,9 +66,6 @@ export async function POST(
     });
   } catch (err) {
     // Backend down (or not yet deployed) — degrade rather than 500 the demo.
-    return NextResponse.json(
-      { degraded: true, reason: `agent unreachable: ${String(err)}` },
-      { status: 200 },
-    );
+    return degraded('agent unreachable', errorClass(err));
   }
 }

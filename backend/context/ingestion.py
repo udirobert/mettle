@@ -78,6 +78,38 @@ def _label_brief_provenance(
     return brief
 
 
+def _verbatim_passage(thread_text: str, claim_text: str) -> str | None:
+    """Recover the exact sentence a claim was extracted from — the claim text is
+    that sentence minus its terminal punctuation, so a substring match restores
+    the verbatim quote for the citation."""
+    index = thread_text.find(claim_text)
+    if index < 0:
+        return None
+    end = index + len(claim_text)
+    if thread_text[end : end + 1] in ".!?":
+        end += 1
+    return thread_text[index:end].strip()
+
+
+def _attach_inbox_citations(brief: ContextBrief, thread_text: str) -> None:
+    """Inbox claims cite the verbatim passage and the message's own timestamp.
+
+    Email has no http URL, so source_url stays absent per the pinned contract.
+    Called before memory claims merge — remembered claims carry no quote.
+    """
+    source_by_id = {s["source_id"]: s for s in brief.get("sources", [])}
+    for claim in brief.get("claims", []):
+        if claim.get("provenance") != "inbox":
+            continue
+        quote = _verbatim_passage(thread_text, str(claim.get("claim") or ""))
+        if quote:
+            claim["quote"] = quote  # type: ignore[typeddict-item]
+        source_ids = claim.get("source_ids") or []
+        source = source_by_id.get(source_ids[0]) if source_ids else None
+        if source and source.get("timestamp"):
+            claim["fetched_at"] = source["timestamp"]  # type: ignore[typeddict-item]
+
+
 def import_from_inbox(limit: int = 10) -> dict:
     """Pull the agent's inbox and produce a draft event + evidence brief.
 
@@ -121,6 +153,7 @@ def import_from_inbox(limit: int = 10) -> dict:
         provenance="inbox",
         provider="agentmail" if not degraded else "manual",
     )
+    _attach_inbox_citations(brief, clean_text)
     if quarantined:
         brief["sensitive_redactions"] = list(
             brief.get("sensitive_redactions") or []

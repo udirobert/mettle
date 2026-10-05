@@ -8,6 +8,8 @@ deterministic summary when no API key is configured.
 
 from __future__ import annotations
 
+import re
+
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from .llm import get_llm
@@ -26,7 +28,9 @@ Rules:
 - Maximum 8 notes total. Prioritize the highest-leverage items.
 - If a nudge was sent during the conversation, note whether the pattern \
 it flagged was addressed or left open.
-- Do not invent commitments or objections that are not in the transcript."""
+- Do not invent commitments or objections that are not in the transcript.
+- For commitments, reuse the exact words from the transcript where possible —
+  unverifiable commitments are discarded downstream."""
 
 DEBRIEF_USER_TEMPLATE = """\
 Stakes: {stakes}
@@ -144,6 +148,97 @@ _COMMITMENT_MARKERS = (
 )
 
 
+_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "that",
+        "this",
+        "with",
+        "from",
+        "will",
+        "have",
+        "has",
+        "you",
+        "your",
+        "they",
+        "them",
+        "what",
+        "when",
+        "about",
+        "into",
+        "before",
+        "after",
+        "would",
+        "could",
+        "should",
+        "there",
+        "their",
+    }
+)
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+
+
+def _content_words(text: str) -> set[str]:
+    """Meaningful words used to match a note back to the line that supports it."""
+    return {
+        word
+        for word in re.findall(r"[a-z0-9']+", text.lower())
+        if len(word) >= 4 and word not in _STOPWORDS
+    }
+
+
+def _transcript_sentences(transcript: list, counterpart_name: str) -> list[dict]:
+    """Verbatim transcript sentences with their speaker label."""
+    sentences: list[dict] = []
+    for turn in transcript:
+        speaker = (
+            "You"
+            if turn.get("speaker") == "user"
+            else counterpart_name or str(turn.get("speaker") or "Counterpart")
+        )
+        for sentence in _SENTENCE_END.split(str(turn.get("text") or "")):
+            text = sentence.strip()
+            if text:
+                sentences.append({"text": text, "speaker": speaker})
+    return sentences
+
+
+def _commitment_quotes(
+    notes: list[str], transcript: list, counterpart_name: str
+) -> list[dict]:
+    """Match each commitment-shaped note to the verbatim transcript line that
+    supports it.
+
+    Fails closed: a commitment with no verbatim line is not returned here and
+    is not written to counterpart memory — remembered commitments must be
+    provable, not plausible.
+    """
+    candidates = [
+        sentence
+        for sentence in _transcript_sentences(transcript, counterpart_name)
+        if any(marker in sentence["text"].lower() for marker in _COMMITMENT_MARKERS)
+    ]
+    verified: list[dict] = []
+    for note in notes:
+        note_words = _content_words(note)
+        best, best_score = None, 0
+        for candidate in candidates:
+            # A verbatim substring inside the note is a direct match; otherwise
+            # require two shared content words so the quote actually supports it.
+            score = len(note_words & _content_words(candidate["text"]))
+            if candidate["text"].lower() in note.lower():
+                score += 100
+            if score > best_score:
+                best, best_score = candidate, score
+        if best is not None and best_score >= 2:
+            verified.append(
+                {"text": note, "quote": best["text"], "speaker": best["speaker"]}
+            )
+    return verified
+
+
 def _split_notes_for_memory(notes: list[str]) -> tuple[list[str], list[str]]:
     """Split debrief notes into (commitments, other notes) for memory.
 
@@ -208,21 +303,32 @@ def run_debrief(state: ConversationState) -> dict:
         except Exception:
             notes = _build_deterministic_notes(state)
 
-    result: dict = {"phase": "debrief", "debrief_notes": notes}
+    # Quote-backed commitments: a commitment survives only when a verbatim
+    # transcript line supports it. Unverified commitment-shaped notes still
+    # appear in debrief_notes, but not as commitments — and never in memory.
+    profile = state.get("counterpart_profile", {})
+    counterpart_name = str(profile.get("name") or "")
+    commitment_notes, other_notes = _split_notes_for_memory(notes)
+    verified = _commitment_quotes(commitment_notes, transcript, counterpart_name)
+    verified_texts = {item["text"] for item in verified}
+    unverified = [note for note in commitment_notes if note not in verified_texts]
+
+    result: dict = {
+        "phase": "debrief",
+        "debrief_notes": notes,
+        "debrief_commitments": verified,
+    }
 
     # Counterpart memory: debrief notes persist so the next conversation with
     # this person starts from history, not zero. No-op without a database.
-    profile = state.get("counterpart_profile", {})
-    counterpart_name = str(profile.get("name") or "")
     if counterpart_name:
         try:
             from context.memory import record_debrief
 
-            commitments, rest = _split_notes_for_memory(notes)
             ref = record_debrief(
                 counterpart_name,
-                commitments=commitments,
-                notes=rest,
+                commitments=[item["text"] for item in verified],
+                notes=other_notes + unverified,
                 source_event=state.get("conversation_source"),
             )
             if ref:
