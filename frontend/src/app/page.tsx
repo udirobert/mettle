@@ -273,6 +273,15 @@ export default function HomePage() {
               <span className={styles.wordmarkMark}>M</span>
               <span>Mettle</span>
             </div>
+            <button
+              className={styles.replayBtn}
+              onClick={replayWalkthrough}
+              title="How Mettle works"
+              type="button"
+            >
+              <CircleHelp size={14} aria-hidden="true" />
+              <span>How Mettle works</span>
+            </button>
           </header>
           <EventList
             onSelectEvent={handleSelectEvent}

@@ -352,3 +352,71 @@
   display: block;
   font-size: 14px;
 }
+
+/* Who's walking in — lightweight identity, no auth */
+.whoami {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+.whoamiLabel {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.whoamiInput {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.1rem 0.15rem;
+  width: 12ch;
+}
+.whoamiInput:focus {
+  outline: none;
+  border-bottom-color: var(--cobalt);
+}
+.whoamiInput::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+
+/* The loop: how Mettle works in four beats, styled like a quiet rail */
+.loop {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0;
+  margin: 1.35rem 0 0;
+  padding: 0;
+  counter-reset: loop;
+}
+.loop li {
+  display: flex;
+  align-items: center;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  counter-increment: loop;
+}
+.loop li::before {
+  content: counter(loop, decimal-leading-zero);
+  color: var(--cobalt);
+  border: 1px solid var(--line);
+  padding: 0.15rem 0.4rem;
+  margin-right: 0.45rem;
+}
+.loop li:not(:last-child)::after {
+  content: '→';
+  margin: 0 0.7rem;
+  color: var(--line);
+}

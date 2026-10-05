@@ -1,12 +1,13 @@
 'use client';
 
-import { FormEvent, useCallback, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
 import { ArrowUp, ArrowRight, Check, Mic, Play, Radio, Send, ThumbsDown, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { useSpeechInput } from '@/hooks/use-speech-input';
 import { NudgeCard } from '@/components/nudge-card';
 import { Fold } from '@/components/fold';
+import { readUserName, USER_NAME_EVENT } from '@/lib/user-name';
 
 /** Live: one intervention, then the transcript. Restraint over inventory. */
 export function WingmanSidePanel() {
@@ -20,6 +21,15 @@ export function WingmanSidePanel() {
     isAgentRunning,
   } = useConversationState();
   const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
+  // The name typed on the docket ("Walking in as…") replaces the generic "Me".
+  const [userFirst, setUserFirst] = useState('');
+  useEffect(() => {
+    const read = () => setUserFirst(readUserName().split(' ')[0] ?? '');
+    read();
+    window.addEventListener(USER_NAME_EVENT, read);
+    return () => window.removeEventListener(USER_NAME_EVENT, read);
+  }, []);
+  const userLabel = userFirst || 'Me';
   const transcriptInputRef = useRef<HTMLInputElement>(null);
   const speech = useSpeechInput(
     useCallback((text: string) => {
@@ -208,7 +218,7 @@ export function WingmanSidePanel() {
             onClick={() => setSpeaker('user')}
             type="button"
           >
-            Me
+            {userLabel}
           </button>
           <button
             className={`px-2 py-1 text-[10px] font-mono uppercase ${speaker === 'counterpart' ? 'bg-[var(--tomato)] text-white' : 'text-[var(--ink-soft)]'}`}
@@ -253,8 +263,8 @@ export function WingmanSidePanel() {
           style={{ color: 'var(--ink-soft)', marginTop: -4, fontSize: 9 }}
         >
           Dictation is transcribed by your browser&apos;s speech service — audio goes to the browser
-          vendor, and the turn is attributed to whoever the Me / {counterpartFirst} toggle is set
-          to.
+          vendor, and the turn is attributed to whoever the {userLabel} / {counterpartFirst} toggle
+          is set to.
         </p>
       )}
 

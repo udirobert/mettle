@@ -103,7 +103,9 @@ export function InboxDraftCard({ onOpen }: { onOpen: (update: ConversationStateU
           >
             <RefreshCw size={13} aria-hidden="true" /> {loading ? 'Checking…' : 'Check again'}
           </button>
-          <span className={styles.meta}>{reason}</span>
+          {/* The chip hint already carries the friendly reason; the raw detail
+              only earns a line when the two differ (e.g. backend unreachable). */}
+          {reason !== draft.reason && <span className={styles.meta}>{draft.reason}</span>}
         </div>
       </section>
     );

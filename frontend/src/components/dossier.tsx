@@ -44,8 +44,7 @@ export function CounterpartDossier({
         <summary className={styles.summary}>
           <span className={styles.summaryLeft}>
             <User size={13} aria-hidden="true" />
-            <span className={styles.summaryName}>{profile.name}</span>
-            {profile.role && <span className={styles.summaryRole}>{profile.role}</span>}
+            <span className={styles.summaryName}>What you&apos;re walking into</span>
           </span>
           <span className={styles.summaryRight}>
             <span className={styles.summaryCount}>

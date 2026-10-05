@@ -14,6 +14,7 @@ import { MemoryPanel } from '@/components/memory-panel';
 import { ScoutBriefing } from '@/components/scout-briefing';
 import { memoryRef, readCarryCount } from '@/lib/counterpart-identity';
 import { describeScoutSource } from '@/lib/scout-status';
+import { readUserName, writeUserName } from '@/lib/user-name';
 
 import styles from './event-list.module.css';
 
@@ -41,8 +42,10 @@ export function EventList({
   // localStorage only exists in the browser, so read it after mount — reading it
   // during render makes the server and client HTML differ (a hydration error).
   const [carryCount, setCarryCount] = useState(0);
+  const [userName, setUserName] = useState('');
   useEffect(() => {
     setCarryCount(carryCountFor(SALARY_EVENT.counterpart, danaOrganization));
+    setUserName(readUserName());
   }, [danaOrganization]);
 
   const isDana = state.scenario_id === SALARY_EVENT.id;
@@ -82,6 +85,21 @@ export function EventList({
         <p className={styles.subtitle}>
           Not every meeting. {SALARY_EVENT.stakes.replace(/\.$/, '')} — and it lands Thursday.
         </p>
+        <label className={styles.whoami}>
+          <span className={styles.whoamiLabel}>Walking in as</span>
+          <input
+            className={styles.whoamiInput}
+            value={userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              writeUserName(e.target.value);
+            }}
+            placeholder="Your name"
+            aria-label="Your name — used to label your side of the transcript"
+            autoComplete="name"
+            maxLength={40}
+          />
+        </label>
       </header>
 
       {onQuickRehearsal && (
@@ -154,6 +172,13 @@ export function EventList({
           <span>{nextMove}</span>
         </div>
       </button>
+
+      <ol className={styles.loop} aria-label="How Mettle works">
+        <li>Forward the thread</li>
+        <li>Keep or reject each claim</li>
+        <li>Rehearse against the council</li>
+        <li>The debrief memo lands in your inbox</li>
+      </ol>
 
       {/* The briefing must not depend on the Scout log existing — the
           degraded inbox path renders no scout events, and the counterpart

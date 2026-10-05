@@ -340,46 +340,6 @@ export const SECONDARY_EVENTS: MettleEvent[] = [
       'May promise outplacement support that has not been approved.',
     ],
   },
-  {
-    id: 'salary_negotiation',
-    name: 'Salary negotiation',
-    kind: 'Compensation',
-    walkIn: {
-      opening: 'Thank her for the title, then name the equity number you are asking for.',
-      ifThen: [
-        {
-          trigger: 'she says equity is decided by another committee',
-          response: 'Understood. Will you take my number to that committee with your recommendation?',
-        },
-        {
-          trigger: 'she offers "next cycle"',
-          response: 'I can work with that if we put the date and the amount in writing today.',
-        },
-      ],
-      avoid: 'Revealing the competing offer before hearing her counter.',
-    },
-    counterpart: 'Sarah Martinez',
-    counterpartRole: 'VP, People',
-    stakes: 'VP promotion compensation package.',
-    risk: 'Medium',
-    timeUntil: '1 week',
-    counterpartProfile: {
-      name: 'Sarah Martinez',
-      role: 'VP, People',
-      style: ['warm', 'process-driven', 'firm on bands'],
-      leverage: 'Controls the band exception process.',
-      concerns: [
-        'Compression complaints from two peers if the package is rich.',
-        'Equity refresh is decided by a separate committee.',
-        'The title change is already approved — only money is open.',
-      ],
-    },
-    userWeakPoints: [
-      'May anchor on the title win and under-ask on equity.',
-      'May reveal the competing offer before extracting the counter.',
-      'May accept "next cycle" framing without a dated commitment.',
-    ],
-  },
 ];
 
 /** Legacy list kept for the "calendar noise" contrast section. */

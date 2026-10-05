@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 
 import type { ScoutEvent } from '@/hooks/use-conversation-state';
+import { useScoutStatus } from '@/hooks/use-scout-status';
 
 import styles from './scout-briefing.module.css';
 
@@ -50,6 +51,7 @@ export function ScoutBriefing({
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const headingRef = useRef<HTMLHeadingElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const { status } = useScoutStatus();
 
   const awaiting = phase.kind === 'awaiting' || phase.kind === 'deciding';
 
@@ -103,6 +105,10 @@ export function ScoutBriefing({
       setPhase({ kind: 'error' });
     }
   };
+
+  // Scout offline: one primary path on the hero, not a CTA that dead-ends.
+  // The status chip in the docket header already explains why Scout is away.
+  if (status?.degraded && phase.kind === 'idle') return null;
 
   return (
     <div className={styles.wrap}>
