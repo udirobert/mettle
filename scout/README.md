@@ -26,6 +26,25 @@ OPENAI_API_KEY=... npm run dev             # Studio + API on :4111
 | `SCOUT_CORS_ORIGIN`                                  | `http://localhost:3000`            | Comma-separated origins                                            |
 | `PORT`                                               | `4111`                             |                                                                    |
 
+## Durable approval gate
+
+`briefing` workflow: `gather → approval (suspend) → release`. Scout drafts;
+the user decides. The suspended snapshot is stored in Mastra storage (Neon when
+`DATABASE_URL` is set), so a decision works from a fresh process.
+
+```bash
+curl :4111/scout/status                                   # {"storage":"neon"|"local"}
+curl -X POST :4111/scout/brief                            # -> status: awaiting_approval, runId
+curl -X POST :4111/scout/brief/<runId>/decision \
+     -H 'Content-Type: application/json' -d '{"approved":true}'   # -> done, released
+```
+
+Verified on Neon: start, kill the server, restart, approve → `released: true`;
+reject → `released: false` with a `discarded_brief` event; bad body → 400. Trace
+spans and the workflow snapshot land in `mastra_ai_spans` /
+`mastra_workflow_snapshot`. Mastra creates its own `mastra_*` tables on first
+boot (about 45), separate from Mettle's `counterpart_memory`.
+
 ## Model selection and fallback
 
 `src/mastra/models.ts` builds the agent's model list from whatever is

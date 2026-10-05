@@ -55,3 +55,5 @@ next-env.d.ts
 .claude
 .scratch/
 .commandcode/
+
+.tmp_repos/

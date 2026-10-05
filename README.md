@@ -19,8 +19,8 @@ conversation (Neon Postgres), and emails you the debrief (AgentMail).
 - `backend/graph/coach.py`, `backend/graph/context.py`,
   `backend/graph/wingman_proactive.py`, `backend/graph/debrief.py`,
   `backend/context/` (AgentMail/Exa/memory ingestion), `backend/triggers/rules.py`,
-  and `backend/voice/` belong to Person B. `/scout` (planned Mastra agent,
-  AG-UI) also belongs to Person B.
+  and `backend/voice/` belong to Person B. `/scout` (Mastra agent,
+  AG-UI; see `scout/README.md`) also belongs to Person B.
 - `scenarios/salary_review.md` is the demo scenario (planned);
   `scenarios/lp_renewal.md` remains as contrast.
 - `frontend/` is the CopilotKit Next.js surface. The workspace in
@@ -82,7 +82,14 @@ modal deploy modal_app.py
 Set `OPENAI_API_KEY` as a Modal secret if you want LLM-backed output; otherwise
 the endpoints fall back to deterministic output. For Neon AI Gateway, also set
 `OPENAI_BASE_URL` to `<NEON_AI_GATEWAY_BASE_URL>/v1` and `OPENAI_MODEL`
-(e.g. `gpt-5-mini`), plus `DATABASE_URL` for the Postgres checkpointer.
+(e.g. `gpt-5-mini`), plus `DATABASE_URL` for the Postgres checkpointer. In
+`.env`, quote the Neon URL (`DATABASE_URL="postgresql://…&…"`) — the `&` breaks
+shell sourcing otherwise. For tool-calling agents (the Scout) use a Claude
+model on the gateway; `gpt-5-mini` fails on multi-step tool runs there.
+
+Scout (Mastra, `scout/`): `cd scout && NODE_ENV=development npm i --include=dev
+&& npm run dev` serves on `:4111`. Needs `NEON_AI_GATEWAY_TOKEN` +
+`NEON_AI_GATEWAY_BASE_URL` and/or `FEATHERLESS_API_KEY` in `scout/.env`.
 
 Backend (Render):
 
@@ -172,10 +179,15 @@ npm run build
 
 ## Known gaps
 
-- **Scout agent (Mastra)** — inbox watch starts as a FastAPI poll; the Mastra
-  AG-UI agent takes over when it lands.
-- **Counterpart memory** — Neon schema for persisted commitments not yet
-  defined.
+- **Scout agent (Mastra)** — built in `scout/`, streaming `scout_log` over
+  AG-UI (Neon AI Gateway primary, Featherless fallback), registered in the
+  CopilotKit runtime via `MastraAgent.getRemoteAgents`. A durable `briefing`
+  workflow suspends for user approval on Neon-backed snapshots. The
+  deterministic `POST /scout/run` remains the demo-safe fallback. See
+  `scout/README.md`.
+- **Counterpart memory** — `backend/context/memory.py` persists to Neon and is
+  wired into ingest and debrief; `run_debrief` splits commitments from notes so
+  remembered commitments surface as `provenance="memory"` claims.
 - **A2UI action forwarding** — the "Get a reframe" action is handled locally in
   the UI. It is not yet forwarded to the agent as an `a2uiAction`.
 - **LiveKit voice** — typed turns are the supported input path.

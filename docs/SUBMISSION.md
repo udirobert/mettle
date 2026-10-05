@@ -45,13 +45,88 @@ Two agents, one shared state contract.
 
 - **Counsel agent** — LangGraph, five modes (Scout / Coach / Opponent /
   Wingman / Debrief), served over AG-UI.
-- **Scout agent** — watches the inbox, triages, calls the ingestion and research
-  routes, writes `scout_log` events into shared state.
+- **Scout agent** — a Mastra agent (`scout/`) that reads the inbox, calls the
+  ingestion and research routes, and writes `scout_log` events into shared
+  state over AG-UI. A Mastra workflow wraps it in a durable approval gate.
 - **Shared contract** — `backend/graph/state.py` is the single source of truth;
   `use-conversation-state.ts` mirrors it typed.
 - **Frontend** — Next.js + CopilotKit. `/webmcp` exposes all four phases as
   browser-native agent tools via `document.modelContext`, so an in-browser agent
   can prepare, rehearse, support, and debrief without leaving the tab.
+
+## Sponsor usage
+
+Each sponsor does a job Mettle cannot do without. File paths point to the code.
+
+### Neon — the persistent brain
+
+- **Why it's necessary:** a counsel agent that forgets your last conversation
+  with Dana is a chatbot. Memory, graph checkpoints, and Scout's suspended
+  approvals must survive restarts, and every model call needs one credential.
+- **Postgres:** `backend/context/memory.py` keeps a `counterpart_memory` table
+  (commitments, changed assumptions, notes per counterpart), read at ingest and
+  written at debrief. `backend/graph/checkpoint.py` runs the LangGraph
+  `PostgresSaver` on the same database. Mastra persists Scout's working memory,
+  workflow snapshots, and trace spans there too (`scout/src/mastra/storage.ts`).
+- **AI Gateway:** Scout's model is `neon/claude-sonnet-4-6` through the gateway
+  (`scout/src/mastra/models.ts`). One key, one bill, switchable per model.
+- **Honest notes:** the gateway's OpenAI Responses path fails on multi-step tool
+  runs, so tool-calling agents use a Claude model. `infra/neon/neon.ts` declares
+  the gateway as code.
+
+### Mastra — the Scout, with a human gate it can't skip
+
+- **Why it's necessary:** Scout works before you arrive, and what it finds must
+  wait for you. A Mastra workflow `suspend()`s with the draft brief and resumes
+  only when you decide — minutes or hours later, even after a server restart.
+- **How:** `briefing` = `gather → approval (suspend) → release`
+  (`scout/src/mastra/workflows/briefing.ts`). `POST /scout/brief` starts it;
+  `POST /scout/brief/:runId/decision` resumes it from a fresh process, loading
+  the snapshot from Neon. Rejecting discards the draft and nothing reaches the
+  Coach. We killed the server mid-approval and resumed to prove it.
+- **Agent:** `scout/src/mastra/agents/scout-agent.ts` calls the ingestion and
+  research routes and appends auditable `ScoutEvent`s to per-thread working
+  memory, streamed to the UI as AG-UI `STATE_SNAPSHOT`/`STATE_DELTA`.
+- **Observability:** every run writes a trace to Neon via the storage exporter
+  with sensitive data filtered.
+- **Honest notes:** a deterministic, LLM-free Scout (`POST /scout/run`) returns
+  the same events, so the demo never depends on a model being up.
+
+### AgentMail — the agent's own inbox
+
+- **Why it's necessary:** the wow moment is forwarding Dana's thread to your
+  agent. It needs its own address, and only reads mail sent to it.
+- **How:** `backend/context/agentmail_client.py` polls `messages.list` (no
+  webhook, no public URL — it survives venue wifi) and sends the debrief memo
+  from the agent's address. `ingestion.py` normalizes threads into claims.
+- **Honest notes:** without a key, ingestion falls back to a bundled seed thread
+  and labels it `(sample thread)` in the scout log. It never passes it off as
+  your mail.
+
+### Exa — public homework
+
+- **Why it's necessary:** your position means little without the market. Exa
+  finds comp bands and company context that your inbox can't.
+- **How:** `backend/context/research_client.py` returns claims with
+  `provenance="web"` and the source URLs, into the same keep/reject gate.
+- **Honest notes:** without a key, research returns empty with `degraded: true`
+  and Scout logs the step as `skipped` rather than inventing sources.
+
+### Featherless — the fallback model
+
+- **Why it's necessary:** a demo should not die with one provider. Scout lists
+  Featherless (`moonshotai/Kimi-K2-Instruct-0905`) after the Neon gateway and
+  Mastra falls through on error.
+- **How:** `scout/src/mastra/models.ts` builds the list from whichever keys are
+  present. We ran the full Scout on Featherless alone and got the same log.
+
+### What a judge can check in two minutes
+
+1. `curl :4111/scout/status` → `{"storage":"neon"}`.
+2. `curl -X POST :4111/scout/brief` → `awaiting_approval` with the draft.
+3. Restart the Scout server, then
+   `curl -X POST :4111/scout/brief/<runId>/decision -d '{"approved":true}'` →
+   `released`. The decision survived the restart.
 
 ## Graceful degradation is a feature
 

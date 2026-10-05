@@ -117,6 +117,48 @@ checkpoint.py`, `backend/context/memory.py`.
   Lane A's FastAPI poll endpoint _is_ the scout; the log says "Scout" either
   way. A stalled Mastra port costs the demo nothing.
 
+### Lane C status (updated 2026-10-05)
+
+**Checkpoint passed: Mastra streams `scout_log` over AG-UI.** Fallback not
+needed.
+
+| Item                                        | State                                                                                                                                                                                                                                        |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL` → `PostgresSaver`            | ✅ Verified live on Neon (project `mettle`, `billowing-hill-98356084`). Unreachable DB now fails with a clear, secret-free error.                                                                                                            |
+| `backend/context/memory.py`                 | ✅ `counterpart_memory` table; `get_history`, `record_debrief`, `history_to_claims`. Live round trip verified. Wired into ingest and debrief. 7 tests.                                                                                       |
+| `scout/` Mastra agent                       | ✅ Calls `/context/import` + `/context/research`, appends `ScoutEvent`s to working-memory `scout_log`. Full AG-UI run (`POST :4111/copilotkit`, `agent/run`) emits `STATE_SNAPSHOT`/`STATE_DELTA`. 8 vitest tests.                           |
+| `POST :4111/scout/run`                      | ✅ Deterministic, LLM-free Scout returning the same `ScoutEvent[]` — the demo-safe fallback.                                                                                                                                                 |
+| LLM                                         | ✅ Neon AI Gateway (`neon/claude-sonnet-4-6`) primary; Featherless (`moonshotai/Kimi-K2-Instruct-0905`) fallback. Each verified alone.                                                                                                       |
+| Durable approval gate (`briefing` workflow) | ✅ `POST /scout/brief` suspends; `POST /scout/brief/:runId/decision` resumes. Verified across a server restart on Neon; reject path discards. 17 vitest tests total.                                                                         |
+| Mastra storage + traces on Neon             | ✅ Working memory, workflow snapshots and spans in Postgres (`DATABASE_URL`); local SQLite fallback.                                                                                                                                         |
+| `route.ts` registration                     | ✅ Done — `MastraAgent.getRemoteAgents({ mastraClient })` registers `scout` beside the default agent; wrapped in try/catch so a down scout server doesn't block boot. `@ag-ui/client` pinned to `0.0.57` to match CopilotKit's type lineage. |
+| Live Neon→Featherless failover in one run   | ⏳ Mechanism verified with a broken primary; not seen mid-run.                                                                                                                                                                               |
+
+Findings other lanes should know:
+
+- `neon/gpt-5-mini` fails after the first tool call (gateway returns 400 on the
+  OpenAI Responses reasoning replay). Use a Claude model for tool-calling
+  agents.
+- Scout working memory is **per thread** — use a fresh `threadId` per briefing
+  or `scout_log` accumulates across runs.
+- Dev B: render `state.scout_log` from the agent keyed `scout`; each entry is
+  `{ ts, actor: "scout", action, detail, sources? }` with actions
+  `read_thread | flagged_commitment | researched | skipped`. Degraded steps are
+  logged as `skipped`, and the backend's bundled sample thread is labelled
+  "(sample thread)" in `detail`.
+- ~~Dev A: `/context/research` previously matched the wrong "Dana Whitfield"
+  (lawyer/LinkedIn pages) when `counterpart_name` dominated the query.~~
+  Resolved: the query is now `topic + organization` only — `counterpart_name`
+  stays a request field but never reaches Exa (7990fce). Verified live:
+  comp-band sources, not author pages.
+- ~~Debrief passes everything as `notes=`~~ Resolved: `run_debrief` splits
+  commitments out of notes via `_split_notes_for_memory()` and passes them to
+  `record_debrief(commitments=…)`, so remembered commitments surface as
+  `provenance="memory"` claims on the next import (3d7ea45).
+
+Credentials: `neon env pull --project-id billowing-hill-98356084 -s ai-gateway`
+(from `infra/neon/`) for the gateway; `FEATHERLESS_API_KEY` in `scout/.env`.
+
 ## Timeline
 
 | Time  | Gate                                                            |

@@ -1,6 +1,5 @@
 import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
-import { LibSQLStore } from "@mastra/libsql";
 import { z } from "zod";
 import { importInbox, research } from "../tools/backend";
 import { buildScoutModels } from "../models";
@@ -46,11 +45,8 @@ Workflow, every run:
 Keep existing scout_log entries; only append. Finish with a two-sentence summary for the user. Every claim you surface is pending until the user approves it.`,
   model: buildScoutModels(),
   tools: { importInbox, research },
+  // Storage is inherited from the Mastra instance (Neon Postgres when configured).
   memory: new Memory({
-    storage: new LibSQLStore({
-      id: "scout-memory",
-      url: process.env.SCOUT_DB_URL ?? "file:./scout.db",
-    }),
     options: {
       // Per-thread so each briefing starts with a clean scout_log.
       workingMemory: { enabled: true, schema: scoutStateSchema, scope: "thread" },
