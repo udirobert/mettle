@@ -1,9 +1,10 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useCallback, useRef, useState } from 'react';
 import { useInterrupt } from '@copilotkit/react-core/v2';
-import { ArrowUp, ArrowRight, Check, Play, Radio, Send, ThumbsDown, Zap } from 'lucide-react';
+import { ArrowUp, ArrowRight, Check, Mic, Play, Radio, Send, ThumbsDown, Zap } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { useSpeechInput } from '@/hooks/use-speech-input';
 import { NudgeCard } from '@/components/nudge-card';
 import { Fold } from '@/components/fold';
 
@@ -19,6 +20,13 @@ export function WingmanSidePanel() {
     isAgentRunning,
   } = useConversationState();
   const [speaker, setSpeaker] = useState<'user' | 'counterpart'>('user');
+  const transcriptInputRef = useRef<HTMLInputElement>(null);
+  const speech = useSpeechInput(
+    useCallback((text: string) => {
+      const input = transcriptInputRef.current;
+      if (input) input.value = input.value ? `${input.value} ${text}` : text;
+    }, []),
+  );
   const nudges = state.nudges_sent ?? [];
   const latestNudge = nudges.at(-1);
   const reactiveReply = state.reactive_reply ?? null;
@@ -211,15 +219,44 @@ export function WingmanSidePanel() {
           </button>
         </div>
         <input
+          ref={transcriptInputRef}
           className="mettle-input flex-1"
           disabled={isAgentRunning}
           name="transcript"
           placeholder="Add the latest turn"
         />
+        {speech.supported && (
+          <button
+            aria-label={
+              speech.listening
+                ? `Stop dictating (as ${speaker === 'user' ? 'you' : counterpartFirst})`
+                : `Dictate the turn as ${speaker === 'user' ? 'you' : counterpartFirst}`
+            }
+            aria-pressed={speech.listening}
+            className="mettle-icon-action"
+            disabled={isAgentRunning}
+            onClick={() => (speech.listening ? speech.stop() : speech.start())}
+            title="Push to talk — transcribed by your browser's speech service"
+            type="button"
+          >
+            <Mic size={14} aria-hidden="true" />
+            {speech.listening ? 'Listening…' : 'Talk'}
+          </button>
+        )}
         <button className="mettle-action" disabled={isAgentRunning} type="submit">
           <ArrowUp size={16} aria-hidden="true" /> Add
         </button>
       </form>
+      {speech.supported && (
+        <p
+          className="mettle-label"
+          style={{ color: 'var(--ink-soft)', marginTop: -4, fontSize: 9 }}
+        >
+          Dictation is transcribed by your browser&apos;s speech service — audio goes to the browser
+          vendor, and the turn is attributed to whoever the Me / {counterpartFirst} toggle is set
+          to.
+        </p>
+      )}
 
       <div>
         <Fold

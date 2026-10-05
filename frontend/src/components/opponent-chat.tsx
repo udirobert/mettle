@@ -1,8 +1,9 @@
 'use client';
 
-import type { CSSProperties } from 'react';
-import { ArrowRight, ArrowUp } from 'lucide-react';
+import { useCallback, useRef, type CSSProperties } from 'react';
+import { ArrowRight, ArrowUp, Mic } from 'lucide-react';
 import { useConversationState } from '@/hooks/use-conversation-state';
+import { useSpeechInput } from '@/hooks/use-speech-input';
 import styles from './opponent-chat.module.css';
 
 const OPENING =
@@ -50,6 +51,13 @@ function order(index: number): CSSProperties {
 /** Rehearse: the rehearsal floor. Her seat, yours, and the lines between. */
 export function OpponentChat() {
   const { state, runOpponentTurn, isAgentRunning, setPhase } = useConversationState();
+  const turnInputRef = useRef<HTMLInputElement>(null);
+  const speech = useSpeechInput(
+    useCallback((text: string) => {
+      const input = turnInputRef.current;
+      if (input) input.value = input.value ? `${input.value} ${text}` : text;
+    }, []),
+  );
   const transcript = state.transcript ?? [];
   const counterpart =
     typeof state.counterpart_profile?.name === 'string'
@@ -195,6 +203,7 @@ export function OpponentChat() {
           Your reply to {firstName}
         </label>
         <input
+          ref={turnInputRef}
           id="rehearse-turn"
           className={`mettle-input ${styles.markInput}`}
           disabled={isAgentRunning}
@@ -209,11 +218,30 @@ export function OpponentChat() {
           autoComplete="off"
           autoFocus
         />
+        {speech.supported && (
+          <button
+            aria-label={speech.listening ? 'Stop dictating your line' : 'Dictate your line'}
+            aria-pressed={speech.listening}
+            className="mettle-icon-action"
+            disabled={isAgentRunning}
+            onClick={() => (speech.listening ? speech.stop() : speech.start())}
+            title="Push to talk — transcribed by your browser's speech service"
+            type="button"
+          >
+            <Mic size={14} aria-hidden="true" />
+          </button>
+        )}
         <button className="mettle-action" disabled={isAgentRunning} type="submit">
           <ArrowUp size={16} aria-hidden="true" />
           Send
         </button>
       </form>
+      {speech.supported && (
+        <p className="mettle-label" style={{ color: 'var(--ink-soft)', marginTop: 4, fontSize: 9 }}>
+          Dictation is transcribed by your browser&apos;s speech service — audio goes to the browser
+          vendor, not to Mettle.
+        </p>
+      )}
     </div>
   );
 }

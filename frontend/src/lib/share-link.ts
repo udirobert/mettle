@@ -26,14 +26,17 @@ function toBase64Url(bytes: Uint8Array): string {
 }
 
 function fromBase64Url(text: string): Uint8Array {
-  const padded = text.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((text.length + 3) % 4);
+  const padded =
+    text.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (text.length % 4)) % 4);
   const binary = atob(padded);
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-export function encodeShareLink(payload: SharedDebrief): string {
+export function encodeShareLink(payload: SharedDebrief, origin?: string): string {
+  const base =
+    origin ?? (typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
   const json = new TextEncoder().encode(JSON.stringify(payload));
-  return `${window.location.origin}/share#d=${toBase64Url(json)}`;
+  return `${base}/share#d=${toBase64Url(json)}`;
 }
 
 export function decodeShareLink(hash: string): SharedDebrief | null {
