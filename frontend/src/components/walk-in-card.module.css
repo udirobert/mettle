@@ -1,0 +1,226 @@
+.dialog {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  margin: auto;
+  max-height: calc(100dvh - 2rem);
+  max-width: min(420px, calc(100vw - 2rem));
+  padding: 0;
+  width: 100%;
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* The card is dealt onto the table, then its lines are read out one by one. */
+.dialog[open] .card {
+  animation: deal 420ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(28px) rotate(-3deg) scale(0.96);
+  }
+}
+
+.step {
+  animation: lineIn 320ms ease-out both;
+  animation-delay: calc(260ms + var(--i, 0) * 110ms);
+}
+
+@keyframes lineIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open] .card,
+  .step {
+    animation: none;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.5rem;
+}
+
+.head {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.kicker,
+.label {
+  color: var(--cobalt);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.role {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
+
+.close {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  flex-shrink: 0;
+  height: 2.25rem;
+  place-items: center;
+  width: 2.25rem;
+}
+
+.close:hover {
+  border-color: var(--ink);
+}
+
+.opening {
+  background: var(--lime);
+  color: var(--on-lime);
+  padding: 1rem 1.1rem;
+}
+
+.opening .label {
+  color: var(--on-lime);
+}
+
+.openingText {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.line {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0;
+}
+
+.line dt {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.line dd {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.avoid {
+  align-items: flex-start;
+  background: var(--tint-risk);
+  border: 1px solid var(--tint-risk-line);
+  color: var(--ink);
+  display: flex;
+  font-size: 0.88rem;
+  gap: 0.5rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+}
+
+.avoid svg {
+  color: var(--tomato);
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.foot {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.spar {
+  align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--surface);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  padding: 0.6rem 0.9rem;
+}
+
+.spar:hover {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+}
+
+.prep {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  padding: 0.6rem 0.9rem;
+}
+
+.prep:hover {
+  border-color: var(--ink);
+}
+
+.spar:focus-visible,
+.prep:focus-visible,
+.close:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cobalt) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.hint {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  margin-left: auto;
+  text-transform: uppercase;
+}

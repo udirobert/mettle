@@ -12,11 +12,35 @@ import type { MettleEvent } from './lp-event';
 export const SALARY_EVENT: MettleEvent = {
   id: 'salary_review',
   name: 'Comp review',
+  kind: 'Compensation',
   counterpart: 'Dana Whitfield',
   counterpartRole: 'VP Product, Meridian Labs',
   stakes: "A long-deferred raise: $185k base and the senior title.",
   risk: 'High' as const,
   timeUntil: 'Thursday',
+  walkIn: {
+    opening:
+      'Open with the scope case she asked for — what the role became, not the number — then state $185k as the band-appropriate figure for it.',
+    ifThen: [
+      {
+        trigger: 'she says $185k is above band',
+        response:
+          'That is why the scope case comes first — walk the expanded scope, then ask what the band for that scope actually is.',
+      },
+      {
+        trigger: 'she raises the March team-health metrics',
+        response:
+          'Own it in one sentence — "I owe you those, they are ready, you will have them today" — then return to scope. Do not relitigate the miss.',
+      },
+      {
+        trigger: 'she offers the title without the number',
+        response:
+          'Accept the title as done, then ask for a dated comp decision: "If not this cycle, what date do we put on the $185k?"',
+      },
+    ],
+    avoid:
+      'Conceding the number before testing whether title plus expanded scope is a real trade — or justifying with tenure instead of scope.',
+  },
   counterpartProfile: {
     name: 'Dana Whitfield',
     role: 'VP Product, Meridian Labs',

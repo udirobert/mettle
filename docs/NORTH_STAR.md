@@ -177,6 +177,69 @@ The web app is the counsel desk, not the whole product.
 - If a screen could be reused for generic meeting notes or a task list,
   sharpen it until it only makes sense for high-stakes personal counsel.
 
+### Restraint (from user testing: "verbose, overwhelming")
+
+The answer is the product; the reasoning is there when asked for.
+
+- **One job per screen.** Each screen answers "what do I say or do next?"
+- **The walk-in card is the standard output.** Brief, Spar and Close all reduce
+  to: one opening, up to three if-then lines, one "don't".
+- **One "Show working" per screen.** Adversaries, split, pressure test and
+  evidence live behind a single disclosure — never several stacked folds.
+- **Word budgets.** Headline ≤ 8 words, any line ≤ 20, lists ≤ 3 items;
+  under ~60 visible words on home and ~90 on the brief verdict.
+- **Show, don't narrate.** Prefer artefacts and motion to sentences: the raise
+  bar ($ committed / target), the pattern dots (objection hit 3 of 4 LPs), the
+  card dealt onto the table with lines read out in sequence.
+- **Explain once.** Helper copy appears on first use, then gets out of the way.
+- **One note per Spar turn.** The conversation breathes between nudges.
+- **Motion has one job:** sequence information. All of it respects
+  `prefers-reduced-motion`.
+- **Test:** a user should be able to say what they'd say first within 5
+  seconds on any screen.
+
+### First run (from user testing: "what is this for?")
+
+A new visitor gets three answers, in order, in roughly 20 words each:
+
+1. **What is it?** Promise line + one sub-line, with a real walk-in card as the
+   hero artefact — show the output, don't describe it.
+2. **Can I feel it?** One-sentence scene ("You're raising a fund…"), labelled
+   sample data, and one primary action: a 60-second rehearsal.
+3. **Is it for me?** After three rehearsal turns, hand off to a real meeting
+   ("Paste a real thread").
+
+Terms are defined on first use (Card / Rehearse / Prep by time-to-meeting).
+The intro shows once (`mettle.intro.seen`) and is reopened via "What is
+Mettle?". Share previews carry the same promise (title, description, OG image).
+
+### Craft (one world, one kit)
+
+Mettle is a theatre. Each stage of the meeting is a place in it:
+
+| Screen   | Place           | The one thing on stage                 |
+| -------- | --------------- | -------------------------------------- |
+| Intro    | The plan        | The room from above, card on the table |
+| Home     | Call sheet      | Upcoming meetings, pinned              |
+| Prep     | Writers' room   | Three adversaries around the table     |
+| Rehearse | Rehearsal floor | Her seat, yours, the sightline between |
+| Live     | Backstage (dim) | Your lines, within reach               |
+| Close    | Notes session   | What landed; the card filed            |
+
+Build from the kit in `globals.css` (Craft kit), never a one-off:
+
+- **Pieces:** `mettle-plan` (floor-plan grid), `mettle-spike` (tape mark —
+  "act here next"), `mettle-seat` (--them coral / --you cobalt), `mettle-note`
+  (taped director's note for feedback), `mettle-stamp` (step done),
+  `mettle-label` (the one mono label voice). Primary buttons press in.
+- **Motion — four moves, one job each:** `mettle-deal` (an artefact lands),
+  `mettle-line-in` with `--i` (lines read out in order), travel (a turn
+  crosses the sightline), tape pulse ("you're up"). Motion only shows order
+  or turn-taking — never decoration. One entrance sequence per screen.
+  Reduced motion switches it all off.
+- **Before building a screen, answer:** where in the theatre are we, and
+  what's the one thing on stage?
+
 ## Product Language
 
 Preferred positioning:

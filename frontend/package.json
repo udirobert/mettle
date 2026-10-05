@@ -12,7 +12,7 @@
     "install:agent": "./scripts/setup-agent.sh || scripts\\setup-agent.bat"
   },
   "dependencies": {
-    "@ag-ui/client": "^0.0.57",
+    "@ag-ui/client": "^0.0.59",
     "@ag-ui/mastra": "^1.1.6",
     "@copilotkit/a2ui-renderer": "1.62.3",
     "@copilotkit/react-core": "1.62.3",
@@ -31,6 +31,8 @@
     "react-rnd": "^10.5.2",
     "react18-json-view": "^0.2.9",
     "recharts": "^3.7.0",
+    "rrweb-player": "^2.1.6",
+    "swr": "^2.5.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^3.23.8"
   },
@@ -46,6 +48,10 @@
   "overrides": {
     "uuid": "^11.1.1",
     "qs": "^6.15.4",
-    "undici": "^6.28.0"
+    "undici": "^6.28.0",
+    "@ag-ui/client": "^0.0.59",
+    "@ag-ui/core": "0.0.59",
+    "@ag-ui/encoder": "0.0.59",
+    "@ag-ui/proto": "0.0.59"
   }
 }

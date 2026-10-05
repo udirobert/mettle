@@ -16,6 +16,7 @@
   --cobalt: #2545c7;
   --tomato: #ef5d49;
   --lime: #d8f35e;
+  --on-lime: #162039;
   --sun: #ffc94a;
 
   /* Tinted surfaces for risk / signal / accent cards. */
@@ -227,16 +228,30 @@ input:focus-visible {
   transition:
     background 150ms ease,
     color 150ms ease,
-    transform 150ms ease;
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+/* Primary actions are physical: a hard shadow that presses in. */
+.mettle-action {
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .mettle-action:hover,
 .mettle-icon-action:hover {
   background: var(--lime);
-  color: var(--ink);
-  transform: translateY(-2px);
+  color: var(--on-lime);
+}
+.mettle-action:hover {
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.mettle-action:active {
+  box-shadow: 0 0 0 var(--ink);
+  transform: translate(3px, 3px);
 }
 .mettle-action:disabled {
+  box-shadow: 1px 1px 0 var(--ink);
   cursor: wait;
   opacity: 0.55;
   transform: none;
@@ -278,6 +293,33 @@ input:focus-visible {
 
 .mettle-fold:hover {
   color: var(--ink);
+}
+
+.mettle-fold-body:not([hidden]) {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 6px;
+}
+
+.mettle-source-line {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  gap: 8px;
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+}
+
+.mettle-source-line a {
+  align-items: center;
+  color: var(--cobalt);
+  display: inline-flex;
+  gap: 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .mettle-textarea {
@@ -359,6 +401,228 @@ textarea:focus-visible {
   }
 }
 
+/* ------------------------------------------------------------------------
+   Craft kit — shared pieces of the rehearsal-room world.
+   Every screen draws from these instead of inventing its own.
+   See docs/NORTH_STAR.md → Craft.
+   ------------------------------------------------------------------------ */
+
+/* Mono label: the one small-caps voice across the app. */
+.mettle-label {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Floor plan: the blue technical grid a scene is laid out on. */
+.mettle-plan {
+  background-color: color-mix(in srgb, var(--surface) 70%, transparent);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--cobalt) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--cobalt) 9%, transparent) 1px, transparent 1px);
+  background-position: -1px -1px;
+  background-size: 28px 28px;
+  border: 1px solid color-mix(in srgb, var(--cobalt) 22%, transparent);
+  position: relative;
+}
+
+/* Spike tape: a corner floor mark. Marks where to stand — or act — next. */
+.mettle-spike {
+  color: var(--cobalt);
+  display: inline-block;
+  flex-shrink: 0;
+  height: 14px;
+  position: relative;
+  width: 14px;
+}
+.mettle-spike::before,
+.mettle-spike::after {
+  background: currentColor;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+.mettle-spike::before {
+  height: 3px;
+  width: 100%;
+}
+.mettle-spike::after {
+  height: 100%;
+  width: 3px;
+}
+.mettle-spike--them {
+  color: var(--tomato);
+}
+.mettle-spike--go {
+  color: var(--lime);
+}
+.mettle-spike--live {
+  animation: mettle-tape-pulse 1600ms ease-in-out infinite;
+}
+
+/* Seats: her chair (coral outline) and yours (solid cobalt). */
+.mettle-seat {
+  align-items: center;
+  background: var(--surface);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  height: 2.4rem;
+  justify-content: center;
+  position: relative;
+  width: 2.4rem;
+}
+.mettle-seat--them {
+  border-color: var(--tomato);
+  color: var(--tomato);
+}
+.mettle-seat--you {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+  color: var(--surface);
+}
+
+/* Director's note: a slip of paper taped onto the scene. */
+.mettle-note {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--ink) 14%, transparent);
+  display: grid;
+  gap: 0.35rem;
+  justify-self: start;
+  max-width: 34rem;
+  padding: 1.1rem 1.1rem 0.95rem;
+  position: relative;
+  transform: rotate(-0.6deg);
+}
+.mettle-note::before {
+  background: color-mix(in srgb, var(--lime) 70%, transparent);
+  content: '';
+  height: 0.9rem;
+  left: 1.25rem;
+  position: absolute;
+  top: -0.45rem;
+  transform: rotate(-3deg);
+  width: 3.5rem;
+}
+.mettle-note strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.mettle-note p {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Stamp: marks a step as done. */
+.mettle-stamp {
+  border: 2px solid currentColor;
+  color: var(--cobalt);
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  padding: 0.2rem 0.5rem;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+}
+
+/* Backstage: Live is the one deliberately dim place. Night tokens are
+   scoped to this subtree further down (next to dark mode). */
+.mettle-backstage {
+  background-color: var(--canvas);
+  background-image: radial-gradient(
+    ellipse at 50% -10%,
+    color-mix(in srgb, var(--cobalt) 16%, transparent),
+    transparent 60%
+  );
+  color: var(--ink);
+}
+.mettle-backstage .mettle-kicker {
+  color: var(--ink-soft);
+}
+
+/* ---- Motion vocabulary: four moves, each with one job. ---- */
+
+/* 1. Deal: an artefact lands on the table. */
+.mettle-deal {
+  animation: mettle-deal 520ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+}
+@keyframes mettle-deal {
+  from {
+    opacity: 0;
+    transform: translate(24px, -16px) rotate(5deg) scale(0.94);
+  }
+}
+
+/* 2. Line in: lines are read out in order (set --i per line). */
+.mettle-line-in {
+  animation: mettle-line-in 360ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+@keyframes mettle-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* 3. Travel: a signal crosses the sightline between two seats.
+   Use the classes, not the keyframes — CSS modules rename keyframe refs. */
+.mettle-travel-right {
+  animation: mettle-travel-right 850ms cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+.mettle-travel-left {
+  animation: mettle-travel-left 850ms cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+@keyframes mettle-travel-right {
+  0% {
+    left: 0;
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+@keyframes mettle-travel-left {
+  0% {
+    left: 100%;
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    left: 0;
+    opacity: 0;
+  }
+}
+
+/* 4. Tape pulse: "you're up". */
+@keyframes mettle-tape-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 /* Respect users who prefer reduced motion: kill decorative animation. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -371,7 +635,28 @@ textarea:focus-visible {
   }
 }
 
-/* Dark mode: same tokens, night values. The cobalt rail keeps its identity. */
+/* Dark mode: same tokens, night values. The cobalt rail keeps its identity.
+   Backstage (Live) always uses the night values, whatever the system theme. */
+.mettle-backstage {
+  --canvas: #131829;
+  --surface: #1b2138;
+  --surface-alt: #171c30;
+  --foreground: #ece7dc;
+  --ink: #ece7dc;
+  --ink-soft: #a3abbd;
+  --line: #3a4260;
+  --tint-accent: #232c4e;
+  --tint-accent-line: #41519b;
+  --tint-signal: #26301c;
+  --tint-signal-line: #5a7500;
+  --signal-strong: #b4e04a;
+  --signal-strong-ink: #d8f35e;
+  --tint-risk: #34201d;
+  --tint-risk-line: #a1544a;
+  --secondary: #232a45;
+  --muted: #232a45;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --canvas: #131829;
@@ -549,7 +834,7 @@ textarea:focus-visible {
   padding: 11px 18px;
   border-radius: 999px;
   background: var(--ink, #0f172a);
-  color: #fff;
+  color: var(--canvas);
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
@@ -618,7 +903,7 @@ textarea:focus-visible {
 .mettle-coach-step--done .mettle-coach-step-num {
   background: var(--signal-strong, #16a34a);
   border-color: var(--signal-strong, #16a34a);
-  color: #fff;
+  color: var(--on-lime);
 }
 .mettle-coach-step + .mettle-coach-step::before {
   content: '';

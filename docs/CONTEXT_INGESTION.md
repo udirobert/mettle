@@ -73,6 +73,13 @@ Examples:
 - Co-founder reset: market benchmarks for roles/equity, public signals about
   company trajectory.
 
+- `Solari` (shipped): recorded cloud browser for user-named URLs
+  (`backend/research/solari.py`, `POST /research`). One recorded session reads
+  up to five pages; claims return `decision: "pending"` with a
+  `replay_session_id` on each source, and the UI links every researched claim
+  to `/replay/<session>` so the user can watch how it was gathered. Enabled
+  only when `SOLARI_API_KEY` is set; otherwise the option is hidden.
+
 During live Wingman, no open-ended browsing — too slow and too risky. Wingman
 relies on the approved brief, the transcript, and deterministic trigger rules.
 An explicit user ask for a lookup is a reactive action, labeled as external
