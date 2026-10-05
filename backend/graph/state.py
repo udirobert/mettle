@@ -73,6 +73,12 @@ class EvidenceClaim(TypedDict):
     # Where the evidence came from — drives UI provenance badges and keeps
     # private, public, remembered, and user-stated facts visibly separate.
     provenance: NotRequired[Literal["inbox", "paste", "web", "memory", "stated"]]
+    # Citation (pinned contract — written by ingestion/research, rendered by the
+    # claim list): the verbatim passage the claim rests on, where it lives, and
+    # when it was read. All optional; absent on pasted/stated claims.
+    quote: NotRequired[str]
+    source_url: NotRequired[str]
+    fetched_at: NotRequired[str]  # ISO-8601
     # Human-in-the-loop gate. Pending claims never reach Coach prompts.
     decision: NotRequired[Literal["pending", "approved", "rejected"]]
 

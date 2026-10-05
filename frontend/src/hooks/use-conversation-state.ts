@@ -74,6 +74,12 @@ export type EvidenceClaim = {
     | 'risk';
   /** Where the evidence came from — drives provenance badges in the UI. */
   provenance?: 'inbox' | 'paste' | 'web' | 'memory' | 'stated';
+  /** Citation (pinned contract): the verbatim passage the claim rests on. */
+  quote?: string;
+  /** Citation: where the passage lives (http/https only). */
+  source_url?: string;
+  /** Citation: ISO-8601 time the source was read. */
+  fetched_at?: string;
   decision?: 'pending' | 'approved' | 'rejected';
 };
 

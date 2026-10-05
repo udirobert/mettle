@@ -86,3 +86,34 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(claims[0]["provenance"], "memory")
         self.assertEqual(claims[0]["decision"], "pending")
         self.assertEqual(claims[0]["relevance"], "commitment")
+
+
+class ForgetTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.original_environment = os.environ.copy()
+        os.environ.pop("MEMORY_DATABASE_URL", None)
+        os.environ.pop("DATABASE_URL", None)
+        memory._schema_ready = False
+
+    def tearDown(self) -> None:
+        os.environ.clear()
+        os.environ.update(self.original_environment)
+
+    def test_forget_is_none_without_a_database(self) -> None:
+        self.assertIsNone(memory.forget("dana-reyes"))
+
+    def test_forget_deletes_by_normalized_key_and_reports_count(self) -> None:
+        os.environ["DATABASE_URL"] = "postgresql://example"
+        conn = _fake_conn()
+        conn.execute.return_value.rowcount = 3
+        with patch("psycopg.connect", return_value=conn):
+            self.assertEqual(memory.forget("Dana Reyes"), 3)
+        delete = [c for c in conn.execute.call_args_list if "DELETE" in str(c.args[0])][0]
+        self.assertEqual(delete.args[1], ("dana-reyes",))
+
+    def test_forget_zero_is_distinct_from_unavailable(self) -> None:
+        os.environ["DATABASE_URL"] = "postgresql://example"
+        conn = _fake_conn()
+        conn.execute.return_value.rowcount = 0
+        with patch("psycopg.connect", return_value=conn):
+            self.assertEqual(memory.forget("nobody"), 0)

@@ -156,6 +156,28 @@ def record_debrief(
     return key
 
 
+def forget(ref: str) -> int | None:
+    """Delete everything remembered under ``ref``. Returns rows deleted, or
+    ``None`` when memory is unavailable (distinct from 0 = nothing to forget)."""
+    key = counterpart_key(ref)
+    if not key:
+        return None
+    conn = _connect()
+    if conn is None:
+        return None
+    try:
+        with conn:
+            cur = conn.execute(
+                "DELETE FROM counterpart_memory WHERE counterpart_key = %s", (key,)
+            )
+            return cur.rowcount
+    except Exception:
+        logger.warning("counterpart memory delete failed", exc_info=True)
+        return None
+    finally:
+        conn.close()
+
+
 def history_to_claims(history: dict | None) -> list[dict]:
     """Turn remembered commitments into ``EvidenceClaim``-shaped dicts.
 
