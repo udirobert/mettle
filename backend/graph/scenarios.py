@@ -109,3 +109,37 @@ def load_scenario(scenario_id: str) -> dict[str, object]:
         "counterpart_profile": _parse_counterpart_profile(frontmatter),
         "user_weak_points": frontmatter.get("user_weak_points", []),
     }
+
+
+def scenario_for_state(state: dict) -> dict[str, object]:
+    """Resolve the scenario a run is about.
+
+    Prefers the markdown scenario named by ``scenario_id``. An event that
+    arrived from the user's inbox has no scenario file, so fall back to the
+    stakes and counterpart profile already in state, filling missing profile
+    fields with safe defaults. Raises FileNotFoundError only when there is
+    neither a file nor a usable counterpart in state.
+    """
+    scenario_id = str(state.get("scenario_id") or "lp_renewal")
+    try:
+        return load_scenario(scenario_id)
+    except FileNotFoundError:
+        profile = state.get("counterpart_profile") or {}
+        name = str(profile.get("name") or "").strip()
+        if not name:
+            raise
+        style = profile.get("style") or []
+        if isinstance(style, str):
+            style = [part.strip() for part in style.split(",") if part.strip()]
+        return {
+            "scenario_id": scenario_id,
+            "stakes": str(state.get("stakes") or ""),
+            "counterpart_profile": {
+                "name": name,
+                "role": str(profile.get("role") or ""),
+                "style": list(style),
+                "leverage": str(profile.get("leverage") or ""),
+                "concerns": list(profile.get("concerns") or []),
+            },
+            "user_weak_points": list(state.get("user_weak_points") or []),
+        }

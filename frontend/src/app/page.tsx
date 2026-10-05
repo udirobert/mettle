@@ -202,6 +202,15 @@ export default function HomePage() {
     markEntry('prep');
   };
 
+  // An inbox-drafted event has already written its state (see InboxDraftCard);
+  // all that's left is leaving the docket for the prep phase.
+  const handleOpenDraft = () => {
+    if (isAgentRunning) return;
+    setShowEventList(false);
+    setLocalPhase('prep');
+    markEntry('prep');
+  };
+
   // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
   // state reset that also seeds a light coach brief so Rehearse is unlocked,
   // then jumps straight in.
@@ -265,7 +274,11 @@ export default function HomePage() {
               <span>Mettle</span>
             </div>
           </header>
-          <EventList onSelectEvent={handleSelectEvent} onQuickRehearsal={handleQuickRehearsal} />
+          <EventList
+            onSelectEvent={handleSelectEvent}
+            onQuickRehearsal={handleQuickRehearsal}
+            onOpenDraft={handleOpenDraft}
+          />
           <WelcomeOverlay />
         </main>
       </CopilotChatConfigurationProvider>

@@ -141,3 +141,60 @@ class ListScenariosTests(unittest.TestCase):
             self.assertIn("stakes", scenario)
             self.assertTrue(scenario["name"])
             self.assertTrue(scenario["stakes"])
+
+
+class ScenarioForStateTests(unittest.TestCase):
+    def test_prefers_the_scenario_file_when_it_exists(self) -> None:
+        from graph.scenarios import scenario_for_state
+
+        scenario = scenario_for_state(
+            {"scenario_id": "lp_renewal", "stakes": "ignored"}
+        )
+        self.assertNotEqual(scenario["stakes"], "ignored")
+
+    def test_falls_back_to_state_for_an_inbox_drafted_event(self) -> None:
+        from graph.scenarios import scenario_for_state
+
+        scenario = scenario_for_state(
+            {
+                "scenario_id": "inbox_thread",
+                "stakes": "Raise to $185k",
+                "counterpart_profile": {
+                    "name": "Dana",
+                    "concerns": ["budget"],
+                    "style": "direct, calm",
+                },
+                "user_weak_points": ["no metrics"],
+            }
+        )
+        self.assertEqual(scenario["scenario_id"], "inbox_thread")
+        self.assertEqual(scenario["stakes"], "Raise to $185k")
+        profile = scenario["counterpart_profile"]
+        self.assertEqual(profile["name"], "Dana")
+        self.assertEqual(profile["style"], ["direct", "calm"])
+        self.assertEqual(profile["role"], "")
+        self.assertEqual(profile["leverage"], "")
+        self.assertEqual(scenario["user_weak_points"], ["no metrics"])
+
+    def test_still_raises_when_there_is_no_file_and_no_counterpart(self) -> None:
+        from graph.scenarios import scenario_for_state
+
+        with self.assertRaises(FileNotFoundError):
+            scenario_for_state({"scenario_id": "inbox_thread"})
+        with self.assertRaises(FileNotFoundError):
+            scenario_for_state(
+                {"scenario_id": "inbox_thread", "counterpart_profile": {"name": " "}}
+            )
+
+    def test_coach_runs_end_to_end_on_an_inbox_drafted_event(self) -> None:
+        from graph.coach import run_coach
+
+        result = run_coach(
+            {
+                "scenario_id": "inbox_thread",
+                "stakes": "Raise to $185k",
+                "counterpart_profile": {"name": "Dana", "role": "Manager"},
+            }
+        )
+        self.assertEqual(result["coach_stage"], "ready")
+        self.assertTrue(result["coach_analysis"]["perspectives"])

@@ -16,7 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from .context import format_evidence_for_coach
 from .llm import get_llm
-from .scenarios import load_scenario
+from .scenarios import scenario_for_state
 from .state import CoachAnalysis, ContextBrief, ConversationState, PerspectiveResult
 
 # --- Shared scenario context template ---
@@ -322,7 +322,7 @@ def run_coach_perspectives(state: ConversationState) -> dict:
     Writes a partial coach_analysis so the UI can stage the council before
     synthesis arrives.
     """
-    scenario = load_scenario(state.get("scenario_id", "lp_renewal"))
+    scenario = scenario_for_state(state)
     weak_points = state.get("user_weak_points") or scenario["user_weak_points"]
     context_brief = state.get("context_brief")
 

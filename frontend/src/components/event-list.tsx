@@ -8,6 +8,11 @@ import { SALARY_EVENT, SALARY_SCOUT_LOG } from '@/fixtures/salary-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { ScoutLog } from '@/components/scout-log';
 import { CounterpartDossier } from '@/components/dossier';
+import { AgentStatusChip } from '@/components/source-chip';
+import { InboxDraftCard } from '@/components/inbox-draft-card';
+import { MemoryPanel } from '@/components/memory-panel';
+import { ScoutBriefing } from '@/components/scout-briefing';
+import { describeScoutSource } from '@/lib/scout-status';
 
 import styles from './event-list.module.css';
 
@@ -28,11 +33,14 @@ function readCarryCount(counterpart: string): number {
 export function EventList({
   onSelectEvent,
   onQuickRehearsal,
+  onOpenDraft,
 }: {
   onSelectEvent: (scenarioId: string) => void;
   onQuickRehearsal?: () => void;
+  /** Called after an inbox-drafted event has been written to state. */
+  onOpenDraft?: () => void;
 }) {
-  const { state } = useConversationState();
+  const { state, setPartial } = useConversationState();
   const [carryCount] = useState(() => readCarryCount(SALARY_EVENT.counterpart));
 
   const isDana = state.scenario_id === SALARY_EVENT.id;
@@ -42,9 +50,16 @@ export function EventList({
     state.context_brief?.status === 'approved' &&
     (state.context_brief.claims?.length ?? 0) > 0;
 
-  // Real Scout events once the backend emits them; the seed log stands in for
-  // them so the "it was already working" beat survives when the scout is stubbed.
-  const scoutEvents = isDana ? (state.scout_log ?? SALARY_SCOUT_LOG) : [];
+  // Real Scout events once the backend emits them. Until then a sample log
+  // keeps the "it was already working" beat alive — but it is labelled as a
+  // sample so it never passes as real work.
+  // Real events show whenever they exist, for any event; the sample log only
+  // ever stands in on the salary event.
+  const realScoutEvents = state.scout_log ?? [];
+  const usingSampleLog = realScoutEvents.length === 0 && isDana;
+  const scoutEvents =
+    realScoutEvents.length > 0 ? realScoutEvents : usingSampleLog ? SALARY_SCOUT_LOG : [];
+  const scoutSource = describeScoutSource(scoutEvents, { isFixture: usingSampleLog });
 
   const nextMove = !hasEvidence
     ? 'Forward the thread to Mettle, then run Coach.'
@@ -55,7 +70,12 @@ export function EventList({
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <p className={styles.kicker}>Your docket</p>
+        <p className={styles.kicker}>
+          Your docket{' '}
+          <span style={{ marginLeft: '0.6rem' }}>
+            <AgentStatusChip />
+          </span>
+        </p>
         <h1 className={styles.title}>The conversations that matter.</h1>
         <p className={styles.subtitle}>
           Not every meeting. {SALARY_EVENT.stakes.replace(/\.$/, '')} — and it lands Thursday.
@@ -76,6 +96,13 @@ export function EventList({
           <ArrowRight size={15} aria-hidden="true" />
         </button>
       )}
+
+      <InboxDraftCard
+        onOpen={(update) => {
+          setPartial(update);
+          onOpenDraft?.();
+        }}
+      />
 
       <button
         className={styles.hero}
@@ -131,12 +158,20 @@ export function EventList({
           dossier is exactly what you want most in that case. */}
       {scoutEvents.length > 0 && (
         <div className={styles.scoutWrap}>
-          <ScoutLog events={scoutEvents} title="Scout" />
+          <ScoutLog events={scoutEvents} title="Scout" source={scoutSource} />
         </div>
       )}
 
       <div className={styles.scoutWrap}>
+        <ScoutBriefing onRelease={(events) => setPartial({ scout_log: events })} />
+      </div>
+
+      <div className={styles.scoutWrap}>
         <CounterpartDossier profile={SALARY_EVENT.counterpartProfile} />
+      </div>
+
+      <div className={styles.scoutWrap}>
+        <MemoryPanel counterpart={SALARY_EVENT.counterpart} />
       </div>
 
       <div className={styles.contrast}>
