@@ -181,10 +181,6 @@ class IngestionTest(unittest.TestCase):
         claims = " ".join(c["claim"] for c in result["brief"]["claims"])
         self.assertNotIn("previous instructions", claims)
 
-
-if __name__ == "__main__":
-    unittest.main()
-
     def test_organization_comes_from_the_senders_email_domain(self):
         """The counterpart's domain qualifies the memory lookup and the profile."""
         import context.ingestion as ingestion
@@ -226,3 +222,7 @@ if __name__ == "__main__":
         self.assertEqual(
             ingestion._counterpart_organization(messages[:1], "Dana Whitfield"), ""
         )
+
+
+if __name__ == "__main__":
+    unittest.main()
