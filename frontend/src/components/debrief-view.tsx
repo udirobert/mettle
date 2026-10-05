@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   ClipboardList,
   Copy,
   Download,
@@ -11,7 +12,6 @@ import {
   Mail,
   Link2,
 } from 'lucide-react';
-import { Fold } from '@/components/fold';
 import { useConversationState } from '@/hooks/use-conversation-state';
 import { buildFollowUpMemo, buildMailtoHref, copyText } from '@/lib/share-artifacts';
 import { encodeShareLink } from '@/lib/share-link';
@@ -56,7 +56,9 @@ function classifyNote(note: string): 'commitment' | 'assumption' | 'next' {
 /** Debrief: what changed and what to do. The record stays folded. */
 export function DebriefView() {
   const { state, runDebrief, isAgentRunning } = useConversationState();
+  const [showRecord, setShowRecord] = useState(false);
   const [memoStatus, setMemoStatus] = useState<string | null>(null);
+  const [memoTo, setMemoTo] = useState('');
   const notes = state.debrief_notes ?? [];
 
   const carryForward = () => {
@@ -73,6 +75,7 @@ export function DebriefView() {
     setCarried(true);
   };
   const [carried, setCarried] = useState(false);
+  const [sending, setSending] = useState(false);
   const transcript = state.transcript ?? [];
   const nudges = state.nudges_sent ?? [];
   const counterpartFull =
@@ -80,6 +83,11 @@ export function DebriefView() {
       ? state.counterpart_profile.name
       : 'Counterpart';
   const counterpartName = counterpartFull.split(' ')[0] || 'Counterpart';
+
+  // The memo comes back to the user, not to the agent's own inbox — but the
+  // agent can only send to an address it knows, so the user's forward-path
+  // address (the From of the thread they forwarded) is the right destination.
+  const memoRecipient = memoTo ?? '';
 
   // Persist every generated debrief keyed by counterpart so the next event can carry it forward.
   useEffect(() => {
@@ -125,6 +133,57 @@ export function DebriefView() {
     window.location.href = buildMailtoHref(memo.subject, memo.body);
   };
 
+  /**
+   * The agent emails the memo itself — the point is that the follow-up does not
+   * depend on the user remembering to send it. The backend answers 200 with
+   * `degraded: true` when AgentMail is unconfigured, so fall back to the mailto
+   * handoff rather than showing a failure the user has to interpret.
+   */
+  const sendViaAgent = async () => {
+    if (sending) return;
+    setSending(true);
+    setMemoStatus('Sending…');
+    try {
+      const response = await fetch('/api/agent/debrief/memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: memoRecipient,
+          subject: memo.subject,
+          // MemoRequest carries notes, not a rendered body — the backend joins
+          // them into the email body itself.
+          notes: [
+            ...(lead ? [lead] : []),
+            ...commitmentNotes,
+            ...assumptionNotes,
+            ...nextNotes.slice(1),
+          ],
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        sent?: boolean;
+        degraded?: boolean;
+        message_id?: string;
+      };
+
+      if (result.sent) {
+        setMemoStatus('Memo sent — check your inbox');
+      } else if (result.degraded) {
+        setMemoStatus('Email not configured — opening your mail client instead');
+        sendMemo();
+      } else {
+        setMemoStatus('Send failed — opening your mail client instead');
+        sendMemo();
+      }
+    } catch {
+      setMemoStatus('Agent unreachable — opening your mail client instead');
+      sendMemo();
+    } finally {
+      setSending(false);
+      window.setTimeout(() => setMemoStatus(null), 3200);
+    }
+  };
+
   const copyMemo = async () => {
     const text = `${memo.subject}\n\n${memo.body}`;
     const ok = await copyText(text);
@@ -163,20 +222,30 @@ export function DebriefView() {
 
   return (
     <div className="mettle-phase">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <p className="mettle-kicker">
-            Notes session ·{' '}
-            {state.conversation_source === 'rehearsal' ? 'from a rehearsal' : `owed to ${counterpartName}`}
-          </p>
-          <h2 className="mettle-headline">Leave with the next move.</h2>
-        </div>
-        {notes.length > 0 && (
-          <span className="mettle-stamp mettle-deal" aria-label="Scene closed">
-            Curtain
-          </span>
-        )}
+      <header>
+        <p className="mettle-kicker">After the room</p>
+        <h2 className="mettle-headline">Leave with the next move, not a transcript.</h2>
       </header>
+
+      {(() => {
+        const source = state.conversation_source === 'rehearsal' ? 'rehearsal' : 'live';
+        return (
+          <p className="mettle-premise">
+            {source === 'rehearsal' ? (
+              <>
+                This debrief reads a <strong>rehearsal</strong> — so treat commitments here as{' '}
+                <em>intended lines</em>, not promises made. What you actually said in the room is
+                the record that counts.
+              </>
+            ) : (
+              <>
+                This debrief reads a <strong>live conversation</strong> — commitments below were
+                said out loud, to {counterpartName}. They are real and owed.
+              </>
+            )}
+          </p>
+        );
+      })()}
 
       {notes.length === 0 ? (
         <section className="mettle-card mettle-card--accent">
@@ -186,7 +255,7 @@ export function DebriefView() {
           <strong>
             {transcript.length} turns · {nudges.length} signal{nudges.length === 1 ? '' : 's'}
           </strong>
-          <p>What you promised, what stayed open, one follow-up.</p>
+          <p>Pull commitments, what stayed open, and one concrete follow-up.</p>
           <button
             className="mettle-action"
             disabled={isAgentRunning || transcript.length === 0}
@@ -197,52 +266,102 @@ export function DebriefView() {
             <ClipboardList size={14} aria-hidden="true" />
             {isAgentRunning ? 'Synthesizing…' : 'Generate debrief'}
           </button>
-        </section>
-      ) : null}
 
-      {notes.length === 0 && priorDebrief && (
-        <Fold
-          label="From your last conversation"
-          meta={new Date(priorDebrief.savedAt).toLocaleDateString()}
-        >
-          <section aria-label="Previous debrief for this counterpart">
-            <ul className="mettle-list">
-              {priorDebrief.notes.slice(0, 3).map((note, index) => (
-                <li key={`prior-${index}`}>{note}</li>
-              ))}
-            </ul>
-            {carried ? (
-              <p
-                className="mettle-kicker"
-                role="status"
-                style={{ color: 'var(--signal-strong-ink)' }}
-              >
-                <CheckCircle2 size={12} className="inline" aria-hidden="true" /> Open items will
-                surface in the next prep with {counterpartName}.
+          {priorDebrief && (
+            <section
+              className="mettle-card mt-3"
+              aria-label="Previous debrief for this counterpart"
+            >
+              <p className="mettle-kicker">
+                <ArrowRight size={13} /> From your last conversation ·{' '}
+                {new Date(priorDebrief.savedAt).toLocaleDateString()}
               </p>
-            ) : (
-              <button className="mettle-icon-action mt-2" onClick={carryForward} type="button">
-                <ArrowRight size={13} aria-hidden="true" /> Carry open items into next prep
-              </button>
-            )}
-          </section>
-        </Fold>
-      )}
-
-      {notes.length > 0 && (
+              <ul className="mettle-list mt-2">
+                {priorDebrief.notes.slice(0, 3).map((note, index) => (
+                  <li key={`prior-${index}`}>{note}</li>
+                ))}
+              </ul>
+              {carried ? (
+                <p
+                  className="mettle-kicker"
+                  role="status"
+                  style={{ color: 'var(--signal-strong-ink)' }}
+                >
+                  <CheckCircle2 size={12} className="inline" aria-hidden="true" /> Open items will
+                  surface in the next prep with {counterpartName}.
+                </p>
+              ) : (
+                <button className="mettle-icon-action mt-2" onClick={carryForward} type="button">
+                  <ArrowRight size={13} aria-hidden="true" /> Carry open items into next prep
+                </button>
+              )}
+            </section>
+          )}
+        </section>
+      ) : (
         <>
-          <section className="mettle-card mettle-card--signal mettle-deal" aria-label="Next move">
+          {lead && (
+            <section className="mettle-card mettle-card--signal" aria-label="Next move">
+              <p className="mettle-kicker">
+                <Flag size={13} /> Next move
+              </p>
+              <strong>{lead}</strong>
+            </section>
+          )}
+
+          <section className="mettle-card" aria-label="Follow-up memo">
             <p className="mettle-kicker">
-              <Flag size={13} /> Next move
+              <Mail size={13} /> The memo
             </p>
-            <strong>{lead}</strong>
-            <p>One memo: commitments, open items, this move. Never the transcript.</p>
+            <strong>
+              It emails you the follow-up — you don&apos;t have to remember to send it.
+            </strong>
+            <p className="mt-2">
+              Commitments, what stayed open, and the next move. No live record attached.
+            </p>
+
+            <label className="mt-3 block text-xs font-mono font-bold uppercase tracking-wide text-[var(--ink-soft)]">
+              Send it to
+              <input
+                className="mettle-input mt-1 w-full"
+                type="email"
+                value={memoTo}
+                onChange={(event) => setMemoTo(event.target.value)}
+                placeholder="you@company.com"
+                aria-label="Email address to send the memo to"
+              />
+            </label>
+
             <div className="flex flex-wrap gap-2 mt-3">
-              <button className="mettle-action" onClick={sendMemo} type="button">
-                <Mail size={14} aria-hidden="true" /> Send follow-up memo
+              <button
+                className="mettle-action"
+                disabled={sending || !memoTo.trim()}
+                onClick={() => void sendViaAgent()}
+                type="button"
+                title={
+                  memoTo.trim()
+                    ? 'Mettle emails this memo from its own inbox'
+                    : 'Add the address to send the memo to'
+                }
+              >
+                <Mail size={14} aria-hidden="true" />
+                {sending ? 'Sending…' : 'Send me the memo'}
+              </button>
+              <button className="mettle-icon-action" onClick={sendMemo} type="button">
+                Open in my mail app
               </button>
               <button className="mettle-icon-action" onClick={() => void copyMemo()} type="button">
-                <Copy size={14} aria-hidden="true" /> Copy
+                <Copy size={14} aria-hidden="true" /> Copy memo
+              </button>
+              <button className="mettle-icon-action" onClick={downloadMemo} type="button">
+                <Download size={14} aria-hidden="true" /> Download
+              </button>
+              <button
+                className="mettle-icon-action"
+                onClick={() => void copyShareLink()}
+                type="button"
+              >
+                <Link2 size={14} aria-hidden="true" /> Share link
               </button>
             </div>
             {memoStatus && (
@@ -255,62 +374,66 @@ export function DebriefView() {
             )}
           </section>
 
-          <div>
-            {commitmentNotes.length > 0 && (
-              <Fold label="Commitments" meta={`${commitmentNotes.length} locked in`}>
-                <ul className="mettle-list">
-                  {commitmentNotes.map((note, index) => (
-                    <li key={`commit-${index}`}>
-                      <CheckCircle2 size={12} className="mr-1 inline" aria-hidden="true" />
-                      {note}
-                    </li>
-                  ))}
-                </ul>
-              </Fold>
-            )}
-            {assumptionNotes.length > 0 && (
-              <Fold label="Still open" meta={`${assumptionNotes.length}`}>
-                <div className="grid gap-2">
-                  {assumptionNotes.map((note, index) => (
-                    <div className="mettle-card mettle-card--risk" key={`open-${index}`}>
-                      <strong>{note}</strong>
-                    </div>
-                  ))}
-                </div>
-              </Fold>
-            )}
-            {nextNotes.length > 1 && (
-              <Fold label="Also do" meta={`${nextNotes.length - 1}`}>
-                <ul className="mettle-list">
-                  {nextNotes.slice(1).map((note, index) => (
-                    <li key={`next-${index}`}>{note}</li>
-                  ))}
-                </ul>
-              </Fold>
-            )}
-            <Fold label="Other ways to share" meta="download · read-only link">
-              <div className="flex flex-wrap gap-2">
-                <button className="mettle-icon-action" onClick={downloadMemo} type="button">
-                  <Download size={14} aria-hidden="true" /> Download memo
-                </button>
-                <button
-                  className="mettle-icon-action"
-                  onClick={() => void copyShareLink()}
-                  type="button"
-                >
-                  <Link2 size={14} aria-hidden="true" /> Copy share link
-                </button>
+          {commitmentNotes.length > 0 && (
+            <section>
+              <p className="mettle-kicker">Commitments</p>
+              <div className="grid gap-2 mt-2">
+                {commitmentNotes.map((note, index) => (
+                  <div className="mettle-card" key={`commit-${index}`}>
+                    <p className="mettle-kicker">
+                      <CheckCircle2 size={13} /> Locked in
+                    </p>
+                    <strong>{note}</strong>
+                  </div>
+                ))}
               </div>
-            </Fold>
-          </div>
+            </section>
+          )}
+
+          {assumptionNotes.length > 0 && (
+            <section>
+              <p className="mettle-kicker">Still open</p>
+              <div className="grid gap-2 mt-2">
+                {assumptionNotes.map((note, index) => (
+                  <div className="mettle-card mettle-card--risk" key={`open-${index}`}>
+                    <strong>{note}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {nextNotes.length > 1 && (
+            <section>
+              <p className="mettle-kicker">Also do</p>
+              <ul className="mettle-list mt-2">
+                {nextNotes.slice(1).map((note, index) => (
+                  <li key={`next-${index}`}>{note}</li>
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       )}
 
-      <Fold
-        label="The record"
-        meta={`${transcript.length} turns${nudges.length > 0 ? ` · ${nudges.length} signals` : ''}`}
+      <button
+        className="mettle-fold"
+        onClick={() => setShowRecord((value) => !value)}
+        type="button"
+        aria-expanded={showRecord}
       >
-        <ul className="mettle-list">
+        <span>
+          The record · {transcript.length} turns
+          {nudges.length > 0 ? ` · ${nudges.length} signals` : ''}
+        </span>
+        <ChevronDown
+          size={16}
+          className={showRecord ? 'rotate-180 transition-transform' : 'transition-transform'}
+          aria-hidden="true"
+        />
+      </button>
+      {showRecord && (
+        <section className="mettle-list">
           {transcript.length === 0 ? (
             <li>No conversation turns captured yet.</li>
           ) : (
@@ -320,8 +443,8 @@ export function DebriefView() {
               </li>
             ))
           )}
-        </ul>
-      </Fold>
+        </section>
+      )}
     </div>
   );
 }

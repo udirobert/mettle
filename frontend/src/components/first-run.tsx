@@ -69,7 +69,10 @@ function RoomPlan() {
   const firstName = LP_EVENT.counterpart.split(' ')[0];
 
   return (
-    <figure className={styles.room} aria-label={`Example: what you walk in with for ${LP_EVENT.counterpart}`}>
+    <figure
+      className={styles.room}
+      aria-label={`Example: what you walk in with for ${LP_EVENT.counterpart}`}
+    >
       <div className={styles.floor}>
         <span className={`${styles.spike} ${styles.spikeTL}`} aria-hidden="true" />
         <span className={`${styles.spike} ${styles.spikeTR}`} aria-hidden="true" />
@@ -83,16 +86,16 @@ function RoomPlan() {
           <span className={styles.chair} aria-hidden="true">
             {initials(LP_EVENT.counterpart)}
           </span>
-          <span className={styles.seatLabel}>
-            {LP_EVENT.counterpart} · Investor
-          </span>
+          <span className={styles.seatLabel}>{LP_EVENT.counterpart} · Investor</span>
         </div>
 
         <div className={styles.table}>
           {sample && (
             <div className={styles.sampleCard}>
               <p className={styles.sampleLabel}>{firstName} will ask</p>
-              <p className={styles.sampleThey}>&ldquo;Why will liquidity be different this time?&rdquo;</p>
+              <p className={styles.sampleThey}>
+                &ldquo;Why will liquidity be different this time?&rdquo;
+              </p>
               <div className={styles.sampleRule} aria-hidden="true" />
               <p className={styles.sampleLabel}>You say</p>
               <p className={styles.sampleYou}>{sample.response}</p>
@@ -134,13 +137,17 @@ export function FirstRun({ onTry, onSkip }: { onTry: () => void; onSkip: () => v
             </p>
           </section>
 
-          <section className={`${styles.scene} ${styles.step}`} style={order(3)} aria-labelledby="scene-title">
+          <section
+            className={`${styles.scene} ${styles.step}`}
+            style={order(3)}
+            aria-labelledby="scene-title"
+          >
             <p id="scene-title" className={styles.sceneTag}>
               Try it
             </p>
             <p className={styles.sceneText}>
-              You&apos;re raising a fund. <strong>{LP_EVENT.counterpart}</strong>, one of your investors,
-              decides in {LP_EVENT.timeUntil} whether to put in $40M again.
+              You&apos;re raising a fund. <strong>{LP_EVENT.counterpart}</strong>, one of your
+              investors, decides in {LP_EVENT.timeUntil} whether to put in $40M again.
             </p>
             <div className={styles.actions}>
               <button type="button" className={styles.primary} onClick={onTry}>

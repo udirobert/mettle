@@ -15,8 +15,11 @@ from copilotkit import LangGraphAGUIAgent
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
+from context.ingestion import import_from_inbox
+from context import agentmail_client, research_client
 from graph.checkpoint import create_checkpointer
 from graph.coach import run_coach
 from graph.context import extract_brief_from_paste
@@ -29,6 +32,9 @@ from graph.wingman_reactive import answer_reactive_query
 from research import solari as research
 from server_config import allowed_origins
 
+# Load the repo-root .env before anything reads os.environ — without this
+# every service (Neon, Exa, AgentMail) silently degrades in local dev.
+load_dotenv()
 
 checkpointer, close_checkpointer = create_checkpointer()
 graph = build_graph(checkpointer=checkpointer)
@@ -85,7 +91,54 @@ async def extract_context(body: ExtractContextRequest) -> dict:
 
 
 class ResearchRequest(BaseModel):
+    topic: str
+    counterpart_name: str | None = Field(default=None)
+    organization: str | None = Field(default=None)
+
+
+class SolariResearchRequest(BaseModel):
     urls: list[str] = Field(default_factory=list, max_length=research.MAX_URLS)
+
+
+class MemoRequest(BaseModel):
+    to: str
+    subject: str = Field(default="Your Mettle debrief")
+    notes: list[str] = Field(default_factory=list)
+
+
+@app.post("/context/import")
+async def context_import() -> dict:
+    """Pull the agent's own inbox → draft event + evidence brief.
+
+    All claims arrive decision=pending with provenance labels; the HITL
+    keep/reject gate decides what reaches Coach. Degrades to the bundled
+    seed thread when the inbox is unconfigured — never 500s.
+    """
+    return import_from_inbox()
+
+
+@app.post("/context/research")
+async def context_research(body: ResearchRequest) -> dict:
+    """Scoped Exa research → provenance="web" claims for the same gate."""
+    return research_client.research(
+        body.topic,
+        counterpart_name=body.counterpart_name,
+        organization=body.organization,
+    )
+
+
+@app.post("/debrief/memo")
+async def debrief_memo(body: MemoRequest) -> dict:
+    """Email the debrief memo to the user from the agent's own address."""
+    text = "\n".join(f"• {note}" for note in body.notes) or "Debrief complete."
+    sent = agentmail_client.send_memo(to=body.to, subject=body.subject, text=text)
+    if sent is None:
+        return {
+            "sent": False,
+            "degraded": True,
+            "reason": "AGENTMAIL_API_KEY not set or send failed",
+        }
+    return {"sent": True, **sent}
 
 
 @app.get("/research/status")
@@ -94,14 +147,16 @@ async def research_status() -> dict:
 
 
 @app.post("/research")
-async def run_research(body: ResearchRequest) -> dict:
+async def run_research(body: SolariResearchRequest) -> dict:
     """Read user-named public pages in a recorded Solari session → draft brief."""
     if not research.normalize_urls(body.urls):
         raise HTTPException(status_code=422, detail="Add at least one http(s) URL.")
     try:
         return await research.research_public_pages(body.urls)
     except research.ResearchUnavailable as err:
-        raise HTTPException(status_code=503, detail="Public research is not configured.") from err
+        raise HTTPException(
+            status_code=503, detail="Public research is not configured."
+        ) from err
 
 
 @app.get("/research/replay/{session_id}")
@@ -111,7 +166,9 @@ async def research_replay(session_id: str) -> Response:
     try:
         replay = await research.fetch_replay(session_id)
     except research.ResearchUnavailable as err:
-        raise HTTPException(status_code=503, detail="Public research is not configured.") from err
+        raise HTTPException(
+            status_code=503, detail="Public research is not configured."
+        ) from err
     if replay is None:
         raise HTTPException(status_code=404, detail="Replay not uploaded yet")
     return Response(content=replay, media_type="application/x-ndjson")

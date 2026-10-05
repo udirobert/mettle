@@ -13,6 +13,34 @@ Subject: Portfolio Construction Memo — Follow-up
 Understood. I will send the portfolio-construction memo before we meet. The $40M renewal is the ask. Two concentrated positions still dominate unrealized value; the memo will address how we de-risk that.
 `;
 
+/**
+ * Seed thread for the salary-review demo — the moment the whole pitch opens on.
+ *
+ * Forwarded to the agent's own inbox (or pasted into the Coach room) this thread
+ * has to yield the claims the demo leans on: the above-band number, the peer
+ * compression pressure, the "title yes / cash needs sign-off" split, and one
+ * commitment the user forgot making — which is the beat that proves the agent
+ * read something they did not.
+ */
+export const SAMPLE_DANA_THREAD = `From: Dana Whitfield
+Date: 9 Oct 2025
+Subject: Comp cycle — let's get you booked
+
+Let's get you into the cycle before it closes. Fair warning: $185k is above the posted band for your current level, so I need a real scope case, not a tenure case. Also flagging that two peers on your team filed comp complaints after the March review, which means any exception I make becomes precedent I have to defend upstairs.
+
+From: You
+Date: 10 Oct 2025
+Subject: Re: Comp cycle — let's get you booked
+
+To be direct about where I land: I'm asking for $185k base and the senior title. I know the band is the constraint. Happy to take on the platform reorg if comp can follow in the next cycle once the migration lands — that was the deal I proposed back in March and I'm still fine with it.
+
+From: Dana Whitfield
+Date: 11 Oct 2025
+Subject: Re: Comp cycle — let's get you booked
+
+Title is realistic and I can move on it. Cash is the hard part — anything above band needs VP sign-off and the calendar closes this quarter. And I want to flag the March team-health metrics: you committed to sending those and they never arrived, so right now my reliability case for you is thinner than the scope case. Let's talk Thursday.
+`;
+
 const MONEY = /\$[\d,.]+(?:\s*(?:[Mm]|million))?/;
 const COMMIT = /\b(commit(?:ted|ment)?|promis(?:e|ed)|will send|follow-?up|memo)\b/i;
 const OBJECTION = /\b(concern|flagged|lag(?:ged)?|skeptic|hard to defend|worry|object|behind|lack)\b/i;

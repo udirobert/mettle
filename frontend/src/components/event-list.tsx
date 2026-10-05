@@ -1,33 +1,15 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
-import { ArrowRight, CalendarClock, Clock, Flame, IdCard, Repeat, Shield } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Clock, Repeat, Shield, User, Zap } from 'lucide-react';
 
-import {
-  FUND_III,
-  OBJECTION_LABELS,
-  openCommitments,
-  topObjectionPattern,
-  type LpStatus,
-} from '@/fixtures/fundraise';
-import {
-  LP_EVENT,
-  RAISE_EVENTS,
-  SECONDARY_EVENTS,
-  type MettleEvent,
-} from '@/fixtures/lp-event';
+import { LP_EVENT, SECONDARY_EVENTS } from '@/fixtures/lp-event';
+import { SALARY_EVENT, SALARY_SCOUT_LOG } from '@/fixtures/salary-event';
 import { useConversationState } from '@/hooks/use-conversation-state';
-import { Fold } from '@/components/fold';
-import { WalkInCard } from '@/components/walk-in-card';
+import { ScoutLog } from '@/components/scout-log';
+import { CounterpartDossier } from '@/components/dossier';
 
 import styles from './event-list.module.css';
-
-const STATUS_LABELS: Record<LpStatus, string> = {
-  committed: 'Committed',
-  met: 'In diligence',
-  next: 'Next',
-  scheduled: 'Scheduled',
-};
 
 /** Carry-forward marker: open items persisted by a previous debrief with this counterpart. */
 function readCarryCount(counterpart: string): number {
@@ -43,240 +25,179 @@ function readCarryCount(counterpart: string): number {
   }
 }
 
-function firstName(event: MettleEvent) {
-  return event.counterpart.split(' ')[0];
-}
-
-function amount(value: string) {
-  return Number.parseFloat(value.replace(/[^\d.]/g, '')) || 0;
-}
-
-/** Staggered entrance order; CSS reads --i for the delay. */
-function reveal(index: number): CSSProperties {
-  return { '--i': index } as CSSProperties;
-}
-
 export function EventList({
   onSelectEvent,
-  onQuickSpar,
+  onQuickRehearsal,
 }: {
   onSelectEvent: (scenarioId: string) => void;
-  onQuickSpar: (scenarioId: string) => void;
+  onQuickRehearsal?: () => void;
 }) {
   const { state } = useConversationState();
-  const [carryCount] = useState(() => readCarryCount(LP_EVENT.counterpart));
-  const [walkInEvent, setWalkInEvent] = useState<MettleEvent | null>(null);
+  const [carryCount] = useState(() => readCarryCount(SALARY_EVENT.counterpart));
 
-  const pattern = topObjectionPattern(FUND_III);
-  const commitments = openCommitments(FUND_III);
-  const pipeline = FUND_III.lps.filter((lp) => lp.status !== 'next');
-  const raisedPct = Math.min(
-    100,
-    Math.round((amount(FUND_III.committed) / amount(FUND_III.target)) * 100),
-  );
+  const isDana = state.scenario_id === SALARY_EVENT.id;
+  const hasBrief = isDana && !!state.coach_analysis;
+  const hasEvidence =
+    isDana &&
+    state.context_brief?.status === 'approved' &&
+    (state.context_brief.claims?.length ?? 0) > 0;
 
-  const briefFor = (event: MettleEvent) =>
-    state.scenario_id === event.id ? (state.coach_analysis ?? null) : null;
+  // Real Scout events once the backend emits them; the seed log stands in for
+  // them so the "it was already working" beat survives when the scout is stubbed.
+  const scoutEvents = isDana ? (state.scout_log ?? SALARY_SCOUT_LOG) : [];
+
+  const nextMove = !hasEvidence
+    ? 'Forward the thread to Mettle, then run Coach.'
+    : !hasBrief
+      ? 'Evidence is approved. Run Coach.'
+      : 'Open Coach — then rehearse with Dana.';
 
   return (
     <div className={styles.container}>
-      <header className={`${styles.header} ${styles.reveal}`} style={reveal(0)}>
-        <div className={styles.raiseLine}>
-          <span className={styles.kicker}>Call sheet · Sample · {FUND_III.name} raise</span>
-          <span className={styles.raiseAmount}>
-            {FUND_III.committed} <span>/ {FUND_III.target}</span>
-          </span>
-        </div>
-        <div
-          className={styles.raiseBar}
-          role="progressbar"
-          aria-label={`${FUND_III.name} raised`}
-          aria-valuenow={raisedPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <span style={{ '--pct': `${raisedPct}%` } as CSSProperties} />
-        </div>
+      <header className={styles.header}>
+        <p className={styles.kicker}>Your docket</p>
+        <h1 className={styles.title}>The conversations that matter.</h1>
+        <p className={styles.subtitle}>
+          Not every meeting. {SALARY_EVENT.stakes.replace(/\.$/, '')} — and it lands Thursday.
+        </p>
       </header>
 
-      <article className={`${styles.hero} ${styles.reveal}`} style={reveal(1)} aria-labelledby="hero-name">
+      {onQuickRehearsal && (
+        <button
+          className={styles.quickRehearsal}
+          onClick={onQuickRehearsal}
+          type="button"
+          aria-label="Skip setup and try a 60-second rehearsal with the sample counterpart"
+        >
+          <Zap size={15} aria-hidden="true" />
+          <span>
+            <strong>No setup — feel it first.</strong> Jump straight into a 60-second rehearsal.
+          </span>
+          <ArrowRight size={15} aria-hidden="true" />
+        </button>
+      )}
+
+      <button
+        className={styles.hero}
+        onClick={() => onSelectEvent(SALARY_EVENT.id)}
+        aria-label={`Open ${SALARY_EVENT.name} with ${SALARY_EVENT.counterpart}`}
+        type="button"
+      >
         <div className={styles.heroTop}>
           <span className={styles.heroTime}>
             <Clock size={14} aria-hidden="true" />
-            {LP_EVENT.timeUntil}
+            {SALARY_EVENT.timeUntil}
           </span>
           <span className={styles.heroRisk}>
             <Shield size={13} aria-hidden="true" />
-            {LP_EVENT.risk} risk
+            {SALARY_EVENT.risk} risk
           </span>
         </div>
 
-        <p className={styles.heroStakes}>{LP_EVENT.kind}</p>
-        <h1 id="hero-name" className={styles.heroName}>
-          {LP_EVENT.counterpart}
-        </h1>
-        <p className={styles.heroRole}>{LP_EVENT.counterpartRole}</p>
+        <p className={styles.heroStakes}>{SALARY_EVENT.stakes.replace(/\.$/, '')}</p>
+        <div className={styles.heroWho}>
+          <h2 className={styles.heroName}>{SALARY_EVENT.counterpart}</h2>
+          <p className={styles.heroRole}>{SALARY_EVENT.counterpartRole}</p>
+        </div>
 
-        {pattern && (
-          <div
-            className={styles.pattern}
-            aria-label={`${pattern.label} came up with ${pattern.count} of ${pattern.of} LPs met. Expect it from ${firstName(LP_EVENT)}.`}
-          >
-            <span className={styles.patternDots} aria-hidden="true">
-              {Array.from({ length: pattern.of }, (_, index) => (
-                <span
-                  key={index}
-                  className={index < pattern.count ? styles.dotHit : styles.dot}
-                  style={reveal(index)}
-                />
-              ))}
-            </span>
-            <span aria-hidden="true">
-              <strong>{pattern.label}</strong> · {pattern.count} of {pattern.of} LPs asked
-            </span>
-          </div>
-        )}
+        <div className={styles.heroMeta}>
+          <span className={styles.heroCounterpart}>
+            <User size={14} aria-hidden="true" />
+            {SALARY_EVENT.name}
+          </span>
+          <span className={hasBrief ? styles.prepReady : styles.prepIncomplete}>
+            {hasBrief ? 'Brief ready' : 'Prep incomplete'}
+          </span>
+        </div>
 
         {carryCount > 0 && (
-          <p className={styles.carryBadge}>
+          <div className={styles.carryBadge} aria-label="Open items from your last conversation">
             <Repeat size={13} aria-hidden="true" />
-            {carryCount} carried from last time
-          </p>
+            <span>
+              {carryCount} open item{carryCount === 1 ? '' : 's'} carried from your last debrief
+              with {SALARY_EVENT.counterpart.split(' ')[0]}
+            </span>
+          </div>
         )}
 
-        <div className={styles.when} role="group" aria-labelledby="when-label">
-          <p id="when-label" className={styles.whenLabel}>
-            <span className="mettle-spike mettle-spike--them" aria-hidden="true" />
-            In the room in…
-          </p>
-          <div className={styles.whenOptions}>
+        <div className={styles.heroNext}>
+          <ArrowRight size={16} aria-hidden="true" />
+          <span>{nextMove}</span>
+        </div>
+      </button>
+
+      {/* The briefing must not depend on the Scout log existing — the
+          degraded inbox path renders no scout events, and the counterpart
+          dossier is exactly what you want most in that case. */}
+      {scoutEvents.length > 0 && (
+        <div className={styles.scoutWrap}>
+          <ScoutLog events={scoutEvents} title="Scout" />
+        </div>
+      )}
+
+      <div className={styles.scoutWrap}>
+        <CounterpartDossier profile={SALARY_EVENT.counterpartProfile} />
+      </div>
+
+      <div className={styles.contrast}>
+        <p className={styles.kicker}>Everything else on the calendar</p>
+        <ul className={styles.eventCards}>
+          <li>
             <button
-              type="button"
-              className={styles.whenOption}
-              onClick={() => setWalkInEvent(LP_EVENT)}
-            >
-              <IdCard size={18} aria-hidden="true" />
-              <span className={styles.whenTime}>Minutes</span>
-              <span className={styles.whenAction}>Card</span>
-            </button>
-            <button
-              type="button"
-              className={styles.whenOption}
-              onClick={() => onQuickSpar(LP_EVENT.id)}
-            >
-              <Flame size={18} aria-hidden="true" />
-              <span className={styles.whenTime}>Hours</span>
-              <span className={styles.whenAction}>Rehearse</span>
-            </button>
-            <button
-              type="button"
-              className={`${styles.whenOption} ${styles.whenPrimary}`}
+              className={styles.eventCard}
               onClick={() => onSelectEvent(LP_EVENT.id)}
+              aria-label={`Open ${LP_EVENT.name} with ${LP_EVENT.counterpart}`}
+              type="button"
             >
-              <CalendarClock size={18} aria-hidden="true" />
-              <span className={styles.whenTime}>Days</span>
-              <span className={styles.whenAction}>
-                Prep <ArrowRight size={14} aria-hidden="true" />
+              <div className={styles.heroTop}>
+                <span className={styles.heroTime}>
+                  <Clock size={13} aria-hidden="true" />
+                  {LP_EVENT.timeUntil}
+                </span>
+                <span className={styles.heroRisk}>
+                  <Shield size={12} aria-hidden="true" />
+                  {LP_EVENT.risk} risk
+                </span>
+              </div>
+              <span className={styles.eventCardName}>{LP_EVENT.name}</span>
+              <span className={styles.contrastDetail}>
+                {LP_EVENT.counterpart} · {LP_EVENT.stakes}
+              </span>
+              <span className={styles.eventCardCta}>
+                <ArrowRight size={13} aria-hidden="true" /> Prep this
               </span>
             </button>
-          </div>
-        </div>
-      </article>
-
-      <section className={`${styles.contrast} ${styles.reveal}`} style={reveal(2)} aria-labelledby="raise-next">
-        <h2 id="raise-next" className={styles.sectionTitle}>
-          Up next
-        </h2>
-        <ul className={styles.eventCards}>
-          {RAISE_EVENTS.map((event, index) => (
-            <li key={event.id} className={styles.reveal} style={reveal(3 + index)}>
+          </li>
+          {SECONDARY_EVENTS.map((event) => (
+            <li key={event.id}>
               <button
+                className={styles.eventCard}
+                onClick={() => onSelectEvent(event.id)}
+                aria-label={`Open ${event.name} with ${event.counterpart}`}
                 type="button"
-                className={styles.eventCardButton}
-                onClick={() => setWalkInEvent(event)}
-                aria-label={`${event.kind}: ${event.counterpart}, ${event.timeUntil}. Open walk-in card.`}
               >
-                <span className={styles.heroTop}>
-                  <span className={styles.kindChip} data-kind={event.kind}>
-                    {event.kind}
+                <div className={styles.heroTop}>
+                  <span className={styles.heroTime}>
+                    <Clock size={13} aria-hidden="true" />
+                    {event.timeUntil}
                   </span>
-                  <span className={styles.heroTime}>{event.timeUntil}</span>
-                </span>
-                <span className={styles.eventCardName}>{event.counterpart}</span>
+                  <span className={styles.heroRisk}>
+                    <Shield size={12} aria-hidden="true" />
+                    {event.risk} risk
+                  </span>
+                </div>
+                <span className={styles.eventCardName}>{event.name}</span>
                 <span className={styles.contrastDetail}>
-                  {event.counterpartRole.split(', ').pop()}
+                  {event.counterpart} · {event.stakes}
+                </span>
+                <span className={styles.eventCardCta}>
+                  <ArrowRight size={13} aria-hidden="true" /> Prep this
                 </span>
               </button>
             </li>
           ))}
         </ul>
-      </section>
-
-      <div className={`${styles.contrast} ${styles.reveal}`} style={reveal(8)}>
-        <Fold
-          label="Full raise"
-          meta={`${pipeline.length} LPs · ${commitments.length} owed · ${SECONDARY_EVENTS.length} other`}
-        >
-          <ul className={styles.pipeline} aria-label="LP pipeline">
-            {pipeline.map((lp) => (
-              <li key={lp.name} className={styles.pipelineRow}>
-                <span className={styles.pipelineWho}>
-                  <strong>{lp.name}</strong>
-                  <span className={styles.contrastDetail}>{lp.org}</span>
-                </span>
-                <span className={styles.pipelineThemes}>
-                  {lp.objections.length > 0
-                    ? lp.objections.map((theme) => OBJECTION_LABELS[theme]).join(' · ')
-                    : 'Not met yet'}
-                  {lp.openCommitment && (
-                    <span className={styles.pipelinePromise}>Owed: {lp.openCommitment}</span>
-                  )}
-                </span>
-                <span className={styles.pipelineStatus} data-status={lp.status}>
-                  {STATUS_LABELS[lp.status]}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <p className={styles.subhead}>Beyond the raise</p>
-          <ul className={styles.otherList}>
-            {SECONDARY_EVENTS.map((event) => (
-              <li key={event.id}>
-                <button
-                  type="button"
-                  className={styles.otherRow}
-                  onClick={() => setWalkInEvent(event)}
-                  aria-label={`${event.name} with ${event.counterpart}. Open walk-in card.`}
-                >
-                  <span className={styles.kindChip}>{event.kind}</span>
-                  <strong>{event.counterpart}</strong>
-                  <span className={styles.contrastDetail}>{event.timeUntil}</span>
-                  <ArrowRight size={14} aria-hidden="true" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Fold>
       </div>
-
-      {walkInEvent && (
-        <WalkInCard
-          event={walkInEvent}
-          analysis={briefFor(walkInEvent)}
-          onClose={() => setWalkInEvent(null)}
-          onSpar={() => {
-            const id = walkInEvent.id;
-            setWalkInEvent(null);
-            onQuickSpar(id);
-          }}
-          onPrep={() => {
-            const id = walkInEvent.id;
-            setWalkInEvent(null);
-            onSelectEvent(id);
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -1,11 +1,14 @@
 # Mettle
 
-An agent for high-stakes conversations in four phases: Coach, Opponent,
-Wingman, and Debrief.
+The personal agent for the conversations you can't afford to get wrong —
+five modes: Scout, Coach, Opponent, Wingman, and Debrief.
 
-The demo wedge is one consequential event — Elena Park, $40M LP renewal —
-with progressive disclosure: Coach and Rehearse first; Live and Debrief as
-later rooms. Evidence is paste → claim-level keep/reject → debate.
+The demo wedge is one personal-life event — a salary negotiation with your
+manager — with progressive disclosure: Coach and Rehearse first; Live and
+Debrief as later rooms. Evidence enters via the agent's own inbox (forward a
+thread), paste, or scenario fixtures → claim-level keep/reject → debate.
+The agent does its own homework (Exa research), remembers your last hard
+conversation (Neon Postgres), and emails you the debrief (AgentMail).
 
 ## Repository map
 
@@ -15,8 +18,11 @@ later rooms. Evidence is paste → claim-level keep/reject → debate.
   Person A.
 - `backend/graph/coach.py`, `backend/graph/context.py`,
   `backend/graph/wingman_proactive.py`, `backend/graph/debrief.py`,
-  `backend/triggers/rules.py`, and `backend/voice/` belong to Person B.
-- `scenarios/lp_renewal.md` is the first vertical-slice scenario (default demo).
+  `backend/context/` (AgentMail/Exa/memory ingestion), `backend/triggers/rules.py`,
+  and `backend/voice/` belong to Person B. `/scout` (Mastra agent,
+  AG-UI; see `scout/README.md`) also belongs to Person B.
+- `scenarios/salary_review.md` is the demo scenario (planned);
+  `scenarios/lp_renewal.md` remains as contrast.
 - `frontend/` is the CopilotKit Next.js surface. The workspace in
   `frontend/src/app/page.tsx` composes `CoachPanel`, `OpponentChat`,
   `WingmanSidePanel`, and `DebriefView` around a phase rail and signal desk.
@@ -24,15 +30,17 @@ later rooms. Evidence is paste → claim-level keep/reject → debate.
   CopilotKit's shared agent state and mirrors `state.py`.
 - `frontend/src/components/coach-panel.tsx` — claim-level HITL + staged council
   (perspectives land, then agreed / split / move).
-- `frontend/src/fixtures/lp-event.ts` — Elena Park default event.
+- `frontend/src/fixtures/salary-event.ts` — Dana salary-review default event
+  (planned); `lp-event.ts` stays as contrast.
 - `frontend/src/lib/extract-evidence.ts` + `api/extract-context/` — paste-path
   claim extraction (agent `/extract-context` with local fallback).
 - `frontend/src/components/nudge-card.tsx`, `a2ui-catalog.tsx`, and
   `a2ui-nudge-host.tsx` render the proactive nudge surface.
-- `docs/NORTH_STAR.md` defines the product vision: a stakes-aware calendar and
-  live counsel layer, not a generic meeting assistant.
-- `docs/CONTEXT_INGESTION.md` defines paste-path HITL now and planned
-  Composio/Exa ingestion later.
+- `docs/NORTH_STAR.md` defines the product vision: the personal agent for
+  conversations you can't afford to get wrong — an agent with its own inbox,
+  homework, and memory — not a meeting assistant or life-admin tool.
+- `docs/CONTEXT_INGESTION.md` defines AgentMail forward-path + paste HITL now,
+  and the Mastra Scout + Exa research + Neon memory build-out.
 
 ## WebMCP
 
@@ -72,7 +80,16 @@ modal deploy modal_app.py
 ```
 
 Set `OPENAI_API_KEY` as a Modal secret if you want LLM-backed output; otherwise
-the endpoints fall back to deterministic output.
+the endpoints fall back to deterministic output. For Neon AI Gateway, also set
+`OPENAI_BASE_URL` to `<NEON_AI_GATEWAY_BASE_URL>/v1` and `OPENAI_MODEL`
+(e.g. `gpt-5-mini`), plus `DATABASE_URL` for the Postgres checkpointer. In
+`.env`, quote the Neon URL (`DATABASE_URL="postgresql://…&…"`) — the `&` breaks
+shell sourcing otherwise. For tool-calling agents (the Scout) use a Claude
+model on the gateway; `gpt-5-mini` fails on multi-step tool runs there.
+
+Scout (Mastra, `scout/`): `cd scout && NODE_ENV=development npm i --include=dev
+&& npm run dev` serves on `:4111`. Needs `NEON_AI_GATEWAY_TOKEN` +
+`NEON_AI_GATEWAY_BASE_URL` and/or `FEATHERLESS_API_KEY` in `scout/.env`.
 
 Backend (Render):
 
@@ -137,16 +154,14 @@ npm run build
   claim, debate only with kept claims; re-debate anytime.
 - **Done (shared)** — follow-up memo from Debrief (`mailto` + copy) and
   shareable council split from Coach (copy / anonymized; no transcript).
-- **Done (shared)** — restraint pass after user feedback: time-based entry
-  (Minutes / Hours / Days), walk-in card as the standard output, a single
-  "Show working" disclosure on the brief, visual artefacts (raise bar, pattern
-  dots) and sequenced motion in place of explanatory copy. Principles in
-  `docs/NORTH_STAR.md` → Restraint.
-- **Next (Person B)** — real context ingestion (Gmail/Calendar OAuth + public
-  research). Paste HITL remains the unscalable path that teaches the contract.
-- **Stretch** — LiveKit voice adapter. Additive — the demo is complete without it.
-- **Product north star** — calendar-native high-stakes conversation flow. See
-  `docs/NORTH_STAR.md` before making major frontend changes.
+- **Now** — personal-agent reposition: Neon AI Gateway + Postgres, salary
+  scenario, AgentMail inbox ingestion, Exa research, Mastra Scout agent,
+  debrief memo by email, counterpart memory.
+- **Stretch** — Executor MCP gateway, Assistant UI surfaces, Fly sprites,
+  LiveKit voice. Additive — the demo is complete without them.
+- **Product north star** — the personal agent for conversations you can't
+  afford to get wrong. See `docs/NORTH_STAR.md` before making major frontend
+  changes.
 
 ## Build order
 
@@ -156,13 +171,23 @@ npm run build
 4. **Done (shared)** — nudge surface + SignalDesk + reactive pre-fill.
 5. **Done (Person B)** — multi-perspective Coach + paste claim-level HITL +
    progressive disclosure demo wedge.
-6. **Next (Person B)** — real context ingestion (Composio / Exa / Firecrawl).
-7. **Stretch (Person B)** — LiveKit voice adapter.
+6. **Now (hackathon reposition)** — Neon AI Gateway + Postgres envs → salary
+   scenario → AgentMail inbox ingestion → Exa research → scout log +
+   provenance → AgentMail debrief memo → Mastra Scout (AG-UI) → counterpart
+   memory.
+7. **Stretch** — Executor MCP gateway, Assistant UI, Fly sprites, LiveKit.
 
 ## Known gaps
 
-- **Context ingestion** — paste + deterministic extract is the demo path. Real
-  OAuth/Composio/Exa/Firecrawl retrieval is future work.
+- **Scout agent (Mastra)** — built in `scout/`, streaming `scout_log` over
+  AG-UI (Neon AI Gateway primary, Featherless fallback), registered in the
+  CopilotKit runtime via `MastraAgent.getRemoteAgents`. A durable `briefing`
+  workflow suspends for user approval on Neon-backed snapshots. The
+  deterministic `POST /scout/run` remains the demo-safe fallback. See
+  `scout/README.md`.
+- **Counterpart memory** — `backend/context/memory.py` persists to Neon and is
+  wired into ingest and debrief; `run_debrief` splits commitments from notes so
+  remembered commitments surface as `provenance="memory"` claims.
 - **A2UI action forwarding** — the "Get a reframe" action is handled locally in
   the UI. It is not yet forwarded to the agent as an `a2uiAction`.
 - **LiveKit voice** — typed turns are the supported input path.

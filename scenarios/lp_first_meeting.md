@@ -1,5 +1,5 @@
 ---
-stakes: "First meeting with an insurance allocator who can anchor $30M if you clear their screen."
+stakes: 'First meeting with an insurance allocator who can anchor $30M if you clear their screen.'
 counterpart_name: Hiro Tanaka
 counterpart_role: Head of Alternatives, Aster Insurance
 counterpart_style: process-driven, precise, allergic to adjectives

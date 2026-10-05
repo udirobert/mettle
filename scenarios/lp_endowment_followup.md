@@ -1,5 +1,5 @@
 ---
-stakes: "Second meeting with a $25M prospective commitment; you owe him the Q2 exit pipeline."
+stakes: 'Second meeting with a $25M prospective commitment; you owe him the Q2 exit pipeline.'
 counterpart_name: David Okafor
 counterpart_role: Director of Private Markets, Harlow Endowment
 counterpart_style: methodical, courteous, remembers everything

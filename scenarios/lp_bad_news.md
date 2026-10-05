@@ -1,5 +1,5 @@
 ---
-stakes: "Telling your anchor LP a founding partner is leaving, before the final close."
+stakes: 'Telling your anchor LP a founding partner is leaving, before the final close.'
 counterpart_name: Tom Becker
 counterpart_role: Senior Portfolio Manager, Meridian Pension
 counterpart_style: loyal, blunt, hates surprises

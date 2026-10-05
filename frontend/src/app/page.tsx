@@ -2,13 +2,13 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CircleHelp, Lock, LockOpen, Radio } from 'lucide-react';
 import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
 import { EventList } from '@/components/event-list';
 import { NudgeCard } from '@/components/nudge-card';
-import { FirstRun, useIntro } from '@/components/first-run';
+import { WelcomeOverlay, replayWalkthrough } from '@/components/welcome-overlay';
 import {
   isPhaseUnlocked,
   JourneyTracker,
@@ -16,8 +16,7 @@ import {
   type Phase,
 } from '@/components/journey-tracker';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
-import { findEvent, LP_EVENT } from '@/fixtures/lp-event';
-import { PHASE_LABELS } from '@/lib/phase-labels';
+import { findEvent } from '@/fixtures/lp-event';
 
 import styles from './page.module.css';
 
@@ -45,10 +44,10 @@ const DebriefView = dynamic(() => import('@/components/debrief-view').then((m) =
 });
 
 const PHASES: Array<{ id: Phase; label: string }> = [
-  { id: 'prep', label: PHASE_LABELS.prep },
-  { id: 'rehearsal', label: PHASE_LABELS.rehearsal },
-  { id: 'live', label: PHASE_LABELS.live },
-  { id: 'debrief', label: PHASE_LABELS.debrief },
+  { id: 'prep', label: 'Coach' },
+  { id: 'rehearsal', label: 'Rehearse' },
+  { id: 'live', label: 'Live' },
+  { id: 'debrief', label: 'Debrief' },
 ];
 
 function getPhaseHint(phase: Phase, state: ConversationState): string {
@@ -57,11 +56,11 @@ function getPhaseHint(phase: Phase, state: ConversationState): string {
   }
   switch (phase) {
     case 'rehearsal':
-      return 'Finish the brief before rehearsing';
+      return 'Finish the Coach brief before you rehearse';
     case 'live':
-      return 'Rehearse a round before going live';
+      return 'Rehearse once first — that is where the reps come from';
     case 'debrief':
-      return 'Hold a real conversation — live or sparred — before closing it out';
+      return 'Hold the conversation — live or rehearsed — before you debrief';
     default:
       return '';
   }
@@ -120,12 +119,17 @@ function SignalStack({ phase }: { phase: Phase }) {
       ) : (
         <section className={`${styles.signalCard} ${styles.signalCardRisk}`}>
           <span className={styles.cardEyebrow}>Watch for</span>
-          <strong>The concession trap</strong>
-          <p>Do not offer terms before the renewal standard is clear.</p>
+          <strong>The title-for-cash trade</strong>
+          <p>Title is cheap for her right now. Don&apos;t let it stand in for the number.</p>
         </section>
       )}
     </aside>
   );
+}
+
+function formatScenarioName(id: string | undefined): string {
+  if (!id) return 'Consequential conversation';
+  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function HomePage() {
@@ -134,7 +138,6 @@ export default function HomePage() {
   const [localPhase, setLocalPhase] = useState<Phase>(state.phase ?? 'prep');
   const [showEventList, setShowEventList] = useState(!state.scenario_id);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const intro = useIntro();
 
   useEffect(() => {
     if (state.phase && state.phase !== localPhase) {
@@ -199,12 +202,12 @@ export default function HomePage() {
     markEntry('prep');
   };
 
-  // "Hours, not days" entry: skip the brief and spar now. One atomic state
-  // reset seeds a light brief from the scenario's walk-in lines so Spar is
-  // unlocked, then jumps straight in.
-  const handleQuickSpar = (scenarioId: string) => {
+  // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
+  // state reset that also seeds a light coach brief so Rehearse is unlocked,
+  // then jumps straight in.
+  const handleQuickRehearsal = () => {
     if (isAgentRunning) return;
-    const event = findEvent(scenarioId);
+    const event = findEvent('salary_review');
     if (!event) return;
     setPartial({
       scenario_id: event.id,
@@ -213,14 +216,20 @@ export default function HomePage() {
       counterpart_profile: event.counterpartProfile,
       user_weak_points: event.userWeakPoints,
       coach_analysis: {
-        blind_spots: event.userWeakPoints.slice(0, 1),
-        concrete_moves: event.walkIn.ifThen.map((line) => line.response),
-        likely_objections: event.walkIn.ifThen.map((line) => line.trigger),
-        opening_strategy: event.walkIn.opening,
-        if_then: event.walkIn.ifThen,
+        blind_spots: [
+          'Your anchor is still the number you asked for in writing — which is now her floor, not your ceiling.',
+        ],
+        concrete_moves: [
+          'Trade the reorg scope for a dated comp commitment before you accept either.',
+        ],
+        likely_objections: [
+          '"$185k is above band. Walk me through the scope case."',
+          '"You promised me March metrics and they never came."',
+        ],
+        opening_strategy: 'Open with the scope case she asked for, not with the number.',
         perspectives: [],
-        disagreements: [],
-        consensus: [event.walkIn.avoid],
+        disagreements: ['Whether title is a real concession or a way to defer the cash.'],
+        consensus: ['Title is cheap for her right now. Cash is the actual ask.'],
       },
       coach_stage: 'ready',
       context_brief: undefined,
@@ -234,6 +243,7 @@ export default function HomePage() {
     setShowEventList(false);
     setLocalPhase('rehearsal');
     markEntry('rehearsal');
+    localStorage.setItem('mettle.walkthrough.seen', 'true');
   };
 
   const handleBackToEvents = () => {
@@ -254,28 +264,9 @@ export default function HomePage() {
               <span className={styles.wordmarkMark}>M</span>
               <span>Mettle</span>
             </div>
-            <span />
-            {intro.status === 'seen' && (
-              <div className={styles.confidential}>
-                <button className={styles.replayBtn} onClick={intro.reopen} type="button">
-                  <CircleHelp size={14} aria-hidden="true" />
-                  <span>What is Mettle?</span>
-                </button>
-              </div>
-            )}
           </header>
-          {intro.status === 'new' && (
-            <FirstRun
-              onTry={() => {
-                intro.dismiss();
-                handleQuickSpar(LP_EVENT.id);
-              }}
-              onSkip={intro.dismiss}
-            />
-          )}
-          {intro.status === 'seen' && (
-            <EventList onSelectEvent={handleSelectEvent} onQuickSpar={handleQuickSpar} />
-          )}
+          <EventList onSelectEvent={handleSelectEvent} onQuickRehearsal={handleQuickRehearsal} />
+          <WelcomeOverlay />
         </main>
       </CopilotChatConfigurationProvider>
     );
@@ -319,15 +310,15 @@ export default function HomePage() {
             </button>
             <button
               className={styles.replayBtn}
-              onClick={() => {
-                intro.reopen();
-                setShowEventList(true);
-              }}
+              onClick={replayWalkthrough}
+              title="Replay the walkthrough (?)"
               type="button"
             >
               <CircleHelp size={14} aria-hidden="true" />
-              <span>What is Mettle?</span>
+              <span>Replay tour</span>
             </button>
+            <BadgeCheck size={16} aria-hidden="true" />
+            {formatScenarioName(state.scenario_id)}
           </div>
         </header>
 
@@ -394,6 +385,12 @@ export default function HomePage() {
             <div className={styles.canvasBar}>
               <h1>{PHASES.find((item) => item.id === localPhase)?.label}</h1>
               <JourneyTracker current={localPhase} />
+              {state.stakes && (
+                <div className={styles.canvasStakes}>
+                  <span className={styles.stakesDot} />
+                  {state.stakes}
+                </div>
+              )}
             </div>
             <div className={`${styles.phaseCanvas} mettle-fade-in`} key={localPhase}>
               <PhaseCanvas phase={localPhase} />
@@ -417,7 +414,7 @@ export default function HomePage() {
               <p className="mettle-kicker">Keyboard</p>
               <ul className={styles.shortcutsList}>
                 <li>
-                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to {Object.values(PHASE_LABELS).join(' / ')}</span>
+                  <kbd>1</kbd>–<kbd>4</kbd> <span>Jump to Coach / Rehearse / Live / Debrief</span>
                 </li>
                 <li>
                   <kbd>?</kbd> <span>Show or hide this panel</span>

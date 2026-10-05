@@ -42,6 +42,7 @@ class ContextSource(TypedDict):
         "exa",
         "firecrawl",
         "tinyfish",
+        "agentmail",
         "solari",
         "manual",
     ]
@@ -69,8 +70,21 @@ class EvidenceClaim(TypedDict):
         "person",
         "risk",
     ]
+    # Where the evidence came from — drives UI provenance badges and keeps
+    # private, public, remembered, and user-stated facts visibly separate.
+    provenance: NotRequired[Literal["inbox", "paste", "web", "memory", "stated"]]
     # Human-in-the-loop gate. Pending claims never reach Coach prompts.
     decision: NotRequired[Literal["pending", "approved", "rejected"]]
+
+
+class ScoutEvent(TypedDict):
+    """One auditable action by the Scout agent, surfaced in the UI scout log."""
+
+    ts: str
+    actor: Literal["scout"]
+    action: str  # e.g. "read_thread", "researched", "flagged_commitment"
+    detail: str  # human-readable: "Read your thread with Dana — 9 claims"
+    sources: NotRequired[list[str]]
 
 
 class ContextBrief(TypedDict):
@@ -143,6 +157,13 @@ class ConversationState(TypedDict):
 
     # Context ingestion — evidence brief from imported sources (Gmail, Calendar, etc.)
     context_brief: NotRequired[ContextBrief]
+
+    # Scout agent — auditable log of pre-arrival agent work, surfaced in the UI.
+    scout_log: NotRequired[list[ScoutEvent]]
+    # The agent's own AgentMail address — the front door for forwarded threads.
+    agent_inbox_address: NotRequired[str]
+    # Pointer into Neon counterpart memory for repeat counterparts.
+    counterpart_history_ref: NotRequired[str]
 
     # Optional pre-fill text for the reactive Wingman quick-answer prompt.
     reactive_query_prefill: NotRequired[str | None]

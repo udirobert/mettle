@@ -111,7 +111,9 @@ export function WingmanSidePanel() {
       </header>
 
       {transcript.length === 0 && (
-        <p className="mettle-premise">Log each turn. You&apos;ll only hear from us when it matters.</p>
+        <p className="mettle-premise">
+          Log each turn. You&apos;ll only hear from us when it matters.
+        </p>
       )}
 
       {reactiveReply ? (

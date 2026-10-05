@@ -1,0 +1,221 @@
+.log {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 0.9rem 1rem;
+}
+
+.logHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.logTitle {
+  align-items: center;
+  color: var(--cobalt);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0.12em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* Collapsed header doubles as the expand affordance: the count carries the
+   "something already happened" signal without forcing anyone to read it. */
+.logToggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-mono);
+  gap: 0.35rem;
+  padding: 0;
+  text-transform: inherit;
+}
+
+.logToggle:hover .logTitle {
+  color: var(--ink);
+}
+
+.logToggleChevron {
+  color: var(--ink-soft);
+  transition: transform 180ms ease;
+}
+
+.logToggleChevronOpen {
+  transform: rotate(180deg);
+}
+
+.logHead {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.logCount {
+  align-items: center;
+  background: var(--tint-signal);
+  border: 1px solid var(--tint-signal-line);
+  color: var(--signal-strong-ink);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+}
+
+.logEmpty {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.logList {
+  list-style: none;
+  margin: 0;
+  padding: 0.7rem 0 0;
+}
+
+.logRow {
+  display: flex;
+  gap: 0.65rem;
+  padding-bottom: 0.7rem;
+  position: relative;
+}
+
+.logRow:last-child {
+  padding-bottom: 0;
+}
+
+/* The connecting rail makes the log read as work in sequence. */
+.logRow:not(:last-child)::before {
+  background: var(--line);
+  content: '';
+  height: 100%;
+  left: 3px;
+  position: absolute;
+  top: 12px;
+  width: 1px;
+}
+
+.logDot {
+  background: var(--cobalt);
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 7px;
+  margin-top: 4px;
+  width: 7px;
+}
+
+.logBody {
+  min-width: 0;
+}
+
+.logRowTop {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.logRowTop strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.logRowTop time {
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.logBody p {
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0.2rem 0 0;
+}
+
+.logSources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.logFoot {
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  margin: 0.2rem 0 0;
+  padding-top: 0.55rem;
+}
+
+/* Provenance badges — the trust mechanism, so sized to be read at a glance
+   across a room rather than scanned for. Tinted fills over hairline borders:
+   an inbox claim and a web claim must be distinguishable in peripheral vision. */
+.badge {
+  align-items: center;
+  border: 1px solid transparent;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  gap: 0.3rem;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge_inbox {
+  background: var(--tint-accent);
+  border-color: var(--tint-accent-line);
+  color: var(--cobalt);
+}
+
+.badge_web {
+  background: var(--tint-risk);
+  border-color: var(--tint-risk-line);
+  color: var(--tomato);
+}
+
+.badge_memory {
+  background: var(--tint-signal);
+  border-color: var(--tint-signal-line);
+  color: var(--signal-strong-ink);
+}
+
+.badge_paste {
+  background: var(--surface-alt);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.badge_stated {
+  background: var(--surface-alt);
+  border-color: var(--line-strong, var(--line));
+  color: var(--ink-soft);
+}
+
+.badgeUnknown {
+  background: var(--surface-alt);
+  border-color: var(--line);
+  border-style: dashed;
+  opacity: 0.75;
+}

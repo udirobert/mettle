@@ -32,8 +32,18 @@ def create_checkpointer() -> tuple[object, CheckpointerCleanup]:
     context: AbstractContextManager[PostgresSaver] = PostgresSaver.from_conn_string(
         database_url
     )
-    checkpointer = context.__enter__()
-    checkpointer.setup()
+    try:
+        checkpointer = context.__enter__()
+        checkpointer.setup()
+    except Exception as exc:
+        # Never echo the URL: it carries credentials.
+        raise RuntimeError(
+            f"Could not connect to the checkpoint database ({type(exc).__name__}). "
+            "Check that DATABASE_URL / CHECKPOINT_DATABASE_URL is a valid, reachable "
+            "Postgres URL (Neon: use the pooled connection string, keep "
+            "sslmode=require, and quote the value in .env), or unset it to use the "
+            "in-memory checkpointer in development."
+        ) from None
 
     def cleanup() -> None:
         context.__exit__(None, None, None)

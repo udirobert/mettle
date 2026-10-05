@@ -125,6 +125,41 @@ def _build_deterministic_notes(state: ConversationState) -> list[str]:
     return notes
 
 
+_COMMITMENT_MARKERS = (
+    "commit",
+    "agreed",
+    "promise",
+    "will ",
+    "by friday",
+    "by monday",
+    "by tuesday",
+    "by wednesday",
+    "by thursday",
+    "send ",
+    "follow up",
+    "follow-up",
+    "owe",
+    "deliver",
+    "within 24 hours",
+)
+
+
+def _split_notes_for_memory(notes: list[str]) -> tuple[list[str], list[str]]:
+    """Split debrief notes into (commitments, other notes) for memory.
+
+    Conservative keyword heuristic — only clearly commitment-shaped notes are
+    persisted as commitments, so history_to_claims can later surface them as
+    "You previously committed…" memory claims.
+    """
+    commitments = [
+        note
+        for note in notes
+        if any(marker in note.lower() for marker in _COMMITMENT_MARKERS)
+    ]
+    rest = [note for note in notes if note not in commitments]
+    return commitments, rest
+
+
 def run_debrief(state: ConversationState) -> dict:
     """Summarize commitments, unanswered objections, and next actions.
 
@@ -173,7 +208,26 @@ def run_debrief(state: ConversationState) -> dict:
         except Exception:
             notes = _build_deterministic_notes(state)
 
-    return {
-        "phase": "debrief",
-        "debrief_notes": notes,
-    }
+    result: dict = {"phase": "debrief", "debrief_notes": notes}
+
+    # Counterpart memory: debrief notes persist so the next conversation with
+    # this person starts from history, not zero. No-op without a database.
+    profile = state.get("counterpart_profile", {})
+    counterpart_name = str(profile.get("name") or "")
+    if counterpart_name:
+        try:
+            from context.memory import record_debrief
+
+            commitments, rest = _split_notes_for_memory(notes)
+            ref = record_debrief(
+                counterpart_name,
+                commitments=commitments,
+                notes=rest,
+                source_event=state.get("conversation_source"),
+            )
+            if ref:
+                result["counterpart_history_ref"] = ref
+        except Exception:
+            pass
+
+    return result

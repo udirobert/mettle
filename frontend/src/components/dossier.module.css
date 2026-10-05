@@ -1,0 +1,170 @@
+/* The counterpart briefing — reads like a document, not a form. Deliberately
+   quiet on the surface so the leverage statement carries. */
+.dossier {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ink);
+}
+
+.details {
+  margin: 0;
+}
+
+.summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0.7rem 0.9rem;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:hover .summaryName {
+  color: var(--cobalt);
+}
+
+.summaryLeft {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.summaryLeft svg {
+  color: var(--ink-soft);
+  flex-shrink: 0;
+  transform: translateY(1px);
+}
+
+.summaryName {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.summaryRole {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.summaryRight {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+.summaryCount {
+  background: var(--tint-risk);
+  border: 1px solid var(--tint-risk-line);
+  color: var(--tomato);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.chevron {
+  color: var(--ink-soft);
+  transition: transform 180ms ease;
+}
+
+.details[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.body {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1rem 0.9rem 1.1rem;
+}
+
+.blockLabel {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  gap: 0.35rem;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.styleList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.styleChip {
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.5rem;
+}
+
+/* The single most useful sentence on the screen: what they can actually do. */
+.blockLeverage {
+  background: var(--tint-accent);
+  border-left: 2px solid var(--cobalt);
+  margin: 0 -0.9rem;
+  padding: 0.85rem 0.9rem;
+}
+
+.leverageText {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.35;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.concernList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.concernItem {
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  padding-left: 0.9rem;
+  position: relative;
+}
+
+.concernItem::before {
+  background: var(--tomato);
+  content: '';
+  height: 5px;
+  left: 0;
+  position: absolute;
+  top: 0.55em;
+  width: 5px;
+}

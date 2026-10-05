@@ -1,7 +1,11 @@
 'use client';
 
 import { useAgent, useCopilotKit } from '@copilotkit/react-core/v2';
-import { findEvent } from '@/fixtures/lp-event';
+import { findEvent, registerEvent } from '@/fixtures/lp-event';
+import { SALARY_EVENT } from '@/fixtures/salary-event';
+
+// Dana is the featured event; register her before any lookup can miss.
+registerEvent(SALARY_EVENT);
 
 /**
  * Shared conversation state contract — mirrors backend/graph/state.py.
@@ -42,6 +46,7 @@ export type ContextSource = {
     | 'exa'
     | 'firecrawl'
     | 'tinyfish'
+    | 'agentmail'
     | 'solari'
     | 'manual';
   title: string;
@@ -67,7 +72,17 @@ export type EvidenceClaim = {
     | 'company'
     | 'person'
     | 'risk';
+  /** Where the evidence came from — drives provenance badges in the UI. */
+  provenance?: 'inbox' | 'paste' | 'web' | 'memory' | 'stated';
   decision?: 'pending' | 'approved' | 'rejected';
+};
+
+export type ScoutEvent = {
+  ts: string;
+  actor: 'scout';
+  action: string;
+  detail: string;
+  sources?: string[];
 };
 
 export type ContextBrief = {
@@ -113,6 +128,12 @@ export type ConversationState = {
   coach_analysis?: CoachAnalysis;
   coach_stage?: 'idle' | 'debating' | 'perspectives' | 'ready';
   context_brief?: ContextBrief;
+  /** Auditable log of pre-arrival Scout agent work, rendered in the UI. */
+  scout_log?: ScoutEvent[];
+  /** The agent's own AgentMail address — the front door for forwarded threads. */
+  agent_inbox_address?: string;
+  /** Pointer into Neon counterpart memory for repeat counterparts. */
+  counterpart_history_ref?: string;
   reactive_query_prefill?: string | null;
   nudge_acknowledgements?: NudgeAcknowledgement[];
   privacy_mode?: 'private' | 'shared';

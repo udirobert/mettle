@@ -54,3 +54,6 @@ next-env.d.ts
 # Tools
 .claude
 .scratch/
+.commandcode/
+
+.tmp_repos/

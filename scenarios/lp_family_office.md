@@ -1,5 +1,5 @@
 ---
-stakes: "$15M from a single-family office that invests on relationship and gut feel."
+stakes: '$15M from a single-family office that invests on relationship and gut feel.'
 counterpart_name: Priya Raman
 counterpart_role: Principal, Castell Family Office
 counterpart_style: warm, intuitive, tests for consistency

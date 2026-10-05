@@ -393,3 +393,13 @@ export const ALL_EVENTS: MettleEvent[] = [LP_EVENT, ...RAISE_EVENTS, ...SECONDAR
 export function findEvent(id: string): MettleEvent | undefined {
   return ALL_EVENTS.find((event) => event.id === id);
 }
+
+/**
+ * Register the featured demo event without importing it here — salary-event.ts
+ * borrows this module's MettleEvent type, so a value import would cycle.
+ */
+export function registerEvent(event: MettleEvent): void {
+  if (!ALL_EVENTS.some((existing) => existing.id === event.id)) {
+    ALL_EVENTS.unshift(event);
+  }
+}
