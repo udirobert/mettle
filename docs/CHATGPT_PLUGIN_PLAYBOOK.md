@@ -63,3 +63,17 @@ Allowed patterns for our free → paid ladders:
 | Free MCP tool            | `meeting_brief` at `https://mettle-xi.vercel.app/mcp`                                                                                                                                  |
 | Paid/deep                | Rehearsal + debrief via existing account / [informational plans](https://mettle-xi.vercel.app/plans) — no in-plugin checkout                                                           |
 | Connect / eval / prompts | [CHATGPT_PLUGIN_CONNECT.md](./CHATGPT_PLUGIN_CONNECT.md), [CHATGPT_PLUGIN_EVAL.md](./CHATGPT_PLUGIN_EVAL.md), [CHATGPT_PLUGIN_STARTER_PROMPTS.md](./CHATGPT_PLUGIN_STARTER_PROMPTS.md) |
+
+## Usage → monetisation scoreboard (Plugin Lane)
+
+Watch weekly. Free MCP wedge: `meeting_brief` in ChatGPT; **digital paid stays off-platform** (rehearsal / debrief / plans — informational `/plans` only, no in-plugin checkout). Instrument when you have analytics (MCP/`/mcp` request logs, Vercel logs, site referral/`utm` on deep-links, plan-start events); do not invent dashboards until those exist.
+
+| #   | Metric                       | What “good” looks like                                                                        |
+| --- | ---------------------------- | --------------------------------------------------------------------------------------------- |
+| 1   | Plugin connects              | Successful connect + `tools/list` for `https://mettle-xi.vercel.app/mcp`                      |
+| 2   | `meeting_brief` calls / week | Free-hook volume on the live ChatGPT tool                                                     |
+| 3   | Repeat briefers              | ≥2 briefs in 7 days (same user / stable client id if logged)                                  |
+| 4   | Click-through off free set   | Deep-link to rehearsal / debrief / [plans](https://mettle-xi.vercel.app/plans) (not checkout) |
+| 5   | Paid plan starts             | Plan / trial **started** attributed to ChatGPT referral — when attribution exists             |
+
+Related: [CONNECT](./CHATGPT_PLUGIN_CONNECT.md) · free tool vs out-of-set product surfaces.

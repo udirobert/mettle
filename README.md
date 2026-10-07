@@ -73,6 +73,7 @@ Free v1 tool: `meeting_brief` — paste thread → evidence brief + likely objec
 - Eval: [docs/CHATGPT_PLUGIN_EVAL.md](docs/CHATGPT_PLUGIN_EVAL.md)
 - Starter prompts: [docs/CHATGPT_PLUGIN_STARTER_PROMPTS.md](docs/CHATGPT_PLUGIN_STARTER_PROMPTS.md)
 - Playbook: [docs/CHATGPT_PLUGIN_PLAYBOOK.md](docs/CHATGPT_PLUGIN_PLAYBOOK.md)
+- Scoreboard: weekly usage → monetisation metrics in [docs/CHATGPT_PLUGIN_PLAYBOOK.md](docs/CHATGPT_PLUGIN_PLAYBOOK.md#usage--monetisation-scoreboard-plugin-lane)
 
 ## Deploy
 
