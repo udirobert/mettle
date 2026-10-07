@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // emit the files Next.js 16.3 expects when standalone is enabled, causing an
   // ENOENT for next-server.js.nft.json. See vercel/next.js#96646.
   output: process.env.VERCEL ? undefined : "standalone",
-  serverExternalPackages: ["@copilotkit/runtime"],
+  serverExternalPackages: ["@copilotkit/runtime", "@modelcontextprotocol/sdk"],
   env: {
     // The public Threads UI flag is DERIVED from the server-side license token.
     // Set COPILOTKIT_LICENSE_TOKEN (only) to enable Threads — do not set this flag

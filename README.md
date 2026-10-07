@@ -63,11 +63,23 @@ To test locally with Chrome, enable `chrome://flags/#enable-webmcp-testing` and
 open `http://localhost:3000/webmcp`. ChatGPT's in-app browser supports WebMCP
 out of the box.
 
+## ChatGPT plugin — "help me prepare for this meeting"
+
+Remote **Streamable HTTP MCP** at [`/mcp`](https://mettle-xi.vercel.app/mcp) (production: `https://mettle-xi.vercel.app/mcp`) for ChatGPT directory and mid-conversation discovery — not only browser WebMCP.
+
+Free v1 tool: `meeting_brief` — paste thread → evidence brief + likely objections. Descriptions use user words ("help me prepare for this meeting", "what are they going to ask me") and say when **not** to use. Rehearsal/debrief stay out of the free ChatGPT set; they live in the product for existing accounts or via the informational [plans](https://mettle-xi.vercel.app/plans) page — **not** in-plugin checkout (OpenAI allows plugin commerce for physical goods only).
+
+- Connect: [docs/CHATGPT_PLUGIN_CONNECT.md](docs/CHATGPT_PLUGIN_CONNECT.md)
+- Eval: [docs/CHATGPT_PLUGIN_EVAL.md](docs/CHATGPT_PLUGIN_EVAL.md)
+- Starter prompts: [docs/CHATGPT_PLUGIN_STARTER_PROMPTS.md](docs/CHATGPT_PLUGIN_STARTER_PROMPTS.md)
+- Playbook: [docs/CHATGPT_PLUGIN_PLAYBOOK.md](docs/CHATGPT_PLUGIN_PLAYBOOK.md)
+
 ## Deploy
 
 The production frontend is at `https://mettle-xi.vercel.app` and is linked to
 this GitHub repository. Pushing to `main` autodeploys. The WebMCP demo page is at
-`https://mettle-xi.vercel.app/webmcp`.
+`https://mettle-xi.vercel.app/webmcp`. The public ChatGPT MCP endpoint is at
+`https://mettle-xi.vercel.app/mcp`.
 
 ### Backend
 
