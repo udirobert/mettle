@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeShareLink, encodeShareLink, type SharedDebrief } from './share-link';
+import {
+  decodeCouncilShareLink,
+  decodeShareLink,
+  encodeCouncilShareLink,
+  encodeShareLink,
+  type SharedCouncilSplit,
+  type SharedDebrief,
+} from './share-link';
 
 const payload: SharedDebrief = {
   v: 1,
@@ -38,5 +45,19 @@ describe('share link round trip', () => {
     expect(decodeShareLink('')).toBeNull();
     const wrongVersion = encodeShareLink({ ...payload, v: 2 } as never, 'https://x');
     expect(decodeShareLink(wrongVersion.slice(wrongVersion.indexOf('#')))).toBeNull();
+  });
+
+  it('encodes and decodes council split share links (#c=...)', () => {
+    const council: SharedCouncilSplit = {
+      v: 1,
+      counterpart: 'Dana Whitfield',
+      stakes: 'Salary review — $185k and senior scope',
+      agreed: 'Lead with expanded scope, not tenure.',
+      split: 'Skeptic sees March metrics as a blocker; Negotiator sees title as leverage.',
+      move: 'Open with the scope case she asked for, then anchor $185k.',
+    };
+    const link = encodeCouncilShareLink(council, 'https://mettle.example');
+    expect(link.startsWith('https://mettle.example/share#c=')).toBe(true);
+    expect(decodeCouncilShareLink(link.slice(link.indexOf('#')))).toEqual(council);
   });
 });

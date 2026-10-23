@@ -335,13 +335,16 @@ def run_debrief(state: ConversationState) -> dict:
         try:
             from context.memory import record_debrief
 
-            ref = record_debrief(
-                counterpart_name,
-                organization=str(profile.get("organization") or "") or None,
-                commitments=[item["text"] for item in verified],
-                notes=other_notes + unverified,
-                source_event=state.get("conversation_source"),
-            )
+            owner_id = state.get("client_id")
+            kwargs: dict = {
+                "organization": str(profile.get("organization") or "") or None,
+                "commitments": [item["text"] for item in verified],
+                "notes": other_notes + unverified,
+                "source_event": state.get("conversation_source"),
+            }
+            if owner_id:
+                kwargs["owner_id"] = owner_id
+            ref = record_debrief(counterpart_name, **kwargs)
             if ref:
                 result["counterpart_history_ref"] = ref
         except Exception:

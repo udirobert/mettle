@@ -17,6 +17,7 @@ import {
 } from '@/components/journey-tracker';
 import { useConversationState, type ConversationState } from '@/hooks/use-conversation-state';
 import { findEvent } from '@/fixtures/lp-event';
+import { trackClientEvent } from '@/lib/telemetry';
 
 import styles from './page.module.css';
 
@@ -148,6 +149,7 @@ export default function HomePage() {
   const selectPhase = (phase: Phase) => {
     setLocalPhase(phase);
     setPhase(phase);
+    trackClientEvent('mode_session', { mode: phase, scenarioId: state.scenario_id });
   };
 
   // Keyboard flow: 1–4 switch (unlocked) phases, ? opens shortcuts, Escape closes.
@@ -200,6 +202,11 @@ export default function HomePage() {
     setShowEventList(false);
     setLocalPhase('prep');
     markEntry('prep');
+    trackClientEvent('conversation_started', {
+      entry: 'prep',
+      mode: 'prep',
+      scenarioId,
+    });
   };
 
   // An inbox-drafted event has already written its state (see InboxDraftCard);
@@ -209,21 +216,35 @@ export default function HomePage() {
     setShowEventList(false);
     setLocalPhase('prep');
     markEntry('prep');
+    trackClientEvent('conversation_started', {
+      entry: 'draft',
+      mode: 'prep',
+      scenarioId: state.scenario_id || 'inbox_draft',
+    });
   };
 
   // Rehearsal-first onboarding: skip the brief, feel the hook. One atomic
   // state reset that also seeds a light coach brief so Rehearse is unlocked,
-  // then jumps straight in.
-  const handleQuickRehearsal = () => {
+  // then jumps straight in. Supports an optional custom counterpart name from
+  // ChatGPT `/mcp` rehearsal deep-links.
+  const handleQuickRehearsal = (customCounterpart?: string) => {
     if (isAgentRunning) return;
-    const event = findEvent('salary_review');
-    if (!event) return;
+    const baseEvent = findEvent('salary_review');
+    if (!baseEvent) return;
+    const trimmedName = customCounterpart?.trim();
+    const counterpartProfile =
+      trimmedName && trimmedName.toLowerCase() !== baseEvent.counterpart.toLowerCase()
+        ? {
+            ...baseEvent.counterpartProfile,
+            name: trimmedName,
+          }
+        : baseEvent.counterpartProfile;
     setPartial({
-      scenario_id: event.id,
+      scenario_id: baseEvent.id,
       phase: 'rehearsal',
-      stakes: event.stakes,
-      counterpart_profile: event.counterpartProfile,
-      user_weak_points: event.userWeakPoints,
+      stakes: baseEvent.stakes,
+      counterpart_profile: counterpartProfile,
+      user_weak_points: baseEvent.userWeakPoints,
       coach_analysis: {
         blind_spots: [
           'Your anchor is still the number you asked for in writing — which is now her floor, not your ceiling.',
@@ -253,7 +274,28 @@ export default function HomePage() {
     setLocalPhase('rehearsal');
     markEntry('rehearsal');
     localStorage.setItem('mettle.walkthrough.seen', 'true');
+    trackClientEvent('conversation_started', {
+      entry: 'rehearsal',
+      mode: 'rehearsal',
+      scenarioId: baseEvent.id,
+    });
   };
+
+  // Detect UTM / deep-link arrivals (e.g. from ChatGPT MCP `rehearse_url`).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const utmSource = params.get('utm_source') || undefined;
+    const entry = params.get('entry');
+    const counterpartParam = params.get('counterpart') || undefined;
+    if (utmSource) {
+      trackClientEvent('off_platform_click', { utmSource });
+    }
+    if (entry === 'rehearsal' && showEventList && !isAgentRunning) {
+      handleQuickRehearsal(counterpartParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleBackToEvents = () => {
     setShowEventList(true);

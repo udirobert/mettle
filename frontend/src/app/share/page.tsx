@@ -2,18 +2,44 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, CheckCircle2, CircleAlert, ListTodo, ShieldCheck } from 'lucide-react';
-import { decodeShareLink, type SharedDebrief } from '@/lib/share-link';
+import { ArrowRight, CheckCircle2, CircleAlert, ListTodo, Scale, ShieldCheck } from 'lucide-react';
+import {
+  decodeCouncilShareLink,
+  decodeShareLink,
+  type SharedCouncilSplit,
+  type SharedDebrief,
+} from '@/lib/share-link';
+import { trackClientEvent } from '@/lib/telemetry';
+
+type ShareArtifactState =
+  | null
+  | 'invalid'
+  | { kind: 'debrief'; data: SharedDebrief }
+  | { kind: 'council'; data: SharedCouncilSplit };
 
 /**
- * Read-only shared debrief memo. Payload arrives via the URL fragment —
- * nothing is stored server-side and nothing about the sender's session leaks.
+ * Read-only shared artifact (Debrief memo `#d=...` or Council split `#c=...`).
+ * Payload arrives via the URL fragment — nothing is stored server-side and
+ * nothing about the sender's session leaks.
  */
 export default function SharePage() {
-  const [memo, setMemo] = useState<SharedDebrief | null | 'invalid'>(null);
+  const [artifact, setArtifact] = useState<ShareArtifactState>(null);
 
   useEffect(() => {
-    setMemo(decodeShareLink(window.location.hash) ?? 'invalid');
+    const hash = window.location.hash;
+    const debrief = decodeShareLink(hash);
+    if (debrief) {
+      setArtifact({ kind: 'debrief', data: debrief });
+      trackClientEvent('off_platform_click', { utmSource: 'share_debrief' });
+      return;
+    }
+    const council = decodeCouncilShareLink(hash);
+    if (council) {
+      setArtifact({ kind: 'council', data: council });
+      trackClientEvent('off_platform_click', { utmSource: 'share_council' });
+      return;
+    }
+    setArtifact('invalid');
   }, []);
 
   const formatDate = (iso: string) => {
@@ -35,9 +61,9 @@ export default function SharePage() {
         <span className="mettle-share-word">Mettle</span>
       </header>
 
-      {memo === null ? (
-        <p className="mettle-share-status">Loading memo…</p>
-      ) : memo === 'invalid' ? (
+      {artifact === null ? (
+        <p className="mettle-share-status">Loading card…</p>
+      ) : artifact === 'invalid' ? (
         <section className="mettle-share-card">
           <p className="mettle-kicker">
             <CircleAlert size={13} /> Link not readable
@@ -49,9 +75,52 @@ export default function SharePage() {
             Ask the sender to copy the full link — everything is encoded inside it, so nothing was
             stored on our side to fall back to.
           </p>
-          <Link className="mettle-action" href="/">
-            What is Mettle? <ArrowRight size={14} aria-hidden="true" />
+          <Link className="mettle-action" href="/?utm_source=share_artifact&entry=rehearsal">
+            Try a 60-second rehearsal <ArrowRight size={14} aria-hidden="true" />
           </Link>
+        </section>
+      ) : artifact.kind === 'council' ? (
+        <section className="mettle-share-card">
+          <p className="mettle-kicker">
+            <Scale size={13} /> Council split · read-only
+          </p>
+          <h1 className="mettle-share-title">
+            {artifact.data.counterpart}
+            {artifact.data.stakes ? ` — ${artifact.data.stakes}` : ''}
+          </h1>
+          <p className="mettle-share-date">
+            Three adversarial perspectives argued this position. No transcript or private evidence
+            included.
+          </p>
+
+          <p className="mettle-kicker">
+            <CheckCircle2 size={13} /> They agreed
+          </p>
+          <ul className="mettle-list">
+            <li>{artifact.data.agreed}</li>
+          </ul>
+
+          <p className="mettle-kicker">They split</p>
+          <ul className="mettle-list">
+            <li>{artifact.data.split}</li>
+          </ul>
+
+          <p className="mettle-kicker">
+            <ListTodo size={13} /> The move
+          </p>
+          <ul className="mettle-list">
+            <li>{artifact.data.move}</li>
+          </ul>
+
+          <div className="mettle-share-cta">
+            <p>
+              Pressure-test the conversation you cannot afford to get wrong — before you walk into
+              the room.
+            </p>
+            <Link className="mettle-action" href="/?utm_source=share_artifact&entry=rehearsal">
+              Rehearse your own conversation in 60s <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
         </section>
       ) : (
         <section className="mettle-share-card">
@@ -59,48 +128,49 @@ export default function SharePage() {
             <ShieldCheck size={13} /> Conversation debrief · read-only
           </p>
           <h1 className="mettle-share-title">
-            {memo.counterpart} conversation{memo.stakes ? ` — ${memo.stakes}` : ''}
+            {artifact.data.counterpart} conversation
+            {artifact.data.stakes ? ` — ${artifact.data.stakes}` : ''}
           </h1>
-          {memo.savedAt && (
-            <p className="mettle-share-date">Debriefed {formatDate(memo.savedAt)}</p>
+          {artifact.data.savedAt && (
+            <p className="mettle-share-date">Debriefed {formatDate(artifact.data.savedAt)}</p>
           )}
-          {memo.source === 'rehearsal' && (
+          {artifact.data.source === 'rehearsal' && (
             <p className="mettle-share-date">
               From a rehearsal run — commitments are intended lines, not promises made.
             </p>
           )}
 
-          {memo.commitments.length > 0 && (
+          {artifact.data.commitments.length > 0 && (
             <>
               <p className="mettle-kicker">
                 <CheckCircle2 size={13} /> Commitments made
               </p>
               <ul className="mettle-list">
-                {memo.commitments.map((item, i) => (
+                {artifact.data.commitments.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>
             </>
           )}
 
-          {memo.stillOpen.length > 0 && (
+          {artifact.data.stillOpen.length > 0 && (
             <>
               <p className="mettle-kicker">Still open</p>
               <ul className="mettle-list">
-                {memo.stillOpen.map((item, i) => (
+                {artifact.data.stillOpen.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>
             </>
           )}
 
-          {memo.alsoDo.length > 0 && (
+          {artifact.data.alsoDo.length > 0 && (
             <>
               <p className="mettle-kicker">
                 <ListTodo size={13} /> Next moves
               </p>
               <ul className="mettle-list">
-                {memo.alsoDo.map((item, i) => (
+                {artifact.data.alsoDo.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>
@@ -112,8 +182,8 @@ export default function SharePage() {
               Prepared with Mettle — rehearsal, live coaching, and the accountability debrief for
               conversations you can&apos;t afford to get wrong.
             </p>
-            <Link className="mettle-action" href="/">
-              Prep your own conversation <ArrowRight size={14} aria-hidden="true" />
+            <Link className="mettle-action" href="/?utm_source=share_artifact&entry=rehearsal">
+              Rehearse your own conversation in 60s <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
         </section>

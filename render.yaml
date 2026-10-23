@@ -9,7 +9,7 @@ services:
     dockerfilePath: Dockerfile.render
     envVars:
       - key: METTLE_ENV
-        value: development
+        value: production
       - key: OPENAI_API_KEY
         sync: false
       - key: CORS_ALLOWED_ORIGINS

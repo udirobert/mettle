@@ -1,5 +1,7 @@
 # Hackathon Work Split — Build Personal Agents
 
+> **Archived sprint plan (2026-10-05):** The three-lane personal-agent reposition described below has shipped (pinned API contracts remain in force). For current priorities and growth tracking, see [`docs/NORTH_STAR.md`](./NORTH_STAR.md), [`docs/KEIKI_MARITIME.md`](./KEIKI_MARITIME.md), and [`CLAUDE.md`](../CLAUDE.md).
+
 Three devs, one repo, ~5 hours of hacking, submissions 4:30 PM.
 
 **The one rule:** the demo must never depend on the riskiest item. Every rung

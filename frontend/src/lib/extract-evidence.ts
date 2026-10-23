@@ -41,11 +41,15 @@ Subject: Re: Comp cycle — let's get you booked
 Title is realistic and I can move on it. Cash is the hard part — anything above band needs VP sign-off and the calendar closes this quarter. And I want to flag the March team-health metrics: you committed to sending those and they never arrived, so right now my reliability case for you is thinner than the scope case. Let's talk Thursday.
 `;
 
-const MONEY = /\$[\d,.]+(?:\s*(?:[Mm]|million))?/;
-const COMMIT = /\b(commit(?:ted|ment)?|promis(?:e|ed)|will send|follow-?up|memo)\b/i;
-const OBJECTION = /\b(concern|flagged|lag(?:ged)?|skeptic|hard to defend|worry|object|behind|lack)\b/i;
-const RISK = /\b(reduc(?:e|ed)|risk|reputational|unwind|concentrat)\b/i;
-const TIMELINE = /\b(timeline|before we meet|deadline|Q[1-4]|this time)\b/i;
+const MONEY = /\$[\d,.]+(?:\s*(?:[KkMmBb]|thousand|million|billion))?|\b\d+(?:\.\d+)?%\b/;
+const COMMIT =
+  /\b(commit(?:ted|ment)?|promis(?:e|ed)|will send|follow-?up|memo|agreed|owe|never arrived|deliver(?:ed)?)\b/i;
+const OBJECTION =
+  /\b(concern|flagged|lag(?:ged)?|skeptic|hard to defend|worry|object|behind|lack|above (?:the )?(?:posted )?band|needs? .*sign-?off|pushback|defer(?:red)?|complaint)\b/i;
+const RISK =
+  /\b(reduc(?:e|ed)|risk|reputational|unwind|concentrat|precedent|thinner|stalled|walk away)\b/i;
+const TIMELINE =
+  /\b(timeline|before we meet|deadline|Q[1-4]|this time|this quarter|next cycle|closes|thursday|friday|monday)\b/i;
 const HEADER = /^(From|Date|Subject|To|Cc):\s*/i;
 
 function classify(sentence: string): EvidenceClaim['relevance'] | null {

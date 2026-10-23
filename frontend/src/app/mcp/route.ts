@@ -2,6 +2,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 
 import { createMettleMcpServer } from '@/lib/mcp/create-mettle-server';
 import { clientIp, isRateLimited } from '@/lib/mcp/rate-limit';
+import { hashClientIdentifier, recordServerTelemetry } from '@/lib/telemetry';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -46,11 +47,28 @@ function jsonError(status: number, message: string): Response {
  * Production URL: https://mettle-xi.vercel.app/mcp
  */
 async function handleMcp(request: Request): Promise<Response> {
-  if (isRateLimited(clientIp(request))) {
+  const ip = clientIp(request);
+  if (isRateLimited(ip)) {
     return jsonError(429, 'Too many requests');
   }
 
-  const server = createMettleMcpServer();
+  const clientIdHash = hashClientIdentifier(ip);
+  if (request.method === 'POST') {
+    try {
+      const cloned = (await request.clone().json()) as { method?: string };
+      if (cloned?.method === 'tools/list' || cloned?.method === 'initialize') {
+        recordServerTelemetry({
+          event: 'mcp_connect',
+          clientIdHash,
+          utmSource: 'chatgpt_mcp',
+        });
+      }
+    } catch {
+      /* ignore non-JSON body */
+    }
+  }
+
+  const server = createMettleMcpServer(clientIdHash);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,

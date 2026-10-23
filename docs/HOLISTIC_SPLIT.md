@@ -1,5 +1,7 @@
 # Holistic pass — two-dev split
 
+> **Archived sprint plan (2026-10-05):** Both Slice A (Scout & docket visibility) and Slice B (trust, citations, and verified commitments) have been merged to `main`. See [`docs/NORTH_STAR.md`](./NORTH_STAR.md) and [`docs/KEIKI_MARITIME.md`](./KEIKI_MARITIME.md) for current product and growth priorities.
+
 Date: 2026-10-05. Branches: Slice A `feat/holistic-pass`, Slice B `feat/trust-pass`.
 Both start from the contract commit. Merge A first, then B.
 

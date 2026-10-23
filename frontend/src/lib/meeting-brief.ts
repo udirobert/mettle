@@ -3,13 +3,31 @@ import { extractBriefFromPaste } from '@/lib/extract-evidence';
 
 const MAX_TEXT_LENGTH = 20_000;
 
+export const APP_BASE_URL =
+  process.env.NEXT_PUBLIC_METTLE_APP_URL || 'https://mettle-xi.vercel.app';
+
 export const PLANS_URL =
   process.env.NEXT_PUBLIC_METTLE_PLANS_URL ||
-  'https://mettle-xi.vercel.app/plans';
+  `${APP_BASE_URL}/plans?utm_source=chatgpt_mcp&utm_medium=mcp`;
+
+export function buildRehearseUrl(counterpartName: string): string {
+  const params = new URLSearchParams({
+    utm_source: 'chatgpt_mcp',
+    utm_medium: 'mcp',
+    entry: 'rehearsal',
+  });
+  const trimmed = counterpartName.trim();
+  if (trimmed && trimmed.toLowerCase() !== 'counterpart') {
+    params.set('counterpart', trimmed);
+  }
+  return `${APP_BASE_URL}/?${params.toString()}`;
+}
 
 export type MeetingBriefResult = {
   counterpart_name: string;
   brief: ContextBrief;
+  /** Speakable first move for the first 60 seconds of the meeting. */
+  walk_in_move: string;
   /** Counterpart pushbacks / questions the user should expect. */
   objections: string[];
   /** Short prep bullets derived from the thread (numbers, commitments, stakes). */
@@ -18,6 +36,7 @@ export type MeetingBriefResult = {
   richer_actions: {
     status: 'account_or_product';
     message: string;
+    rehearse_url: string;
     plans_url: string;
   };
 };
@@ -116,15 +135,25 @@ export function buildMeetingBrief(
     ];
   }
 
+  const openCommitment = brief.open_commitments?.[0];
+  const topObjection = objections[0];
+  const walk_in_move = openCommitment
+    ? `Address the open commitment with ${name} in your first sentence ("${openCommitment.slice(0, 90)}"), then state your concrete ask.`
+    : topObjection
+      ? `Pre-empt ${name}'s top pushback up front (${topObjection.replace(/\?$/, '')}), then put a dated ask on the table.`
+      : `Ask ${name} what would make a yes straightforward today before walking through your case.`;
+
   return {
     counterpart_name: name,
     brief,
+    walk_in_move,
     objections,
     prep_highlights,
     richer_actions: {
       status: 'account_or_product',
       message:
         'Rehearsal (opponent roleplay) and debrief are available in the Mettle product for users with an existing account. They are not part of this free ChatGPT tool. See the informational plans page — no in-plugin checkout.',
+      rehearse_url: buildRehearseUrl(name),
       plans_url: PLANS_URL,
     },
   };
@@ -133,6 +162,8 @@ export function buildMeetingBrief(
 export function formatMeetingBriefText(result: MeetingBriefResult): string {
   const lines: string[] = [
     `Meeting brief for ${result.counterpart_name}`,
+    '',
+    `Walk-in move: ${result.walk_in_move}`,
     '',
     'Likely objections / questions:',
     ...(result.objections.length
@@ -147,6 +178,7 @@ export function formatMeetingBriefText(result: MeetingBriefResult): string {
     `Claims extracted: ${result.brief.claims.length} (pending human review in the full product)`,
     '',
     result.richer_actions.message,
+    `Rehearse on Mettle: ${result.richer_actions.rehearse_url}`,
     `Plans (informational): ${result.richer_actions.plans_url}`,
   ];
   return lines.join('\n');

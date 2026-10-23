@@ -8,6 +8,8 @@
  * "the record stays folded" principle.
  */
 
+import { trackClientEvent } from '@/lib/telemetry';
+
 export type SharedDebrief = {
   v: 1;
   counterpart: string;
@@ -17,6 +19,15 @@ export type SharedDebrief = {
   stillOpen: string[];
   alsoDo: string[];
   source?: 'rehearsal' | 'live';
+};
+
+export type SharedCouncilSplit = {
+  v: 1;
+  counterpart: string;
+  stakes?: string;
+  agreed: string;
+  split: string;
+  move: string;
 };
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -36,6 +47,7 @@ export function encodeShareLink(payload: SharedDebrief, origin?: string): string
   const base =
     origin ?? (typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
   const json = new TextEncoder().encode(JSON.stringify(payload));
+  trackClientEvent('share_artifact_created', { artifactKind: 'share_link' });
   return `${base}/share#d=${toBase64Url(json)}`;
 }
 
@@ -50,6 +62,34 @@ export function decodeShareLink(hash: string): SharedDebrief | null {
       Array.isArray(parsed.commitments)
     ) {
       return parsed as SharedDebrief;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function encodeCouncilShareLink(payload: SharedCouncilSplit, origin?: string): string {
+  const base =
+    origin ?? (typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
+  const json = new TextEncoder().encode(JSON.stringify(payload));
+  trackClientEvent('share_artifact_created', { artifactKind: 'council_split' });
+  return `${base}/share#c=${toBase64Url(json)}`;
+}
+
+export function decodeCouncilShareLink(hash: string): SharedCouncilSplit | null {
+  const match = /(?:^#|&)c=([^&]+)/.exec(hash.startsWith('#') ? hash : `#${hash}`);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(new TextDecoder().decode(fromBase64Url(match[1])));
+    if (
+      parsed?.v === 1 &&
+      typeof parsed.counterpart === 'string' &&
+      typeof parsed.agreed === 'string' &&
+      typeof parsed.split === 'string' &&
+      typeof parsed.move === 'string'
+    ) {
+      return parsed as SharedCouncilSplit;
     }
     return null;
   } catch {

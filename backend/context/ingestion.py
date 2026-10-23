@@ -124,7 +124,7 @@ def _attach_inbox_citations(brief: ContextBrief, thread_text: str) -> None:
             claim["fetched_at"] = source["timestamp"]  # type: ignore[typeddict-item]
 
 
-def import_from_inbox(limit: int = 10) -> dict:
+def import_from_inbox(limit: int = 10, owner_id: str | None = None) -> dict:
     """Pull the agent's inbox and produce a draft event + evidence brief.
 
     Response shape (pinned in docs/HACKATHON_SPLIT.md):
@@ -185,7 +185,13 @@ def import_from_inbox(limit: int = 10) -> dict:
     # keep/reject gate as provenance="memory" claims. None/[] when no DB.
     counterpart_history_ref = None
     organization = _counterpart_organization(messages, counterpart)
-    history = memory.get_history(counterpart, organization=organization or None)
+    history = (
+        memory.get_history(
+            counterpart, organization=organization or None, owner_id=owner_id
+        )
+        if owner_id
+        else memory.get_history(counterpart, organization=organization or None)
+    )
     if history:
         counterpart_history_ref = history["ref"]
         mem_claims = memory.history_to_claims(history)

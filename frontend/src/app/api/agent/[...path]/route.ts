@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { hashClientIdentifier } from '@/lib/telemetry';
+
 const AGENT_URL = (process.env.AGENT_URL || 'http://localhost:8123').replace(/\/$/, '');
 
 // 128KB cap at the trust boundary — same ceiling as the webmcp proxy. The
@@ -54,9 +56,14 @@ export async function POST(
   }
 
   try {
+    const sid = request.cookies.get('mettle_sid')?.value;
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (sid) {
+      headers['x-mettle-client-id'] = hashClientIdentifier(sid);
+    }
     const response = await fetch(`${AGENT_URL}/${endpoint}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: raw || '{}',
     });
     const text = await response.text();

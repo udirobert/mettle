@@ -81,6 +81,25 @@ class MemoryRouteTests(unittest.TestCase):
                 self.client.delete("/memory/dana-reyes").json()["degraded"], True
             )
 
+    def test_client_id_header_scopes_memory_get_and_delete(self) -> None:
+        os.environ["DATABASE_URL"] = "postgresql://example"
+        with patch.object(serve.memory, "get_history_by_ref", return_value=None) as get:
+            self.client.get(
+                "/memory/dana-whitfield--meridianlabs",
+                headers={"X-Mettle-Client-Id": "c_2553c504"},
+            )
+        get.assert_called_once_with(
+            "dana-whitfield--meridianlabs", owner_id="c_2553c504"
+        )
+        with patch.object(serve.memory, "forget", return_value=1) as forget:
+            self.client.delete(
+                "/memory/dana-whitfield--meridianlabs",
+                headers={"X-Mettle-Client-Id": "c_2553c504"},
+            )
+        forget.assert_called_once_with(
+            "dana-whitfield--meridianlabs", owner_id="c_2553c504"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

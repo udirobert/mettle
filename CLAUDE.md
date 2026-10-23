@@ -274,7 +274,7 @@ Backend deps for the new stack: `exa-py`, `agentmail`. Credentials in
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16, React 19, TailwindCSS 4, CopilotKit v2 (AG-UI)
+- **Frontend**: Next.js 16.4.3 (patched against Oct 2026 advisories), React 19, TailwindCSS 4, CopilotKit v2 (AG-UI)
 - **Backend**: LangGraph (Python), FastAPI/uvicorn via `serve.py`
 - **Scout agent**: Mastra (TypeScript) over AG-UI — separate process/agent
 - **LLM**: Neon AI Gateway (OpenAI-compatible chat completions)
@@ -292,15 +292,15 @@ Backend deps for the new stack: `exa-py`, `agentmail`. Credentials in
    prompt pre-fill from "Get a reframe".
 5. **Done** — multi-perspective Coach debate + paste claim-level HITL +
    progressive disclosure + shareable council split and debrief memo.
-6. **Now — hackathon reposition (personal agent)**:
+6. **Done — hackathon reposition (personal agent)**:
    - a. Neon AI Gateway env swap + Neon Postgres `DATABASE_URL` (env only)
    - b. `scenarios/salary_review.md` + `salary-event.ts` fixture + docket copy
    - c. AgentMail inbox → `/context/import` → draft claims (same HITL gate)
-   - d. Exa `research_client.py` → research claims (same gate)
+   - d. Exa `research_client.py` + Solari bounded URL research → research claims (same gate)
    - e. Scout log UI + claim `provenance` labels
    - f. Debrief memo send via AgentMail
    - g. Mastra Scout agent over AG-UI beside `conversation_agent`
-   - h. Counterpart memory via Neon Postgres
+   - h. Counterpart memory via Neon Postgres + local Forget sync
 7. **Stretch** — Executor MCP gateway, Assistant UI surfaces, Fly sprites,
    LiveKit voice. Additive — the demo is complete without them.
 
@@ -334,9 +334,10 @@ they agreed / they split / the move.
 
 ## Known Gaps
 
-- **Scout streaming** — the Mastra agent typechecks and registers, but a
-  streamed run emitting `scout_log` state events is not yet verified live.
-  The `/context/import` poll path is the working fallback.
+- **Scout failover** — Mastra Scout streams `scout_log` over AG-UI and persists
+  durable approval snapshots to Neon; live Neon→Featherless mid-run failover
+  remains to be observed in production (`POST /scout/run` is the deterministic
+  fallback).
 - **A2UI action forwarding** — "Get a reframe" is handled locally in the UI;
   not yet forwarded to the agent as an `a2uiAction`.
 - **LiveKit voice** — not wired; typed turns are the supported input path.

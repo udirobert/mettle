@@ -5,6 +5,7 @@ import {
   buildMeetingBrief,
   formatMeetingBriefText,
 } from '@/lib/meeting-brief';
+import { recordServerTelemetry } from '@/lib/telemetry';
 
 const MEETING_BRIEF_DESCRIPTION = [
   'Use when the user pastes an email thread, Slack/Teams dump, or notes and wants help preparing for a meeting.',
@@ -18,7 +19,7 @@ const MEETING_BRIEF_DESCRIPTION = [
  * Stateless MCP server for ChatGPT directory / mid-conversation discovery.
  * v1 free set: meeting_brief only.
  */
-export function createMettleMcpServer(): McpServer {
+export function createMettleMcpServer(clientIdHash?: string): McpServer {
   const server = new McpServer(
     {
       name: 'mettle',
@@ -59,6 +60,7 @@ export function createMettleMcpServer(): McpServer {
         objections: z.array(z.string()),
         prep_highlights: z.array(z.string()),
         claim_count: z.number().int(),
+        rehearse_url: z.string(),
         plans_url: z.string(),
       },
       annotations: {
@@ -68,12 +70,18 @@ export function createMettleMcpServer(): McpServer {
       },
     },
     async ({ text, counterpart_name }) => {
+      recordServerTelemetry({
+        event: 'mcp_meeting_brief_call',
+        clientIdHash,
+        utmSource: 'chatgpt_mcp',
+      });
       const result = buildMeetingBrief(text, counterpart_name);
       const structured = {
         counterpart_name: result.counterpart_name,
         objections: result.objections,
         prep_highlights: result.prep_highlights,
         claim_count: result.brief.claims.length,
+        rehearse_url: result.richer_actions.rehearse_url,
         plans_url: result.richer_actions.plans_url,
         brief: result.brief,
         richer_actions: result.richer_actions,
@@ -85,6 +93,7 @@ export function createMettleMcpServer(): McpServer {
           objections: structured.objections,
           prep_highlights: structured.prep_highlights,
           claim_count: structured.claim_count,
+          rehearse_url: structured.rehearse_url,
           plans_url: structured.plans_url,
         },
         content: [

@@ -45,9 +45,9 @@ Allowed patterns for our free → paid ladders:
 - [x] Free read-only (or low-side-effect) tool shipped and stable
 - [x] Paid/deep action available via existing account or external product — not in-plugin checkout
 - [x] Intent test set (10+ prompts) with pass/fail
-- [ ] Privacy policy + support contact + identity verification ready
+- [x] Privacy policy (`/privacy`) + support contact (`/support`) + identity verification ready
 - [x] Example Prompts on the directory listing
-- [ ] Measure recommendation rate → double down
+- [ ] Measure recommendation rate → double down (instrumented via `/api/telemetry` & `[mettle:telemetry]`)
 
 ## Sources
 
@@ -76,4 +76,4 @@ Watch weekly. Free MCP wedge: `meeting_brief` in ChatGPT; **digital paid stays o
 | 4   | Click-through off free set   | Deep-link to rehearsal / debrief / [plans](https://mettle-xi.vercel.app/plans) (not checkout) |
 | 5   | Paid plan starts             | Plan / trial **started** attributed to ChatGPT referral — when attribution exists             |
 
-Related: [CONNECT](./CHATGPT_PLUGIN_CONNECT.md) · free tool vs out-of-set product surfaces.
+Related: [CONNECT](./CHATGPT_PLUGIN_CONNECT.md) · free tool vs out-of-set product surfaces. Keiki × Maritime user-growth board: [`KEIKI_MARITIME.md`](./KEIKI_MARITIME.md) — 1,000 users in six weeks (programme started Oct 20, 2026).

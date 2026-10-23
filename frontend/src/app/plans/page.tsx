@@ -66,6 +66,10 @@ export default function PlansPage() {
         <a href="https://mettle-xi.vercel.app/webmcp">WebMCP demo</a>
         {' · '}
         <a href="https://mettle-xi.vercel.app/mcp">MCP endpoint</a>
+        {' · '}
+        <a href="/privacy">Privacy</a>
+        {' · '}
+        <a href="/support">Support</a>
       </p>
     </main>
   );

@@ -7,12 +7,13 @@ CopilotKit/AG-UI but return plain JSON instead of streaming events.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 import os
 
 import uvicorn
 from ag_ui_langgraph import add_langgraph_fastapi_endpoint
 from copilotkit import LangGraphAGUIAgent
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
@@ -39,13 +40,17 @@ load_dotenv()
 checkpointer, close_checkpointer = create_checkpointer()
 graph = build_graph(checkpointer=checkpointer)
 
-app = FastAPI()
 
-
-@app.on_event("shutdown")
-def shutdown_checkpointer() -> None:
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
     """Close the Postgres connection cleanly when the agent process stops."""
-    close_checkpointer()
+    try:
+        yield
+    finally:
+        close_checkpointer()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.add_middleware(
@@ -107,14 +112,17 @@ class MemoRequest(BaseModel):
 
 
 @app.post("/context/import")
-async def context_import() -> dict:
+async def context_import(
+    x_mettle_client_id: str | None = Header(default=None),
+) -> dict:
     """Pull the agent's own inbox → draft event + evidence brief.
 
     All claims arrive decision=pending with provenance labels; the HITL
     keep/reject gate decides what reaches Coach. Degrades to the bundled
     seed thread when the inbox is unconfigured — never 500s.
     """
-    return import_from_inbox()
+    owner_id = memory.normalize_owner_id(x_mettle_client_id)
+    return import_from_inbox(owner_id=owner_id) if owner_id else import_from_inbox()
 
 
 @app.post("/context/research")
@@ -257,7 +265,10 @@ async def webmcp_debrief(body: WebMCPStateRequest) -> dict:
 
 
 @app.get("/memory/{ref}")
-async def memory_get(ref: str) -> dict:
+async def memory_get(
+    ref: str,
+    x_mettle_client_id: str | None = Header(default=None),
+) -> dict:
     """What the agent remembers about a counterpart (ref = normalized name)."""
     if not memory._database_url():
         return {
@@ -266,14 +277,22 @@ async def memory_get(ref: str) -> dict:
             "degraded": True,
             "reason": "DATABASE_URL not set",
         }
-    history = memory.get_history_by_ref(ref)
+    owner_id = memory.normalize_owner_id(x_mettle_client_id)
+    history = (
+        memory.get_history_by_ref(ref, owner_id=owner_id)
+        if owner_id
+        else memory.get_history_by_ref(ref)
+    )
     if history is None:
         return {"ref": memory.resolve_key(ref), "found": False}
     return {"ref": history["ref"], "found": True, "history": history}
 
 
 @app.delete("/memory/{ref}")
-async def memory_forget(ref: str) -> dict:
+async def memory_forget(
+    ref: str,
+    x_mettle_client_id: str | None = Header(default=None),
+) -> dict:
     """Forget everything remembered about a counterpart."""
     if not memory._database_url():
         return {
@@ -282,7 +301,8 @@ async def memory_forget(ref: str) -> dict:
             "degraded": True,
             "reason": "DATABASE_URL not set",
         }
-    deleted = memory.forget(ref)
+    owner_id = memory.normalize_owner_id(x_mettle_client_id)
+    deleted = memory.forget(ref, owner_id=owner_id) if owner_id else memory.forget(ref)
     if deleted is None:
         return {
             "ref": memory.resolve_key(ref),

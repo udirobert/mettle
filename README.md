@@ -21,8 +21,8 @@ conversation (Neon Postgres), and emails you the debrief (AgentMail).
   `backend/context/` (AgentMail/Exa/memory ingestion), `backend/triggers/rules.py`,
   and `backend/voice/` belong to Person B. `/scout` (Mastra agent,
   AG-UI; see `scout/README.md`) also belongs to Person B.
-- `scenarios/salary_review.md` is the demo scenario (planned);
-  `scenarios/lp_renewal.md` remains as contrast.
+- `scenarios/salary_review.md` is the lead demo scenario;
+  `scenarios/lp_renewal.md` and the Fund III raise scenarios remain as contrast.
 - `frontend/` is the CopilotKit Next.js surface. The workspace in
   `frontend/src/app/page.tsx` composes `CoachPanel`, `OpponentChat`,
   `WingmanSidePanel`, and `DebriefView` around a phase rail and signal desk.
@@ -30,8 +30,8 @@ conversation (Neon Postgres), and emails you the debrief (AgentMail).
   CopilotKit's shared agent state and mirrors `state.py`.
 - `frontend/src/components/coach-panel.tsx` — claim-level HITL + staged council
   (perspectives land, then agreed / split / move).
-- `frontend/src/fixtures/salary-event.ts` — Dana salary-review default event
-  (planned); `lp-event.ts` stays as contrast.
+- `frontend/src/fixtures/salary-event.ts` — Dana salary-review default event;
+  `lp-event.ts` stays as contrast.
 - `frontend/src/lib/extract-evidence.ts` + `api/extract-context/` — paste-path
   claim extraction (agent `/extract-context` with local fallback).
 - `frontend/src/components/nudge-card.tsx`, `a2ui-catalog.tsx`, and
@@ -167,9 +167,10 @@ npm run build
   claim, debate only with kept claims; re-debate anytime.
 - **Done (shared)** — follow-up memo from Debrief (`mailto` + copy) and
   shareable council split from Coach (copy / anonymized; no transcript).
-- **Now** — personal-agent reposition: Neon AI Gateway + Postgres, salary
-  scenario, AgentMail inbox ingestion, Exa research, Mastra Scout agent,
-  debrief memo by email, counterpart memory.
+- **Done (personal-agent reposition)** — Neon AI Gateway + Postgres, salary
+  scenario, AgentMail inbox ingestion, Exa + Solari bounded URL research,
+  Mastra Scout agent, debrief memo by email, counterpart memory with Forget,
+  and remote ChatGPT `/mcp` (`meeting_brief`) + `/api/telemetry` scoreboard.
 - **Stretch** — Executor MCP gateway, Assistant UI surfaces, Fly sprites,
   LiveKit voice. Additive — the demo is complete without them.
 - **Product north star** — the personal agent for conversations you can't
@@ -184,10 +185,10 @@ npm run build
 4. **Done (shared)** — nudge surface + SignalDesk + reactive pre-fill.
 5. **Done (Person B)** — multi-perspective Coach + paste claim-level HITL +
    progressive disclosure demo wedge.
-6. **Now (hackathon reposition)** — Neon AI Gateway + Postgres envs → salary
-   scenario → AgentMail inbox ingestion → Exa research → scout log +
+6. **Done (hackathon reposition)** — Neon AI Gateway + Postgres envs → salary
+   scenario → AgentMail inbox ingestion → Exa + Solari research → scout log +
    provenance → AgentMail debrief memo → Mastra Scout (AG-UI) → counterpart
-   memory.
+   memory → ChatGPT `/mcp` plugin wedge & scoreboard telemetry.
 7. **Stretch** — Executor MCP gateway, Assistant UI, Fly sprites, LiveKit.
 
 ## Known gaps
@@ -211,3 +212,11 @@ This project was bootstrapped from CopilotKit's maintained
 `examples/integrations/langgraph-python` template. The legacy standalone
 `coagents-starter` and `coagents-travel` repositories have been consolidated
 into the CopilotKit examples monorepo.
+
+## Virality (Nikita Bier playbook)
+
+Council splits + debrief follow-up memos (`share-artifacts.ts`) are the shareable surface: "they agreed / they split / the move" reads like a Wrapped card for your negotiation. Run the shareable-content check (one card, one CTA back to a rehearsal), then a 48-hour test on memo-share copy before adding more surfaces.
+
+## Programme: Keiki × Maritime
+
+Accepted into the Keiki × Maritime programme (Oct 20 – Dec 1, 2026): build an always-on personal agent, reach 1,000 users in six weeks. Transparent user tracking starts at zero: [`docs/KEIKI_MARITIME.md`](./docs/KEIKI_MARITIME.md).

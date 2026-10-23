@@ -188,3 +188,6 @@ class ConversationState(TypedDict):
 
     # Optional pre-fill text for the reactive Wingman quick-answer prompt.
     reactive_query_prefill: NotRequired[str | None]
+    privacy_mode: NotRequired[Literal["private", "shared"]]
+    conversation_source: NotRequired[Literal["rehearsal", "live"]]
+    client_id: NotRequired[str]

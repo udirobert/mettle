@@ -118,3 +118,37 @@ class CoachTests(unittest.TestCase):
         self.assertEqual(mid["coach_stage"], "perspectives")
         self.assertEqual(len(mid["coach_analysis"]["perspectives"]), 3)
         self.assertEqual(mid["coach_analysis"]["opening_strategy"], "")
+
+    def test_salary_review_fallback_uses_dana_compensation_context(self):
+        """Salary review fallback must reference Dana / $185k / scope, never $40M LP renewal."""
+        result = run_coach({"scenario_id": "salary_review"})
+        analysis = result["coach_analysis"]
+
+        self.assertEqual(result["counterpart_profile"]["name"], "Dana Whitfield")
+        self.assertIn("$185k", analysis["opening_strategy"])
+        self.assertNotIn("$40M", analysis["opening_strategy"])
+        self.assertNotIn("Elena", analysis["perspectives"][0]["analysis"])
+
+    def test_custom_counterpart_fallback_uses_counterpart_concerns(self):
+        """Custom inbox events without an LP/salary scenario must generate dynamic fallback."""
+        result = run_coach(
+            {
+                "scenario_id": "inbox_custom",
+                "stakes": "Recover $3,200 security deposit",
+                "counterpart_profile": {
+                    "name": "Arthur Pendelton",
+                    "role": "Property Manager",
+                    "style": ["evasive"],
+                    "leverage": "Holds the deposit check",
+                    "concerns": [
+                        "Move-out inspection photos",
+                        "30-day statutory window",
+                    ],
+                },
+                "user_weak_points": ["Accepting partial refund too quickly"],
+            }
+        )
+        analysis = result["coach_analysis"]
+        self.assertIn("Arthur Pendelton", analysis["opening_strategy"])
+        self.assertNotIn("Elena", analysis["opening_strategy"])
+        self.assertNotIn("$40M", analysis["opening_strategy"])

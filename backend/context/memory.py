@@ -61,6 +61,28 @@ _LEGAL_SUFFIXES = {
 _SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov", "edu"}
 _DOMAIN_RE = re.compile(r"^[a-z0-9-]+(?:\.[a-z0-9-]+)+$")
 _KEY_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+)?")
+_OWNER_RE = re.compile(r"^[a-z0-9_-]{1,64}$")
+
+
+def normalize_owner_id(owner_id: str | None) -> str | None:
+    """Validate and normalize an optional tenant/client identifier."""
+    if not owner_id:
+        return None
+    cleaned = owner_id.strip().lower()
+    return cleaned if _OWNER_RE.fullmatch(cleaned) else None
+
+
+def _scoped_key(key: str, owner_id: str | None = None) -> str:
+    """Prefix a counterpart key with the tenant owner_id when present."""
+    if not key:
+        return ""
+    owner = normalize_owner_id(owner_id)
+    return f"{owner}::{key}" if owner else key
+
+
+def _unscope_key(scoped: str) -> str:
+    """Strip an optional tenant prefix so callers always see the canonical ref."""
+    return scoped.split("::", 1)[1] if "::" in scoped else scoped
 
 
 def organization_key(organization: str | None) -> str:
@@ -149,7 +171,7 @@ def _history_for_key(key: str, limit: int = 20) -> dict | None:
     if not rows:
         return None
     history: dict = {
-        "ref": key,
+        "ref": _unscope_key(key),
         "counterpart_name": rows[0][0],
         "commitments": [],
         "assumptions": [],
@@ -161,14 +183,19 @@ def _history_for_key(key: str, limit: int = 20) -> dict | None:
     return history
 
 
-def get_history_by_ref(ref: str, limit: int = 20) -> dict | None:
+def get_history_by_ref(
+    ref: str, limit: int = 20, owner_id: str | None = None
+) -> dict | None:
     """Exactly what is stored under ``ref`` (a key or a display name). No
     fallback — this backs the /memory routes, which show one specific record."""
-    return _history_for_key(resolve_key(ref), limit)
+    return _history_for_key(_scoped_key(resolve_key(ref), owner_id), limit)
 
 
 def get_history(
-    name: str, limit: int = 20, organization: str | None = None
+    name: str,
+    limit: int = 20,
+    organization: str | None = None,
+    owner_id: str | None = None,
 ) -> dict | None:
     """What is remembered about this counterpart, for use at ingest.
 
@@ -178,10 +205,12 @@ def get_history(
     an organisation only the name-only record can be consulted.
     """
     if organization_key(organization):
-        exact = _history_for_key(counterpart_key(name, organization), limit)
+        exact = _history_for_key(
+            _scoped_key(counterpart_key(name, organization), owner_id), limit
+        )
         if exact:
             return {**exact, "match": "exact"}
-    legacy = _history_for_key(counterpart_key(name), limit)
+    legacy = _history_for_key(_scoped_key(counterpart_key(name), owner_id), limit)
     return {**legacy, "match": "name_only"} if legacy else None
 
 
@@ -193,6 +222,7 @@ def record_debrief(
     notes: list[str] | None = None,
     source_event: str | None = None,
     organization: str | None = None,
+    owner_id: str | None = None,
 ) -> str | None:
     """Persist what a debrief learned about ``name``.
 
@@ -200,6 +230,7 @@ def record_debrief(
     ``None`` when memory is unavailable or there was nothing to write.
     """
     key = counterpart_key(name, organization)
+    scoped = _scoped_key(key, owner_id)
     entries = [
         (kind, text.strip())
         for kind, items in (
@@ -223,7 +254,7 @@ def record_debrief(
                         "INSERT INTO counterpart_memory "
                         "(counterpart_key, counterpart_name, kind, text, source_event) "
                         "VALUES (%s, %s, %s, %s, %s)",
-                        (key, name.strip(), kind, text, source_event),
+                        (scoped, name.strip(), kind, text, source_event),
                     )
     except Exception:
         logger.warning("counterpart memory write failed", exc_info=True)
@@ -233,10 +264,10 @@ def record_debrief(
     return key
 
 
-def forget(ref: str) -> int | None:
+def forget(ref: str, owner_id: str | None = None) -> int | None:
     """Delete everything remembered under ``ref``. Returns rows deleted, or
     ``None`` when memory is unavailable (distinct from 0 = nothing to forget)."""
-    key = resolve_key(ref)
+    key = _scoped_key(resolve_key(ref), owner_id)
     if not key:
         return None
     conn = _connect()

@@ -1,5 +1,7 @@
 # Parallel Work Plan
 
+> **Archived sprint plan:** This initial two-person vertical slice is complete. For current architecture and active priorities, see [`docs/NORTH_STAR.md`](./NORTH_STAR.md), [`docs/KEIKI_MARITIME.md`](./KEIKI_MARITIME.md), and [`CLAUDE.md`](../CLAUDE.md).
+
 This is the working agreement for the two-person vertical slice. It is designed
 to minimize merge conflicts while preserving one end-to-end graph.
 

@@ -42,7 +42,8 @@ SKEPTIC_PROMPT = """\
 You are a hostile analyst. Your job is NOT to help — it is to attack.
 
 Find the weakest point in this person's position. What is the strongest \
-argument against renewing at full size? Where is the hole they are not seeing?
+argument against giving them their full ask (or renewing at full size)? \
+Where is the hole they are not seeing?
 
 Be specific. Reference the actual facts of the scenario. Do not give \
 encouragement. If the position is sound on one dimension, say so briefly \
@@ -58,8 +59,8 @@ You have heard this person's preparation for the meeting. Now tell them \
 what you actually think.
 
 What matters to you that they are not addressing? What would make you \
-reduce the allocation? What would make you renew at full size — and do \
-they have it?
+push back, defer, or reduce the ask/allocation? What would make you say \
+yes to the full ask (or renew at full size) — and do they have it?
 
 Speak in first person. Be the person, not an analyst. If you would be \
 skeptical, be skeptical. If something would actually convince you, say so.
@@ -203,6 +204,186 @@ FALLBACK_ANALYSIS: CoachAnalysis = {
     ],
 }
 
+SALARY_FALLBACK_PERSPECTIVES: list[PerspectiveResult] = [
+    {
+        "name": "skeptic",
+        "analysis": (
+            "$185k sits above the posted band for your current level, and the "
+            "unanswered March commitment on team-health metrics gives Dana an "
+            "easy reason to pause on cash. If you frame the ask around tenure "
+            "or two deferred cycles, she can agree with the frustration while "
+            "blaming band policy and VP sign-off."
+        ),
+    },
+    {
+        "name": "counterpart",
+        "analysis": (
+            "I already know this review has been deferred twice, and I am ready "
+            "to move on the senior title. What I need from you is a clean scope "
+            "and impact case I can take to VP sign-off for $185k — and I need "
+            "to know the March team-health metrics are handled before I spend "
+            "political capital pushing above band."
+        ),
+    },
+    {
+        "name": "negotiator",
+        "analysis": (
+            "Leading with the number puts Dana on defense about comp bands before "
+            "she agrees on the expanded role. Get her to confirm the senior scope "
+            "first, own the March metrics in one calm sentence so it cannot derail "
+            "the room, and ask what band applies to the role you are actually doing."
+        ),
+    },
+]
+
+SALARY_FALLBACK_ANALYSIS: CoachAnalysis = {
+    "blind_spots": [
+        "The missed March team-health metrics weaken the reliability case right when Dana needs VP sign-off.",
+        "Dana can offer the senior title now to defer the $185k cash decision for a third cycle.",
+    ],
+    "concrete_moves": [
+        "Open with the expanded scope case she asked for, then name $185k as the band for that scope.",
+        "Close the March team-health metrics loop in one sentence up front and hand them over today.",
+        "If cash cannot move this cycle, lock a specific written review date and milestone before leaving.",
+    ],
+    "likely_objections": [
+        "$185k sits above the posted band for your current level and requires VP sign-off.",
+        "We can move on the senior title this cycle, then revisit the cash adjustment next cycle.",
+        "What happened to the team-health metrics we agreed on after the March review?",
+    ],
+    "opening_strategy": (
+        "Open with the scope case she asked for — what the role became over the last two cycles — "
+        "deliver the March team-health metrics in one sentence, then state $185k as the figure that matches the senior scope."
+    ),
+    "if_then": [
+        {
+            "trigger": "She says $185k is above the posted band for your level.",
+            "response": (
+                "That is why the scope case comes first — once we align on the senior scope, "
+                "what does the band for that level look like?"
+            ),
+        },
+        {
+            "trigger": "She brings up the March team-health metrics.",
+            "response": (
+                "I owe you those — they are complete and in your inbox today. "
+                "Let's look at how they tie to the expanded scope."
+            ),
+        },
+        {
+            "trigger": "She offers the senior title now and asks to revisit cash next cycle.",
+            "response": (
+                "I appreciate moving on the title. Before we defer the $185k, what specific "
+                "date and sign-off criteria can we put in writing today?"
+            ),
+        },
+    ],
+    "perspectives": SALARY_FALLBACK_PERSPECTIVES,
+    "disagreements": [
+        "The Skeptic sees the above-band ask as blocked by the March metrics miss; "
+        "the Negotiator sees the title concession as leverage to anchor the $185k band.",
+    ],
+    "consensus": [
+        "All three agree: lead with expanded scope and impact, not tenure or past deferrals.",
+        "All three agree: neutralize the March team-health metrics immediately so it cannot be used to delay cash.",
+    ],
+}
+
+
+def _fallback_analysis_for_scenario(scenario: dict) -> CoachAnalysis:
+    """Return a scenario-appropriate deterministic CoachAnalysis."""
+    scenario_id = str(scenario.get("scenario_id") or "")
+    profile = scenario.get("counterpart_profile") or {}
+    name = str(profile.get("name") or "the counterpart")
+
+    if scenario_id.startswith("salary") or "dana" in name.lower():
+        return SALARY_FALLBACK_ANALYSIS
+    if scenario_id.startswith("lp_") or "elena" in name.lower():
+        return FALLBACK_ANALYSIS
+
+    concerns = list(profile.get("concerns") or [])
+    weak_points = list(scenario.get("user_weak_points") or [])
+    stakes = str(scenario.get("stakes") or "the core decision in this meeting")
+    first_concern = concerns[0] if concerns else f"the core risk around {stakes}"
+    second_concern = (
+        concerns[1]
+        if len(concerns) > 1
+        else "whether commitments will hold on schedule"
+    )
+    first_weak = (
+        weak_points[0]
+        if weak_points
+        else "Softening the ask before testing their real constraint."
+    )
+
+    perspectives: list[PerspectiveResult] = [
+        {
+            "name": "skeptic",
+            "analysis": (
+                f"The weak point in this room with {name} is {first_concern} "
+                f"Without a direct answer on {second_concern}, {name} has no reason "
+                "to commit today."
+            ),
+        },
+        {
+            "name": "counterpart",
+            "analysis": (
+                f"Address what I actually care about: {first_concern} "
+                "Do not walk me through background before giving me a concrete, "
+                "dated commitment I can hold you to."
+            ),
+        },
+        {
+            "name": "negotiator",
+            "analysis": (
+                f"Lead by naming {name}'s top concern before defending your position. "
+                "Ask what would make a yes straightforward today, then tie your ask "
+                "to a dated milestone."
+            ),
+        },
+    ]
+    return {
+        "blind_spots": [
+            f"Unaddressed counterpart concern: {first_concern}",
+            first_weak,
+        ],
+        "concrete_moves": [
+            f"Address {name}'s top concern in the first 60 seconds before pitching.",
+            "State your ask and desired timeline explicitly.",
+            "Leave with a dated next step in writing rather than an open-ended follow-up.",
+        ],
+        "likely_objections": concerns[:3]
+        if len(concerns) >= 2
+        else [
+            first_concern,
+            second_concern,
+        ],
+        "opening_strategy": (
+            f"Name {name}'s primary concern up front, state what changed operationally, "
+            "and put the concrete ask on the table."
+        ),
+        "if_then": [
+            {
+                "trigger": f"{name} pushes back on {first_concern.rstrip('.')}.",
+                "response": "Acknowledge the gap directly and offer a specific, dated milestone.",
+            },
+            {
+                "trigger": f"{name} tries to defer the decision without a date.",
+                "response": "Before we pause — what specific criteria and date would let us close this?",
+            },
+        ],
+        "perspectives": perspectives,
+        "disagreements": [
+            f"The Skeptic sees {first_concern.rstrip('.')} as a blocker; "
+            "the Negotiator sees it as an opening to trade for a dated commitment.",
+        ],
+        "consensus": [
+            f"All three agree: address {name}'s top concern before defending your ask.",
+            "All three agree: do not leave without a dated commitment.",
+        ],
+    }
+
+
 PERSPECTIVE_CONFIG = [
     ("skeptic", SKEPTIC_PROMPT),
     ("counterpart", COUNTERPART_PROMPT),
@@ -337,9 +518,10 @@ def run_coach_perspectives(state: ConversationState) -> dict:
         except Exception:
             perspectives = []
 
+    fallback_analysis = _fallback_analysis_for_scenario(scenario)
     if not perspectives:
         perspectives = list(
-            _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)[
+            _ground_fallback_in_evidence(fallback_analysis, context_brief)[
                 "perspectives"
             ]
         )
@@ -358,10 +540,15 @@ def run_coach_synthesize(state: ConversationState) -> dict:
     existing = state.get("coach_analysis") or _empty_partial_analysis([])
     perspectives = existing.get("perspectives") or []
     context_brief = state.get("context_brief")
+    try:
+        scenario = scenario_for_state(state)
+    except Exception:
+        scenario = {"scenario_id": state.get("scenario_id") or "lp_renewal"}
+    fallback_analysis = _fallback_analysis_for_scenario(scenario)
 
     llm = get_llm(max_tokens=900)
     if llm is None or not perspectives:
-        analysis = _ground_fallback_in_evidence(FALLBACK_ANALYSIS, context_brief)
+        analysis = _ground_fallback_in_evidence(fallback_analysis, context_brief)
         if perspectives:
             analysis = {**analysis, "perspectives": perspectives}
         return {
@@ -381,7 +568,7 @@ def run_coach_synthesize(state: ConversationState) -> dict:
         return {
             "coach_stage": "ready",
             "coach_analysis": _ground_fallback_in_evidence(
-                {**FALLBACK_ANALYSIS, "perspectives": perspectives},
+                {**fallback_analysis, "perspectives": perspectives},
                 context_brief,
             ),
         }

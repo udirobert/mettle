@@ -1,4 +1,5 @@
 import type { CoachAnalysis } from '@/hooks/use-conversation-state';
+import { trackClientEvent } from '@/lib/telemetry';
 
 export type CouncilShareInput = {
   analysis: CoachAnalysis;
@@ -87,12 +88,16 @@ export function buildFollowUpMemo({
 }
 
 export function buildMailtoHref(subject: string, body: string): string {
+  trackClientEvent('share_artifact_created', { artifactKind: 'followup_memo' });
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
+    trackClientEvent('share_artifact_created', {
+      artifactKind: text.startsWith('Council split') ? 'council_split' : 'followup_memo',
+    });
     return true;
   } catch {
     return false;

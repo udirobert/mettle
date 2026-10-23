@@ -263,3 +263,33 @@ class OrganizationLookupTests(unittest.TestCase):
             0
         ]
         self.assertEqual(delete.args[1], ("dana-whitfield--meridianlabs",))
+
+    def test_owner_id_scopes_records_across_visitors_while_preserving_ref(self) -> None:
+        conn = _fake_conn(
+            [("Dana Whitfield", "commitment", "User A private commitment")]
+        )
+        with patch("psycopg.connect", return_value=conn):
+            ref = memory.record_debrief(
+                "Dana Whitfield",
+                commitments=["User A private commitment"],
+                organization="Meridian Labs",
+                owner_id="c_2553c504",
+            )
+            history = memory.get_history_by_ref(
+                "dana-whitfield--meridianlabs", owner_id="c_2553c504"
+            )
+            deleted = memory.forget(
+                "dana-whitfield--meridianlabs", owner_id="c_2553c504"
+            )
+
+        self.assertEqual(ref, "dana-whitfield--meridianlabs")
+        self.assertEqual(history["ref"], "dana-whitfield--meridianlabs")
+        self.assertIsNotNone(deleted)
+        insert = [c for c in conn.execute.call_args_list if "INSERT" in str(c.args[0])][
+            0
+        ]
+        self.assertEqual(insert.args[1][0], "c_2553c504::dana-whitfield--meridianlabs")
+        delete = [c for c in conn.execute.call_args_list if "DELETE" in str(c.args[0])][
+            0
+        ]
+        self.assertEqual(delete.args[1], ("c_2553c504::dana-whitfield--meridianlabs",))
