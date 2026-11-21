@@ -133,6 +133,11 @@ walkthrough, engineer on call). Nothing usable on the public web.
    font size / lines visible.
 6. Input surface: touch bar, ring, voice wake — whichever exists drives
    the reactive fragment path.
+7. **Venue WiFi:** event networks usually isolate client-to-client
+   traffic, and every channel here polls or pushes to
+   `http://<mac-ip>:3000`. Plan A is an **iPhone hotspot** — Mac + M6
+   join it, relay URL = the Mac's hotspot IP. Test the hotspot path
+   before leaving, not at the venue.
 
 Keep the contract above stable regardless of the answers.
 
@@ -155,10 +160,11 @@ Each rung is a complete demo; climb until one fails.
    to `GET/POST /api/glasses` (SSE variant at `/api/glasses/stream`), and
    `scripts/glasses_relay.py` polls it and hands every card to a `render()`
    stub — the single swap point for SDK push, adb, or notification bridges.
-   **APK scaffolded:** `glasses-android/` — one mono-green `TextView`
+   **APK built:** `glasses-android/` — one mono-green `TextView`
    polling the relay over WiFi (`--es relay http://<mac-ip>:3000`,
-   persisted). Standard Android only; needs a Gradle build at the venue —
-   no Android SDK on the dev Mac, so it is compile-untested.
+   persisted). Standard Android only; `assembleDebug` verified Nov 21 —
+   `app-debug.apk` is sideload-ready (`adb install -r`), first boot on
+   the M6 is the remaining unknown.
 5. M6 live — real rules→enrichment pipeline, phone-mic transcript, judge
    wears the glasses. **Live path built:** `GlassesLiveBridge` (mounted in
    `page.tsx`) taps `nudges_sent` / `reactive_reply` / `phase` and POSTs

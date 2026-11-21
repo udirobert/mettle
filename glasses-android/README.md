@@ -8,21 +8,29 @@ just same-WiFi polling.
 
 ## Status
 
-**Untested scaffold** — written against standard Android APIs only
-(`org.json`, `HttpURLConnection`, `TextView`); no SDK installed on the dev
-machine to compile-verify. First build may need trivial fixes. Do the
-first `./gradlew assembleDebug` *before* the venue if possible, or lean on
-MicroLumin's engineer at the venue.
+**Compiles clean** — `assembleDebug` verified Nov 21 on the dev Mac
+(JDK 17 + AGP 8.5.2 → `app-debug.apk`, ~2.3 MB). Still untested on
+hardware: first boot on the M6 is the remaining unknown (poll loop,
+layout scaling on the waveguide).
 
 ## Build
 
-Requires Android SDK + Gradle 8.x (no wrapper jar committed — copy a
-`gradle-wrapper.jar` in or use system gradle):
+Requires JDK 17 and an Android SDK (platform android-34, build-tools).
+The repo includes the wrapper — `./gradlew` downloads Gradle itself:
 
 ```bash
 cd glasses-android
-gradle wrapper           # generates the wrapper once
 ./gradlew assembleDebug  # → app/build/outputs/apk/debug/app-debug.apk
+```
+
+No-Android-Studio setup used on the dev Mac (no sudo needed):
+
+```bash
+# JDK 17 → ~/tools/jdk-17 (Temurin tarball, api.adoptium.net)
+# cmdline-tools → ~/tools/android-sdk/cmdline-tools/latest (dl.google.com)
+export JAVA_HOME=~/tools/jdk-17/Contents/Home
+export ANDROID_HOME=~/tools/android-sdk
+sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 ```
 
 ## Deploy to the M6
