@@ -59,6 +59,7 @@ main agent in the CopilotKit runtime.
     opponent.py           # Opponent node — in-character counterpart
     wingman_reactive.py   # reactive Wingman nodes (interrupt + answer)
     wingman_proactive.py  # proactive trigger evaluation + A2UI surface emit
+    whisper.py            # whisper-tier card emit → GLASSES_RELAY_URL (M6 channel)
     debrief.py            # post-conversation node (+ memo, memory write)
     graph.py              # top-level phase router wiring all nodes
     checkpoint.py         # PostgresSaver via DATABASE_URL (Neon) + memory fallback
@@ -87,6 +88,8 @@ main agent in the CopilotKit runtime.
       layout.tsx          # CopilotKit provider wiring
       api/copilotkit/     # CopilotKit runtime route → HttpAgent(s)
       api/extract-context/# paste extract proxy → agent /extract-context
+      api/glasses/        # whisper relay: card state, SSE stream, sink registry
+      glasses/            # /glasses preview — mono-green whisper-tier cards
     /components
       coach-panel.tsx          # claim HITL + staged council
       opponent-chat.tsx        # Opponent rehearsal
@@ -96,13 +99,18 @@ main agent in the CopilotKit runtime.
       nudge-card.tsx           # kind-aware nudge card (panel + signal variants)
       a2ui-catalog.tsx         # A2UI catalog definition for NudgeCard
       a2ui-nudge-host.tsx      # consume AG-UI a2ui-surface messages
+      glasses-live-bridge.tsx  # taps shared state → POSTs live cards to relay
       ui/                      # reusable shadcn primitives
     /fixtures
       salary-event.ts          # default Dana salary-review event (planned)
+      glasses-nudges.ts        # GlassesNudge contract + canned glasses sequence
       lp-event.ts              # Elena Park event (kept as contrast)
       evidence-fixtures.ts     # legacy static research fixtures
     /lib
       extract-evidence.ts      # local paste extract fallback
+      glasses-card.ts          # shared state → whisper-tier card shaping
+      glasses-state.ts         # relay state + push-sink registry/fan-out
+      glasses-sink.ts          # WhisperSink vocabulary mirror (TS side)
       share-artifacts.ts       # council split + follow-up memo
     /hooks
       use-conversation-state.ts  # typed wrapper around CopilotKit shared state
@@ -110,6 +118,11 @@ main agent in the CopilotKit runtime.
 /scenarios
   salary_review.md        # primary demo scenario (planned)
   lp_renewal.md           # original scenario, kept as contrast
+/scripts
+  glasses_relay.py        # polls /api/glasses, fans cards to WhisperSinks
+  glasses_sinks.py        # WhisperSink impls: stdout/notify/http/adb (+ M6SdkSink stub)
+  glasses_smoke.py        # venue smoke test for the whole whisper chain
+/glasses-android          # M6 whisper viewer APK scaffold (build at venue)
 ```
 
 ## Testing
@@ -118,17 +131,20 @@ main agent in the CopilotKit runtime.
 cd backend && uv run python -m pytest tests/ -q
 ```
 
-107 tests pass. `test_coach.py` covers scenario loading, debate fields, and the
+173 tests pass. `test_coach.py` covers scenario loading, debate fields, and the
 perspectives→synthesize stage; `test_context.py` covers paste extract, claim
 decisions, and evidence grounding; `test_proactive.py` covers trigger rules,
 ingestion, enrichment fallback, and A2UI emit; `test_ingestion.py` and
-`test_memory.py` cover the context stack and counterpart memory.
+`test_memory.py` cover the context stack and counterpart memory;
+`test_whisper.py` covers the whisper-tier card emit (shaping, fire-and-forget,
+wiring at both Wingman emit sites).
 
-Frontend type-check and build:
+Frontend type-check, unit tests, and build:
 
 ```bash
 cd frontend
 npx tsc --noEmit
+npm test            # vitest — 66 tests incl. glasses-state relay/registry
 npm run build
 ```
 
@@ -303,6 +319,11 @@ Backend deps for the new stack: `exa-py`, `agentmail`. Credentials in
    - h. Counterpart memory via Neon Postgres + local Forget sync
 7. **Stretch** — Executor MCP gateway, Assistant UI surfaces, Fly sprites,
    LiveKit voice. Additive — the demo is complete without them.
+8. **Active — Worn × MicroLumin M6 glasses surface** (Track 01, deadline Sat
+   Nov 21 2:00 PM ET). Live Wingman nudges render on the M6 display as a
+   whisper-tier `NudgeCard` payload; phone keeps the agent runtime. Prior
+   work must be disclosed in the submission. Full plan, contract, fallback
+   ladder and demo arc: `docs/WORN_M6.md`.
 
 ## Multi-Perspective Coach Debate (shipped)
 

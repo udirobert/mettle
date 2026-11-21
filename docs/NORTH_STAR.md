@@ -156,6 +156,9 @@ The web app is the counsel desk, not the whole product.
 - The agent's inbox is the front door: forwarding a thread is how most
   conversations should enter.
 - The live wingman is a pocket surface, not a second monitor.
+- Smart glasses are the end-state of the pocket surface: the nudge in your
+  vision, eyes on the counterpart. See `docs/WORN_M6.md` (active priority,
+  Nov 2026).
 - Longer-term: calendar layer that flags consequential conversations,
   mobile companion, voice input for live fragments.
 

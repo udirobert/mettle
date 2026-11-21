@@ -21,6 +21,7 @@ from triggers.rules import evaluate_latest_turn
 
 from .llm import get_llm
 from .state import ConversationState, Nudge, TranscriptTurn
+from .whisper import publish_nudge
 
 NUDGE_HINTS: dict[str, str] = {
     "concession": "Qualify it before moving on.",
@@ -155,6 +156,7 @@ def evaluate_proactive_nudge(state: ConversationState) -> dict:
 
     nudge = _enrich_nudge(candidate, state, turn_text)
     emit_nudge_surface(nudge)
+    publish_nudge(nudge["message"])
     return {"nudges_sent": [*state.get("nudges_sent", []), nudge]}
 
 
@@ -194,4 +196,5 @@ def ingest_transcript_turn(
         )
         update["nudges_sent"].append(nudge)
         emit_nudge_surface(nudge)
+        publish_nudge(nudge["message"])
     return update

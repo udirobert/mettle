@@ -7,6 +7,7 @@ import { CopilotChatConfigurationProvider } from '@copilotkit/react-core/v2';
 
 import { CoachPanel } from '@/components/coach-panel';
 import { EventList } from '@/components/event-list';
+import { GlassesLiveBridge } from '@/components/glasses-live-bridge';
 import { NudgeCard } from '@/components/nudge-card';
 import { WelcomeOverlay, replayWalkthrough } from '@/components/welcome-overlay';
 import {
@@ -465,6 +466,7 @@ export default function HomePage() {
         </div>
 
         <UnlockedToast />
+        <GlassesLiveBridge />
 
         {showShortcuts && (
           <div

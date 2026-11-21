@@ -1,0 +1,82 @@
+/* Waveguide preview — one card, mono green on black, nothing else.
+   Reads as the M6 display would: text floats in the upper field,
+   high contrast, generous size, no chrome. */
+
+.root {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  color: #4dff7a;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.hud {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 18vh 8vw 0;
+}
+
+.card {
+  max-width: 26ch;
+  text-shadow: 0 0 6px rgba(77, 255, 122, 0.55), 0 0 22px rgba(77, 255, 122, 0.25);
+  animation: fade 220ms ease-out;
+}
+
+.headline {
+  font-size: clamp(1.5rem, 4.6vw, 2.6rem);
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.body {
+  margin-top: 0.9em;
+  font-size: clamp(1.05rem, 3vw, 1.7rem);
+  line-height: 1.4;
+  opacity: 0.82;
+}
+
+.phase {
+  font-size: clamp(1.1rem, 3.4vw, 1.9rem);
+  letter-spacing: 0.28em;
+  text-shadow: 0 0 6px rgba(77, 255, 122, 0.5);
+  animation: fade 220ms ease-out;
+}
+
+.operator {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem 1.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  opacity: 0.28; /* operator-only; below waveguide noticeability */
+}
+
+.cue {
+  font-style: italic;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .phase {
+    animation: none;
+  }
+}

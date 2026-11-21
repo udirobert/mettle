@@ -13,6 +13,7 @@ from langgraph.types import interrupt
 
 from .llm import get_llm
 from .state import ConversationState
+from .whisper import publish_reply
 
 REACTIVE_SYSTEM_PROMPT = """\
 You are a live conversation wingman. The user is in a high-stakes meeting \
@@ -211,6 +212,8 @@ def answer_reactive_query(state: ConversationState) -> dict:
             )
         except Exception:
             reply = _build_fallback_reply(state)
+
+    publish_reply(reply)
 
     return {
         "reactive_reply": reply,
