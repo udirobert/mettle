@@ -322,8 +322,10 @@ Backend deps for the new stack: `exa-py`, `agentmail`. Credentials in
 8. **Active — Worn × MicroLumin M6 glasses surface** (Track 01, deadline Sat
    Nov 21 2:00 PM ET). Live Wingman nudges render on the M6 display as a
    whisper-tier `NudgeCard` payload; phone keeps the agent runtime. Prior
-   work must be disclosed in the submission. Full plan, contract, fallback
-   ladder and demo arc: `docs/WORN_M6.md`.
+   work must be disclosed in the submission — draft copy at
+   `docs/SUBMISSION_WORN.md`. The M6 viewer APK (`glasses-android/`)
+   compiles verified; render channel still TBD at the venue. Full plan,
+   contract, fallback ladder and demo arc: `docs/WORN_M6.md`.
 
 ## Multi-Perspective Coach Debate (shipped)
 

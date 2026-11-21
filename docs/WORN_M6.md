@@ -17,6 +17,8 @@
 |                     | glasses · Impact — each 0–2, total /10. Below 1 avg on "works on glasses"  |
 |                     | disqualifies.                                                               |
 | **Prior work**      | Mettle predates the event — **disclose prior work** in the submission.      |
+| **Submission**      | Draft copy ready at `docs/SUBMISSION_WORN.md` — two bracketed slots        |
+|                     | to fill after hardware contact (render channel + observed behavior).      |
 | **Event site**      | https://worn-hacks.com · hub: https://worn-hacks.com/participant-hub        |
 
 ## Why glasses are the Live surface, not a port
