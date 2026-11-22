@@ -48,13 +48,15 @@ nudge, `whisper.py` shapes it into a stable card contract —
 `{kind, headline ≤60 chars, body ≤80, ttl_ms}` — and publishes it
 fire-and-forget to a relay. Sinks subscribe or poll the relay and render
 the current card; the glasses never run agent logic and never replay
-missed nudges — they show the *latest* card, like real peripheral vision.
+missed nudges — they show the _latest_ card, like real peripheral vision.
 
 The same card contract serves every surface: a push-sink registry with
 per-sink capabilities (`private_display` redacts negotiation content to
 "Mettle — nudge" on shared surfaces), an SSE stream, a Python fan-out
 relay (stdout / macOS notification / generic HTTP / adb broadcast), and
-a zero-dependency Android viewer APK for the M6 itself.
+a zero-dependency Android viewer APK for the M6 itself — merged with
+Worn's `GlassesAppTemplate` so it survives reboots and takes pushed
+cards over Wi-Fi (`POST :8080/card`) with no cable.
 
 ## Prior work disclosure (required)
 
@@ -75,7 +77,7 @@ SDK push / teleprompter / sideloaded APK / notification mirror.]
 ## Demo
 
 Three minutes, worn by the team. We walk in with the scout brief on the
-phone (*"You committed to March metrics — they never arrived."*), a
+phone (_"You committed to March metrics — they never arrived."_), a
 teammate plays the manager Dana, and the judge wears the glasses as live
 nudges land mid-sentence. Debrief memo drafted on the walk out — brief on
 the way in, whisper in the room, memo in your pocket.

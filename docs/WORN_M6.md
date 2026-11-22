@@ -7,24 +7,24 @@
 
 ## Event
 
-| Field               | Value                                                                      |
-| ------------------- | -------------------------------------------------------------------------- |
-| **Event**           | Worn — MicroLumin M6 smart-glasses hackathon (theme: "Second nature")       |
-| **Venue**           | CUNY City Tech, 285 Jay St, Brooklyn, rooms A105/A103                       |
-| **Track**           | 01 · Personal Insight — AI that understands the person wearing it          |
-| **Deadline**        | Sat Nov 21, 2:00 PM ET (Airtable, no late edits)                           |
-| **Judging**         | Understands you · Adaptability (phone↔glasses) · Ergonomics · Works on     |
-|                     | glasses · Impact — each 0–2, total /10. Below 1 avg on "works on glasses"  |
-|                     | disqualifies.                                                               |
-| **Prior work**      | Mettle predates the event — **disclose prior work** in the submission.      |
-| **Submission**      | Draft copy ready at `docs/SUBMISSION_WORN.md` — two bracketed slots        |
-|                     | to fill after hardware contact (render channel + observed behavior).      |
-| **Event site**      | https://worn-hacks.com · hub: https://worn-hacks.com/participant-hub        |
+| Field          | Value                                                                     |
+| -------------- | ------------------------------------------------------------------------- |
+| **Event**      | Worn — MicroLumin M6 smart-glasses hackathon (theme: "Second nature")     |
+| **Venue**      | CUNY City Tech, 285 Jay St, Brooklyn, rooms A105/A103                     |
+| **Track**      | 01 · Personal Insight — AI that understands the person wearing it         |
+| **Deadline**   | Sat Nov 21, 2:00 PM ET (Airtable, no late edits)                          |
+| **Judging**    | Understands you · Adaptability (phone↔glasses) · Ergonomics · Works on    |
+|                | glasses · Impact — each 0–2, total /10. Below 1 avg on "works on glasses" |
+|                | disqualifies.                                                             |
+| **Prior work** | Mettle predates the event — **disclose prior work** in the submission.    |
+| **Submission** | Draft copy ready at `docs/SUBMISSION_WORN.md` — two bracketed slots       |
+|                | to fill after hardware contact (render channel + observed behavior).      |
+| **Event site** | https://worn-hacks.com · hub: https://worn-hacks.com/participant-hub      |
 
 ## Why glasses are the Live surface, not a port
 
-`docs/NORTH_STAR.md` already says it: *"The live wingman is a pocket surface,
-not a second monitor."* A phone in your hand mid-negotiation is a prop the
+`docs/NORTH_STAR.md` already says it: _"The live wingman is a pocket surface,
+not a second monitor."_ A phone in your hand mid-negotiation is a prop the
 other side can see. Glasses are the honest end-state of that line — the nudge
 floats in your vision, your eyes stay on the counterpart, your hands stay on
 the table. Every design principle Live mode already obeys (restraint-first,
@@ -37,8 +37,8 @@ catch up to the design.
 The glasses render **one card at a time** — the same `NudgeCard` payload the
 web Wingman emits today via `a2ui-surface`:
 
-- **Proactive nudge** — the headline line only (e.g. *"You've conceded twice —
-  stop anchoring against yourself"*). No card chrome, no buttons.
+- **Proactive nudge** — the headline line only (e.g. _"You've conceded twice —
+  stop anchoring against yourself"_). No card chrome, no buttons.
 - **Reactive answer** — the two-line response to a spoken fragment.
 - **Phase markers** — a one-word stamp when the conversation shifts
   (brief → live → debrief-ready). Optional; drop if it adds noise.
@@ -66,9 +66,9 @@ Mic (glasses/phone) ──► STT ──► phone runs the LangGraph agent
   in) — all shipped. The glasses consume the same `a2ui-surface` stream the
   web `A2UINudgeHost` consumes.
 - **Dev environment constraint:** macOS + iPhone only — no Android phone in
-  the team. `adb` runs fine on Mac and the M6 *is* the Android device, so
+  the team. `adb` runs fine on Mac and the M6 _is_ the Android device, so
   on-device sideloading is still on the table; what's costly is APK
-  *iteration* (Android toolchain builds, no second Android device to test
+  _iteration_ (Android toolchain builds, no second Android device to test
   against). Prefer zero-build and SDK-push routes before writing an APK.
 
 ## Hardware facts (confirmed from public sources, Nov 21)
@@ -137,7 +137,8 @@ walkthrough, engineer on call). Nothing usable on the public web.
    the reactive fragment path.
 7. **Venue WiFi:** event networks usually isolate client-to-client
    traffic, and every channel here polls or pushes to
-   `http://<mac-ip>:3000`. Plan A is an **iPhone hotspot** — Mac + M6
+   `http://<mac-ip>:3000` — plus pushes _to_ the glasses at
+   `http://<glasses-ip>:8080`. Plan A is an **iPhone hotspot** — Mac + M6
    join it, relay URL = the Mac's hotspot IP. Test the hotspot path
    before leaving, not at the venue.
 
@@ -166,7 +167,16 @@ Each rung is a complete demo; climb until one fails.
    polling the relay over WiFi (`--es relay http://<mac-ip>:3000`,
    persisted). Standard Android only; `assembleDebug` verified Nov 21 —
    `app-debug.apk` is sideload-ready (`adb install -r`), first boot on
-   the M6 is the remaining unknown.
+   the M6 is the remaining unknown. **Nov 22 — Worn `GlassesAppTemplate`
+   merged in:** sideloaded apps can't boot-start or be opened cable-free
+   on the M6, so the APK now carries the template's fix — an
+   accessibility service Android restarts at every boot (`setup.sh`
+   enables it once over adb), a foreground keep-alive, and an on-glasses
+   HTTP server on `:8080`: `GET /open /close /ping /relay?url=` plus
+   `POST /card` — the push endpoint for
+   `glasses_relay --sink http=…:8080/card`, which also pops the viewer
+   over the menu. Poll loop stays as fallback; `OPEN_ON_BOOT` opens the
+   viewer ~20 s after power-on.
 5. M6 live — real rules→enrichment pipeline, phone-mic transcript, judge
    wears the glasses. **Live path built:** `GlassesLiveBridge` (mounted in
    `page.tsx`) taps `nudges_sent` / `reactive_reply` / `phase` and POSTs
@@ -197,7 +207,7 @@ What survives into that refactor, by design today:
   grow per-provider fields.
 - **Capabilities live on the sink.** Each provider registers
   `{max_chars, max_lines, supports_body, supports_bitmap, inputs,
-  private_display}`. `private_display` is the load-bearing one: nudge text
+private_display}`. `private_display` is the load-bearing one: nudge text
   is negotiation content — fine on a waveguide in your eye, must degrade to
   "Mettle: nudge" on a lock screen.
 - **The emit moved to the backend (done Nov 21).** `backend/graph/whisper.py`
@@ -246,10 +256,10 @@ to get wrong. It did its homework before this room — and now it stands next to
 me in it."
 
 1. **The walk-in (phone).** Show the scout log + one briefing line on the
-   phone screen: *"You committed to March metrics — they never arrived."*
+   phone screen: _"You committed to March metrics — they never arrived."_
 2. **The moment (glasses).** Teammate plays Dana. Judge/teammate wears the M6.
-   Live nudge lands mid-sentence — *"She countered on title, not cash — that's
-   cheap for her."* Eyes never left the counterpart.
+   Live nudge lands mid-sentence — _"She countered on title, not cash — that's
+   cheap for her."_ Eyes never left the counterpart.
 3. **The loop closes (phone).** Debrief memo drafted on the phone. Brief on
    the walk in, whisper in the room, memo in your pocket — one agent, three
    surfaces, none of them a screen you stare at.

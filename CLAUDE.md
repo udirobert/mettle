@@ -122,7 +122,9 @@ main agent in the CopilotKit runtime.
   glasses_relay.py        # polls /api/glasses, fans cards to WhisperSinks
   glasses_sinks.py        # WhisperSink impls: stdout/notify/http/adb (+ M6SdkSink stub)
   glasses_smoke.py        # venue smoke test for the whole whisper chain
-/glasses-android          # M6 whisper viewer APK scaffold (build at venue)
+/glasses-android          # M6 whisper viewer APK — Worn template merged:
+                          # boot persistence + on-glasses HTTP :8080
+                          # (/card push, /open /close /ping /relay)
 ```
 
 ## Testing
@@ -324,8 +326,11 @@ Backend deps for the new stack: `exa-py`, `agentmail`. Credentials in
    whisper-tier `NudgeCard` payload; phone keeps the agent runtime. Prior
    work must be disclosed in the submission — draft copy at
    `docs/SUBMISSION_WORN.md`. The M6 viewer APK (`glasses-android/`)
-   compiles verified; render channel still TBD at the venue. Full plan,
-   contract, fallback ladder and demo arc: `docs/WORN_M6.md`.
+   merged the Worn `GlassesAppTemplate` (Nov 22): accessibility-service
+   boot persistence + on-glasses HTTP server — `POST :8080/card` is the
+   push path (`--sink http=…:8080/card`), the 300 ms relay poll stays as
+   fallback. Full plan, contract, fallback ladder and demo arc:
+   `docs/WORN_M6.md`.
 
 ## Multi-Perspective Coach Debate (shipped)
 

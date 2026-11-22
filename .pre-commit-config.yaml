@@ -22,6 +22,7 @@ repos:
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
+        language_version: system # nodeenv 'latest' resolves to an unparseable Node alpha
         types_or: [javascript, jsx, tsx, json, css, markdown]
         args: [--write]
         additional_dependencies:

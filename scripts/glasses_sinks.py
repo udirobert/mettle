@@ -14,8 +14,9 @@ Sinks shipped today:
   notify   — macOS `display notification`; NOT private (visible on screen,
              Notification Center history) → renders the redacted card.
              Works right now — the rung-3 analog you can demo on this Mac.
-  http=URL — POSTs the card JSON anywhere: a venue SDK push endpoint, a
-             localhost APK server, a webhook. The generic bridge.
+  http=URL — POSTs the card JSON anywhere: the M6 viewer APK's on-glasses
+             server (http://<glasses-ip>:8080/card), a venue SDK push
+             endpoint, a webhook. The generic bridge.
   adb      — `am broadcast` to a sideloaded viewer APK on the M6
              (Android 9/W527 — glasses are the Android device; adb works
              from macOS over USB-C or WiFi).
